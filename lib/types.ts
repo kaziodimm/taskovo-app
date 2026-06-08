@@ -36,22 +36,27 @@ export type Offer = {
 
 export type TaskerProfile = {
   id: string;
+  auth_user_id: string | null;
+  email: string | null;
   name: string;
   city: string;
   categories: string;
   contact?: string;
   bio: string | null;
   verified: boolean;
+  password_auth_enabled?: boolean;
   created_at: string;
 };
 
 export type ClientProfile = {
   id: string;
+  auth_user_id: string | null;
   name: string;
   email: string;
   phone: string | null;
   city: string | null;
   preferred_language: string;
   marketing_consent: boolean;
+  password_auth_enabled?: boolean;
   created_at: string;
 };
