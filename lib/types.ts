@@ -36,8 +36,8 @@ export type Offer = {
 
 export type TaskerProfile = {
   id: string;
-  auth_user_id: string | null;
-  email: string | null;
+  auth_user_id?: string | null;
+  email?: string | null;
   name: string;
   city: string;
   categories: string;
@@ -50,7 +50,7 @@ export type TaskerProfile = {
 
 export type ClientProfile = {
   id: string;
-  auth_user_id: string | null;
+  auth_user_id?: string | null;
   name: string;
   email: string;
   phone: string | null;
