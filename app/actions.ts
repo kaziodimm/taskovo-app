@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { clearAdminSession, setAdminSession, validateAdminCredentials } from "@/lib/admin-auth";
 import { createServiceSupabaseClient, hasSupabaseEnv } from "@/lib/supabase";
 
 function requiredString(formData: FormData, key: string) {
@@ -14,6 +15,48 @@ function requiredString(formData: FormData, key: string) {
 
 function titleFromDescription(description: string) {
   return description.length > 64 ? `${description.slice(0, 61)}...` : description;
+}
+
+export async function createClientProfile(formData: FormData) {
+  if (!hasSupabaseEnv() || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    console.warn("Supabase env missing; createClientProfile skipped.");
+    redirect("/prihlaseni?registered=client");
+  }
+
+  const email = requiredString(formData, "email").toLowerCase();
+  const supabase = createServiceSupabaseClient();
+  const { error } = await supabase.from("client_profiles").upsert(
+    {
+      name: requiredString(formData, "name"),
+      email,
+      phone: formData.get("phone")?.toString().trim() || null,
+      city: formData.get("city")?.toString().trim() || null,
+      preferred_language: "cs",
+      marketing_consent: formData.get("marketing_consent") === "on",
+    },
+    { onConflict: "email" },
+  );
+
+  if (error) throw new Error(error.message);
+  revalidatePath("/admin");
+  redirect("/prihlaseni?registered=client");
+}
+
+export async function adminLogin(formData: FormData) {
+  const email = requiredString(formData, "email");
+  const password = requiredString(formData, "password");
+
+  if (!validateAdminCredentials(email, password)) {
+    redirect("/admin/prihlaseni?error=invalid");
+  }
+
+  await setAdminSession(email);
+  redirect("/admin");
+}
+
+export async function adminLogout() {
+  await clearAdminSession();
+  redirect("/admin/prihlaseni");
 }
 
 export async function createTask(formData: FormData) {
