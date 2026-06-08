@@ -9,12 +9,12 @@ export function ProviderCard({ provider }: { provider: FeaturedProvider }) {
           <h3>{provider.name}</h3>
           <p>{provider.city} · {provider.responseTime}</p>
         </div>
-        {provider.verified ? <span className="verified-badge">Overeno</span> : null}
+        {provider.verified ? <span className="verified-badge">Ověřeno</span> : null}
       </div>
       <p>{provider.bio}</p>
       <div className="provider-metrics">
-        <span><strong>{provider.rating.toFixed(1)}</strong> rating</span>
-        <span><strong>{provider.completedTasks}</strong> ukolu</span>
+        <span><strong>{provider.rating.toFixed(1)}</strong> hodnocení</span>
+        <span><strong>{provider.completedTasks}</strong> úkolů</span>
         <span><strong>{provider.priceFrom}</strong> od</span>
       </div>
       <div className="chip-row">
