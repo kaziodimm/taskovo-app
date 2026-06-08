@@ -4,10 +4,10 @@ const footerGroups = [
   {
     title: "Marketplace",
     links: [
-      ["Zadat ukol", "/zadat-ukol"],
+      ["Zadat úkol", "/zadat-ukol"],
       ["Kategorie", "/kategorie"],
-      ["Poskytovatele", "/poskytovatele"],
-      ["Aktualni ukoly", "/tasks"],
+      ["Poskytovatelé", "/poskytovatele"],
+      ["Aktuální úkoly", "/tasks"],
     ],
   },
   {
@@ -15,16 +15,16 @@ const footerGroups = [
     links: [
       ["Registrace", "/registrace-poskytovatel"],
       ["Dashboard", "/poskytovatel/dashboard"],
-      ["Vyplaty", "/vyplaty"],
-      ["Podminky", "/podminky-pro-poskytovatele"],
+      ["Výplaty", "/vyplaty"],
+      ["Podmínky", "/podminky-pro-poskytovatele"],
     ],
   },
   {
-    title: "Duvěra",
+    title: "Důvěra",
     links: [
-      ["Bezpecnost", "/bezpecnost"],
+      ["Bezpečnost", "/bezpecnost"],
       ["Kontakt", "/kontakt"],
-      ["Ochrana udaju", "/ochrana-osobnich-udaju"],
+      ["Ochrana údajů", "/ochrana-osobnich-udaju"],
       ["Cookies", "/cookies"],
     ],
   },
@@ -38,10 +38,10 @@ export function Footer() {
           <BrandMark />
           <span className="brand-copy">
             <strong>Taskovo</strong>
-            <small>Pomoc. Rychle. Spolehlive.</small>
+            <small>Pomoc. Rychle. Spolehlivě.</small>
           </span>
         </a>
-        <p>Cesky marketplace pro lokalni ukoly, sluzby a overenou pomoc v okoli. Taskovo je zprostredkovatelska platforma, ne zamestnavatel poskytovatelu.</p>
+        <p>Český marketplace pro lokální úkoly, služby a ověřenou pomoc v okolí. Taskovo je zprostředkovatelská platforma, ne zaměstnavatel poskytovatelů.</p>
       </div>
       <div className="footer-columns">
         {footerGroups.map((group) => (
