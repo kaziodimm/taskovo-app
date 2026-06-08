@@ -25,6 +25,16 @@ function authRedirect(role: string | undefined) {
   redirect("/dashboard");
 }
 
+function normalizedImageUrl(value: string) {
+  try {
+    const url = new URL(value);
+    if (!["http:", "https:"].includes(url.protocol)) return null;
+    return url.toString();
+  } catch {
+    return null;
+  }
+}
+
 export async function registerClientAccount(formData: FormData) {
   if (!hasSupabaseEnv() || !process.env.SUPABASE_SERVICE_ROLE_KEY) redirect("/prihlaseni?error=config");
 
@@ -131,7 +141,7 @@ export async function createTask(formData: FormData) {
   const { data: { user } } = await authSupabase.auth.getUser();
   const service = createServiceSupabaseClient();
   const clientName = optionalString(formData, "client_name") || user?.user_metadata?.name || user?.email || "Klient Taskovo";
-  const clientContact = optionalString(formData, "client_contact") || user?.email || "kontakt po prihlaseni";
+  const clientContact = optionalString(formData, "client_contact") || user?.email || "kontakt po přihlášení";
 
   const { error } = await service.from("tasks").insert({
     client_auth_user_id: user?.id || null,
@@ -169,7 +179,7 @@ export async function createOffer(formData: FormData) {
   }
 
   const taskerName = optionalString(formData, "tasker_name") || profile?.name || user?.user_metadata?.name || user?.email || "Tasker Taskovo";
-  const taskerContact = optionalString(formData, "tasker_contact") || profile?.contact || profile?.email || user?.email || "kontakt po prihlaseni";
+  const taskerContact = optionalString(formData, "tasker_contact") || profile?.contact || profile?.email || user?.email || "kontakt po přihlášení";
 
   const { error } = await service.from("offers").insert({
     task_id: taskId,
@@ -188,7 +198,39 @@ export async function createOffer(formData: FormData) {
   revalidatePath("/tasks");
   revalidatePath("/dashboard");
   revalidatePath("/poskytovatel/dashboard");
+  revalidatePath(`/ukol/${taskId}`);
   redirect(user?.user_metadata?.role === "tasker" ? "/poskytovatel/dashboard" : "/tasks");
+}
+
+export async function addTaskAttachment(formData: FormData) {
+  if (!hasSupabaseEnv() || !process.env.SUPABASE_SERVICE_ROLE_KEY) redirect("/dashboard?error=config");
+
+  const taskId = requiredString(formData, "task_id");
+  const imageUrl = normalizedImageUrl(requiredString(formData, "image_url"));
+  const caption = optionalString(formData, "caption");
+  const authSupabase = await createServerSupabaseClient();
+  const { data: { user } } = await authSupabase.auth.getUser();
+
+  if (!user) redirect("/prihlaseni?error=login_required");
+  if (!imageUrl) redirect(`/ukol/${taskId}?error=image_url`);
+
+  const service = createServiceSupabaseClient();
+  const { data: task, error: taskError } = await service.from("tasks").select("id,client_auth_user_id").eq("id", taskId).maybeSingle();
+  if (taskError) throw new Error(taskError.message);
+  if (!task || task.client_auth_user_id !== user.id) redirect(`/ukol/${taskId}?error=forbidden`);
+
+  const { error } = await service.from("task_attachments").insert({
+    task_id: taskId,
+    image_url: imageUrl,
+    caption,
+    created_by_auth_user_id: user.id,
+  });
+
+  if (error) throw new Error(error.message);
+
+  revalidatePath(`/ukol/${taskId}`);
+  revalidatePath("/dashboard");
+  redirect(`/ukol/${taskId}`);
 }
 
 export async function acceptOffer(formData: FormData) {
@@ -229,6 +271,7 @@ export async function acceptOffer(formData: FormData) {
   revalidatePath("/tasks");
   revalidatePath("/dashboard");
   revalidatePath("/poskytovatel/dashboard");
+  revalidatePath(`/ukol/${taskId}`);
   revalidatePath("/admin");
   redirect("/dashboard");
 }
