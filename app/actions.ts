@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { clearAdminSession, setAdminSession, validateAdminCredentials } from "@/lib/admin-auth";
-import { createServiceSupabaseClient, hasSupabaseEnv } from "@/lib/supabase";
+import { createServerSupabaseClient, createServiceSupabaseClient, hasSupabaseEnv } from "@/lib/supabase";
 
 function requiredString(formData: FormData, key: string) {
   const value = formData.get(key);
@@ -17,29 +17,128 @@ function titleFromDescription(description: string) {
   return description.length > 64 ? `${description.slice(0, 61)}...` : description;
 }
 
-export async function createClientProfile(formData: FormData) {
-  if (!hasSupabaseEnv() || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
-    console.warn("Supabase env missing; createClientProfile skipped.");
-    redirect("/prihlaseni?registered=client");
+function authRedirect(role: string | undefined) {
+  if (role === "tasker") redirect("/poskytovatel/dashboard");
+  redirect("/dashboard");
+}
+
+export async function registerClientAccount(formData: FormData) {
+  if (!hasSupabaseEnv() || !process.env.SUPABASE_SERVICE_ROLE_KEY) redirect("/prihlaseni?error=config");
+
+  const name = requiredString(formData, "name");
+  const email = requiredString(formData, "email").toLowerCase();
+  const password = requiredString(formData, "password");
+  const phone = formData.get("phone")?.toString().trim() || null;
+  const city = formData.get("city")?.toString().trim() || null;
+  const service = createServiceSupabaseClient();
+
+  const { data: created, error: createError } = await service.auth.admin.createUser({
+    email,
+    password,
+    email_confirm: true,
+    user_metadata: { name, role: "client" },
+  });
+
+  if (createError && !createError.message.toLowerCase().includes("already")) {
+    redirect("/prihlaseni?error=register");
   }
 
-  const email = requiredString(formData, "email").toLowerCase();
-  const supabase = createServiceSupabaseClient();
-  const { error } = await supabase.from("client_profiles").upsert(
+  let userId = created.user?.id;
+  if (!userId) {
+    const { data } = await service.auth.admin.listUsers();
+    userId = data.users.find((user) => user.email?.toLowerCase() === email)?.id;
+  }
+
+  const { error: profileError } = await service.from("client_profiles").upsert(
     {
-      name: requiredString(formData, "name"),
+      auth_user_id: userId || null,
+      name,
       email,
-      phone: formData.get("phone")?.toString().trim() || null,
-      city: formData.get("city")?.toString().trim() || null,
+      phone,
+      city,
       preferred_language: "cs",
       marketing_consent: formData.get("marketing_consent") === "on",
+      password_auth_enabled: true,
     },
     { onConflict: "email" },
   );
 
-  if (error) throw new Error(error.message);
+  if (profileError) throw new Error(profileError.message);
+
+  const supabase = await createServerSupabaseClient();
+  const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+  if (signInError) redirect("/prihlaseni?registered=client");
+
   revalidatePath("/admin");
-  redirect("/prihlaseni?registered=client");
+  redirect("/dashboard");
+}
+
+export async function registerTaskerAccount(formData: FormData) {
+  if (!hasSupabaseEnv() || !process.env.SUPABASE_SERVICE_ROLE_KEY) redirect("/prihlaseni?error=config");
+
+  const name = requiredString(formData, "name");
+  const email = requiredString(formData, "email").toLowerCase();
+  const password = requiredString(formData, "password");
+  const city = requiredString(formData, "city");
+  const categories = requiredString(formData, "categories");
+  const contact = formData.get("contact")?.toString().trim() || email;
+  const bio = formData.get("bio")?.toString().trim() || null;
+  const service = createServiceSupabaseClient();
+
+  const { data: created, error: createError } = await service.auth.admin.createUser({
+    email,
+    password,
+    email_confirm: true,
+    user_metadata: { name, role: "tasker" },
+  });
+
+  if (createError && !createError.message.toLowerCase().includes("already")) redirect("/prihlaseni?error=register");
+
+  let userId = created.user?.id;
+  if (!userId) {
+    const { data } = await service.auth.admin.listUsers();
+    userId = data.users.find((user) => user.email?.toLowerCase() === email)?.id;
+  }
+
+  const { error: profileError } = await service.from("tasker_profiles").insert({
+    auth_user_id: userId || null,
+    email,
+    name,
+    city,
+    categories,
+    contact,
+    bio,
+    password_auth_enabled: true,
+  });
+
+  if (profileError) throw new Error(profileError.message);
+
+  const supabase = await createServerSupabaseClient();
+  const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+  if (signInError) redirect("/prihlaseni?registered=tasker");
+
+  revalidatePath("/admin");
+  redirect("/poskytovatel/dashboard");
+}
+
+export async function loginAccount(formData: FormData) {
+  const email = requiredString(formData, "email").toLowerCase();
+  const password = requiredString(formData, "password");
+  const supabase = await createServerSupabaseClient();
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+
+  if (error) redirect("/prihlaseni?error=login");
+  authRedirect(data.user?.user_metadata?.role);
+}
+
+export async function logoutAccount() {
+  const supabase = await createServerSupabaseClient();
+  await supabase.auth.signOut();
+  redirect("/prihlaseni");
+}
+
+export async function createClientProfile(formData: FormData) {
+  return registerClientAccount(formData);
 }
 
 export async function adminLogin(formData: FormData) {
