@@ -3,6 +3,8 @@ import { demoOffers, demoTaskers, demoTasks } from "./demo-data";
 import { createServiceSupabaseClient, hasSupabaseEnv } from "./supabase";
 import type { ClientProfile, Offer, Task, TaskerProfile } from "./types";
 
+const visibleStatuses = ["open", "offers_received", "assigned", "in_progress", "completed"];
+
 export async function getTasks(): Promise<Task[]> {
   noStore();
 
@@ -12,12 +14,32 @@ export async function getTasks(): Promise<Task[]> {
   const { data, error } = await supabase
     .from("tasks")
     .select("*")
-    .in("status", ["open", "offers_received", "assigned", "in_progress", "completed"])
+    .in("status", visibleStatuses)
     .order("created_at", { ascending: false });
 
   if (error) {
     console.error(error);
     return demoTasks;
+  }
+
+  return data as Task[];
+}
+
+export async function getTasksForClient(clientAuthUserId: string): Promise<Task[]> {
+  noStore();
+
+  if (!hasSupabaseEnv() || !process.env.SUPABASE_SERVICE_ROLE_KEY) return [];
+
+  const supabase = createServiceSupabaseClient();
+  const { data, error } = await supabase
+    .from("tasks")
+    .select("*")
+    .eq("client_auth_user_id", clientAuthUserId)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error(error);
+    return [];
   }
 
   return data as Task[];
