@@ -7,9 +7,7 @@ import { createServerSupabaseClient, createServiceSupabaseClient, hasSupabaseEnv
 
 function requiredString(formData: FormData, key: string) {
   const value = formData.get(key);
-  if (typeof value !== "string" || !value.trim()) {
-    throw new Error(`Missing field: ${key}`);
-  }
+  if (typeof value !== "string" || !value.trim()) throw new Error(`Missing field: ${key}`);
   return value.trim();
 }
 
@@ -36,13 +34,7 @@ export async function registerClientAccount(formData: FormData) {
   const phone = optionalString(formData, "phone");
   const city = optionalString(formData, "city");
   const service = createServiceSupabaseClient();
-
-  const { data: created, error: createError } = await service.auth.admin.createUser({
-    email,
-    password,
-    email_confirm: true,
-    user_metadata: { name, role: "client" },
-  });
+  const { data: created, error: createError } = await service.auth.admin.createUser({ email, password, email_confirm: true, user_metadata: { name, role: "client" } });
 
   if (createError && !createError.message.toLowerCase().includes("already")) redirect("/prihlaseni?error=register");
 
@@ -52,11 +44,7 @@ export async function registerClientAccount(formData: FormData) {
     userId = data.users.find((user) => user.email?.toLowerCase() === email)?.id;
   }
 
-  const { error: profileError } = await service.from("client_profiles").upsert(
-    { auth_user_id: userId || null, name, email, phone, city, preferred_language: "cs", marketing_consent: formData.get("marketing_consent") === "on", password_auth_enabled: true },
-    { onConflict: "email" },
-  );
-
+  const { error: profileError } = await service.from("client_profiles").upsert({ auth_user_id: userId || null, name, email, phone, city, preferred_language: "cs", marketing_consent: formData.get("marketing_consent") === "on", password_auth_enabled: true }, { onConflict: "email" });
   if (profileError) throw new Error(profileError.message);
 
   const supabase = await createServerSupabaseClient();
@@ -78,8 +66,8 @@ export async function registerTaskerAccount(formData: FormData) {
   const contact = optionalString(formData, "contact") || email;
   const bio = optionalString(formData, "bio");
   const service = createServiceSupabaseClient();
-
   const { data: created, error: createError } = await service.auth.admin.createUser({ email, password, email_confirm: true, user_metadata: { name, role: "tasker" } });
+
   if (createError && !createError.message.toLowerCase().includes("already")) redirect("/prihlaseni?error=register");
 
   let userId = created.user?.id;
@@ -137,15 +125,11 @@ export async function adminLogout() {
 export async function createTask(formData: FormData) {
   const description = requiredString(formData, "description");
 
-  if (!hasSupabaseEnv() || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
-    console.warn("Supabase env missing; createTask skipped.");
-    redirect("/tasks");
-  }
+  if (!hasSupabaseEnv() || !process.env.SUPABASE_SERVICE_ROLE_KEY) redirect("/tasks");
 
   const authSupabase = await createServerSupabaseClient();
   const { data: { user } } = await authSupabase.auth.getUser();
   const service = createServiceSupabaseClient();
-
   const clientName = optionalString(formData, "client_name") || user?.user_metadata?.name || user?.email || "Klient Taskovo";
   const clientContact = optionalString(formData, "client_contact") || user?.email || "kontakt po přihlášení";
 
@@ -171,35 +155,44 @@ export async function createTask(formData: FormData) {
 }
 
 export async function createOffer(formData: FormData) {
-  if (!hasSupabaseEnv() || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
-    console.warn("Supabase env missing; createOffer skipped.");
-    redirect("/tasks");
-  }
+  if (!hasSupabaseEnv() || !process.env.SUPABASE_SERVICE_ROLE_KEY) redirect("/tasks");
 
   const taskId = requiredString(formData, "task_id");
-  const supabase = createServiceSupabaseClient();
+  const authSupabase = await createServerSupabaseClient();
+  const { data: { user } } = await authSupabase.auth.getUser();
+  const service = createServiceSupabaseClient();
 
-  const { error } = await supabase.from("offers").insert({
+  let profile: { id: string; name: string; contact?: string | null; email?: string | null } | null = null;
+  if (user?.id) {
+    const { data } = await service.from("tasker_profiles").select("id,name,contact,email").eq("auth_user_id", user.id).order("created_at", { ascending: false }).limit(1).maybeSingle();
+    profile = data;
+  }
+
+  const taskerName = optionalString(formData, "tasker_name") || profile?.name || user?.user_metadata?.name || user?.email || "Tasker Taskovo";
+  const taskerContact = optionalString(formData, "tasker_contact") || profile?.contact || profile?.email || user?.email || "kontakt po přihlášení";
+
+  const { error } = await service.from("offers").insert({
     task_id: taskId,
-    tasker_name: requiredString(formData, "tasker_name"),
-    tasker_contact: requiredString(formData, "tasker_contact"),
+    tasker_auth_user_id: user?.id || null,
+    tasker_profile_id: profile?.id || null,
+    tasker_name: taskerName,
+    tasker_contact: taskerContact,
     price_czk: Number(requiredString(formData, "price_czk")),
     message: requiredString(formData, "message"),
   });
 
   if (error) throw new Error(error.message);
 
-  await supabase.from("tasks").update({ status: "offers_received" }).eq("id", taskId);
+  await service.from("tasks").update({ status: "offers_received" }).eq("id", taskId);
   revalidatePath("/");
   revalidatePath("/tasks");
-  redirect("/tasks");
+  revalidatePath("/dashboard");
+  revalidatePath("/poskytovatel/dashboard");
+  redirect(user?.user_metadata?.role === "tasker" ? "/poskytovatel/dashboard" : "/tasks");
 }
 
 export async function createTaskerProfile(formData: FormData) {
-  if (!hasSupabaseEnv() || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
-    console.warn("Supabase env missing; createTaskerProfile skipped.");
-    redirect("/taskers");
-  }
+  if (!hasSupabaseEnv() || !process.env.SUPABASE_SERVICE_ROLE_KEY) redirect("/taskers");
 
   const supabase = createServiceSupabaseClient();
   const { error } = await supabase.from("tasker_profiles").insert({
