@@ -27,6 +27,8 @@ export type Task = {
 export type Offer = {
   id: string;
   task_id: string;
+  tasker_auth_user_id?: string | null;
+  tasker_profile_id?: string | null;
   tasker_name: string;
   tasker_contact?: string;
   price_czk: number;
