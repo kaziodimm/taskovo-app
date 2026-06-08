@@ -52,6 +52,7 @@ export function TaskCard({ task, offers, canSelectOffer = false, showOfferForm =
         <div><span>Tasker</span><strong>{money(payout)} Kč</strong></div>
         <div><span>Nabídky</span><strong>{offers.length}</strong></div>
       </div>
+      <a className="button secondary" href={`/ukol/${task.id}`}>Detail objednávky</a>
       <details>
         <summary>Nabídky</summary>
         <ul className="offer-list">
