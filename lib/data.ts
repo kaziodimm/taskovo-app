@@ -1,7 +1,7 @@
 import { unstable_noStore as noStore } from "next/cache";
 import { demoOffers, demoTaskers, demoTasks } from "./demo-data";
 import { createServiceSupabaseClient, hasSupabaseEnv } from "./supabase";
-import type { Offer, Task, TaskerProfile } from "./types";
+import type { ClientProfile, Offer, Task, TaskerProfile } from "./types";
 
 export async function getTasks(): Promise<Task[]> {
   noStore();
@@ -56,4 +56,23 @@ export async function getTaskers(): Promise<TaskerProfile[]> {
   }
 
   return data as TaskerProfile[];
+}
+
+export async function getClients(): Promise<ClientProfile[]> {
+  noStore();
+
+  if (!hasSupabaseEnv() || !process.env.SUPABASE_SERVICE_ROLE_KEY) return [];
+
+  const supabase = createServiceSupabaseClient();
+  const { data, error } = await supabase
+    .from("client_profiles")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error(error);
+    return [];
+  }
+
+  return data as ClientProfile[];
 }
