@@ -13,6 +13,11 @@ function requiredString(formData: FormData, key: string) {
   return value.trim();
 }
 
+function optionalString(formData: FormData, key: string) {
+  const value = formData.get(key);
+  return typeof value === "string" && value.trim() ? value.trim() : null;
+}
+
 function titleFromDescription(description: string) {
   return description.length > 64 ? `${description.slice(0, 61)}...` : description;
 }
@@ -28,8 +33,8 @@ export async function registerClientAccount(formData: FormData) {
   const name = requiredString(formData, "name");
   const email = requiredString(formData, "email").toLowerCase();
   const password = requiredString(formData, "password");
-  const phone = formData.get("phone")?.toString().trim() || null;
-  const city = formData.get("city")?.toString().trim() || null;
+  const phone = optionalString(formData, "phone");
+  const city = optionalString(formData, "city");
   const service = createServiceSupabaseClient();
 
   const { data: created, error: createError } = await service.auth.admin.createUser({
@@ -39,9 +44,7 @@ export async function registerClientAccount(formData: FormData) {
     user_metadata: { name, role: "client" },
   });
 
-  if (createError && !createError.message.toLowerCase().includes("already")) {
-    redirect("/prihlaseni?error=register");
-  }
+  if (createError && !createError.message.toLowerCase().includes("already")) redirect("/prihlaseni?error=register");
 
   let userId = created.user?.id;
   if (!userId) {
@@ -50,16 +53,7 @@ export async function registerClientAccount(formData: FormData) {
   }
 
   const { error: profileError } = await service.from("client_profiles").upsert(
-    {
-      auth_user_id: userId || null,
-      name,
-      email,
-      phone,
-      city,
-      preferred_language: "cs",
-      marketing_consent: formData.get("marketing_consent") === "on",
-      password_auth_enabled: true,
-    },
+    { auth_user_id: userId || null, name, email, phone, city, preferred_language: "cs", marketing_consent: formData.get("marketing_consent") === "on", password_auth_enabled: true },
     { onConflict: "email" },
   );
 
@@ -81,17 +75,11 @@ export async function registerTaskerAccount(formData: FormData) {
   const password = requiredString(formData, "password");
   const city = requiredString(formData, "city");
   const categories = requiredString(formData, "categories");
-  const contact = formData.get("contact")?.toString().trim() || email;
-  const bio = formData.get("bio")?.toString().trim() || null;
+  const contact = optionalString(formData, "contact") || email;
+  const bio = optionalString(formData, "bio");
   const service = createServiceSupabaseClient();
 
-  const { data: created, error: createError } = await service.auth.admin.createUser({
-    email,
-    password,
-    email_confirm: true,
-    user_metadata: { name, role: "tasker" },
-  });
-
+  const { data: created, error: createError } = await service.auth.admin.createUser({ email, password, email_confirm: true, user_metadata: { name, role: "tasker" } });
   if (createError && !createError.message.toLowerCase().includes("already")) redirect("/prihlaseni?error=register");
 
   let userId = created.user?.id;
@@ -100,17 +88,7 @@ export async function registerTaskerAccount(formData: FormData) {
     userId = data.users.find((user) => user.email?.toLowerCase() === email)?.id;
   }
 
-  const { error: profileError } = await service.from("tasker_profiles").insert({
-    auth_user_id: userId || null,
-    email,
-    name,
-    city,
-    categories,
-    contact,
-    bio,
-    password_auth_enabled: true,
-  });
-
+  const { error: profileError } = await service.from("tasker_profiles").insert({ auth_user_id: userId || null, email, name, city, categories, contact, bio, password_auth_enabled: true });
   if (profileError) throw new Error(profileError.message);
 
   const supabase = await createServerSupabaseClient();
@@ -145,9 +123,7 @@ export async function adminLogin(formData: FormData) {
   const email = requiredString(formData, "email");
   const password = requiredString(formData, "password");
 
-  if (!validateAdminCredentials(email, password)) {
-    redirect("/admin/prihlaseni?error=invalid");
-  }
+  if (!validateAdminCredentials(email, password)) redirect("/admin/prihlaseni?error=invalid");
 
   await setAdminSession(email);
   redirect("/admin");
@@ -166,24 +142,32 @@ export async function createTask(formData: FormData) {
     redirect("/tasks");
   }
 
-  const supabase = createServiceSupabaseClient();
-  const { error } = await supabase.from("tasks").insert({
+  const authSupabase = await createServerSupabaseClient();
+  const { data: { user } } = await authSupabase.auth.getUser();
+  const service = createServiceSupabaseClient();
+
+  const clientName = optionalString(formData, "client_name") || user?.user_metadata?.name || user?.email || "Klient Taskovo";
+  const clientContact = optionalString(formData, "client_contact") || user?.email || "kontakt po přihlášení";
+
+  const { error } = await service.from("tasks").insert({
+    client_auth_user_id: user?.id || null,
     title: titleFromDescription(description),
     description,
     category: requiredString(formData, "category"),
     city: requiredString(formData, "city"),
-    district: formData.get("district")?.toString().trim() || null,
+    district: optionalString(formData, "district"),
     budget_czk: Number(requiredString(formData, "budget_czk")),
     desired_time: requiredString(formData, "desired_time"),
-    client_name: requiredString(formData, "client_name"),
-    client_contact: requiredString(formData, "client_contact"),
+    client_name: clientName,
+    client_contact: clientContact,
     status: "open",
   });
 
   if (error) throw new Error(error.message);
   revalidatePath("/");
   revalidatePath("/tasks");
-  redirect("/tasks");
+  revalidatePath("/dashboard");
+  redirect(user ? "/dashboard" : "/tasks");
 }
 
 export async function createOffer(formData: FormData) {
@@ -223,7 +207,7 @@ export async function createTaskerProfile(formData: FormData) {
     city: requiredString(formData, "city"),
     categories: requiredString(formData, "categories"),
     contact: requiredString(formData, "contact"),
-    bio: formData.get("bio")?.toString().trim() || null,
+    bio: optionalString(formData, "bio"),
   });
 
   if (error) throw new Error(error.message);
