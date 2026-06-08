@@ -11,6 +11,9 @@ export type TaskStatus =
 export type Task = {
   id: string;
   client_auth_user_id?: string | null;
+  accepted_offer_id?: string | null;
+  assigned_tasker_auth_user_id?: string | null;
+  assigned_tasker_profile_id?: string | null;
   title: string;
   description: string;
   category: string;
