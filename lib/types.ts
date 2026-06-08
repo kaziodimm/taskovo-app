@@ -10,6 +10,7 @@ export type TaskStatus =
 
 export type Task = {
   id: string;
+  client_auth_user_id?: string | null;
   title: string;
   description: string;
   category: string;
