@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { createServiceSupabaseClient, hasSupabaseEnv } from "@/lib/supabase";
 
 function requiredString(formData: FormData, key: string) {
@@ -20,7 +21,7 @@ export async function createTask(formData: FormData) {
 
   if (!hasSupabaseEnv() || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
     console.warn("Supabase env missing; createTask skipped.");
-    return;
+    redirect("/tasks");
   }
 
   const supabase = createServiceSupabaseClient();
@@ -39,12 +40,14 @@ export async function createTask(formData: FormData) {
 
   if (error) throw new Error(error.message);
   revalidatePath("/");
+  revalidatePath("/tasks");
+  redirect("/tasks");
 }
 
 export async function createOffer(formData: FormData) {
   if (!hasSupabaseEnv() || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
     console.warn("Supabase env missing; createOffer skipped.");
-    return;
+    redirect("/tasks");
   }
 
   const taskId = requiredString(formData, "task_id");
@@ -62,12 +65,14 @@ export async function createOffer(formData: FormData) {
 
   await supabase.from("tasks").update({ status: "offers_received" }).eq("id", taskId);
   revalidatePath("/");
+  revalidatePath("/tasks");
+  redirect("/tasks");
 }
 
 export async function createTaskerProfile(formData: FormData) {
   if (!hasSupabaseEnv() || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
     console.warn("Supabase env missing; createTaskerProfile skipped.");
-    return;
+    redirect("/taskers");
   }
 
   const supabase = createServiceSupabaseClient();
@@ -81,5 +86,7 @@ export async function createTaskerProfile(formData: FormData) {
 
   if (error) throw new Error(error.message);
   revalidatePath("/");
+  revalidatePath("/taskers");
   revalidatePath("/admin");
+  redirect("/taskers");
 }
