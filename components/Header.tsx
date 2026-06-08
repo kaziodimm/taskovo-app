@@ -3,23 +3,23 @@ import { BrandMark } from "@/components/BrandMark";
 export function Header() {
   return (
     <header className="site-header">
-      <a className="brand" href="/" aria-label="Taskovo domovska stranka">
+      <a className="brand" href="/" aria-label="Domovská stránka Taskovo">
         <BrandMark />
         <span className="brand-copy">
           <strong>Taskovo</strong>
-          <small>Pomoc. Rychle. Spolehlive.</small>
+          <small>Pomoc. Rychle. Spolehlivě.</small>
         </span>
       </a>
-      <nav className="site-nav" aria-label="Hlavni navigace">
+      <nav className="site-nav" aria-label="Hlavní navigace">
         <a href="/#jak-to-funguje">Jak to funguje</a>
         <a href="/kategorie">Kategorie</a>
-        <a href="/poskytovatele">Poskytovatele</a>
+        <a href="/poskytovatele">Poskytovatelé</a>
         <a href="/registrace-poskytovatel">Pro poskytovatele</a>
-        <a href="/bezpecnost">Bezpecnost</a>
+        <a href="/bezpecnost">Bezpečnost</a>
       </nav>
       <div className="header-actions">
-        <a className="login-link" href="/dashboard">Prihlasit se</a>
-        <a className="header-action" href="/zadat-ukol">Zadam ukol</a>
+        <a className="login-link" href="/prihlaseni">Přihlásit se</a>
+        <a className="header-action" href="/zadat-ukol">Zadám úkol</a>
       </div>
     </header>
   );
