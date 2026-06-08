@@ -1,7 +1,7 @@
 import { unstable_noStore as noStore } from "next/cache";
 import { demoOffers, demoTaskers, demoTasks } from "./demo-data";
 import { createServiceSupabaseClient, hasSupabaseEnv } from "./supabase";
-import type { ClientProfile, Offer, Task, TaskerProfile } from "./types";
+import type { ClientProfile, Offer, Task, TaskAttachment, TaskerProfile } from "./types";
 
 const visibleStatuses = ["open", "offers_received", "assigned", "in_progress", "completed"];
 const taskerVisibleStatuses = ["open", "offers_received"];
@@ -20,6 +20,22 @@ export async function getTasks(): Promise<Task[]> {
   }
 
   return data as Task[];
+}
+
+export async function getTaskById(taskId: string): Promise<Task | null> {
+  noStore();
+
+  if (!hasSupabaseEnv() || !process.env.SUPABASE_SERVICE_ROLE_KEY) return demoTasks.find((task) => task.id === taskId) || null;
+
+  const supabase = createServiceSupabaseClient();
+  const { data, error } = await supabase.from("tasks").select("*").eq("id", taskId).in("status", visibleStatuses).maybeSingle();
+
+  if (error) {
+    console.error(error);
+    return null;
+  }
+
+  return data as Task | null;
 }
 
 export async function getOpenTasksForTaskers(): Promise<Task[]> {
@@ -70,6 +86,22 @@ export async function getOffers(): Promise<Offer[]> {
   return data as Offer[];
 }
 
+export async function getOffersForTask(taskId: string): Promise<Offer[]> {
+  noStore();
+
+  if (!hasSupabaseEnv() || !process.env.SUPABASE_SERVICE_ROLE_KEY) return demoOffers.filter((offer) => offer.task_id === taskId);
+
+  const supabase = createServiceSupabaseClient();
+  const { data, error } = await supabase.from("offers").select("*").eq("task_id", taskId).order("created_at");
+
+  if (error) {
+    console.error(error);
+    return [];
+  }
+
+  return data as Offer[];
+}
+
 export async function getOffersForTasker(taskerAuthUserId: string): Promise<Offer[]> {
   noStore();
 
@@ -84,6 +116,22 @@ export async function getOffersForTasker(taskerAuthUserId: string): Promise<Offe
   }
 
   return data as Offer[];
+}
+
+export async function getTaskAttachments(taskId: string): Promise<TaskAttachment[]> {
+  noStore();
+
+  if (!hasSupabaseEnv() || !process.env.SUPABASE_SERVICE_ROLE_KEY) return [];
+
+  const supabase = createServiceSupabaseClient();
+  const { data, error } = await supabase.from("task_attachments").select("*").eq("task_id", taskId).order("created_at", { ascending: true });
+
+  if (error) {
+    console.error(error);
+    return [];
+  }
+
+  return data as TaskAttachment[];
 }
 
 export async function getTaskers(): Promise<TaskerProfile[]> {
