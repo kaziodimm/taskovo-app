@@ -44,6 +44,7 @@ export type TaskAttachment = {
   id: string;
   task_id: string;
   image_url: string;
+  storage_path?: string | null;
   caption: string | null;
   created_by_auth_user_id?: string | null;
   created_at: string;
