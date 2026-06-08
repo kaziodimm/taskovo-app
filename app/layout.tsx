@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import "./taskovo-extra.css";
 
 export const metadata: Metadata = {
   title: "Taskovo | Lidé na úkoly v okolí",
