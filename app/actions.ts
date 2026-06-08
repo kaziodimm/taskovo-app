@@ -1,9 +1,14 @@
 "use server";
 
+import { randomUUID } from "crypto";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { clearAdminSession, setAdminSession, validateAdminCredentials } from "@/lib/admin-auth";
 import { createServerSupabaseClient, createServiceSupabaseClient, hasSupabaseEnv } from "@/lib/supabase";
+
+const ATTACHMENT_BUCKET = "task-attachments";
+const MAX_ATTACHMENT_BYTES = 8 * 1024 * 1024;
+const ALLOWED_ATTACHMENT_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
 
 function requiredString(formData: FormData, key: string) {
   const value = formData.get(key);
@@ -25,14 +30,21 @@ function authRedirect(role: string | undefined) {
   redirect("/dashboard");
 }
 
-function normalizedImageUrl(value: string) {
-  try {
-    const url = new URL(value);
-    if (!["http:", "https:"].includes(url.protocol)) return null;
-    return url.toString();
-  } catch {
-    return null;
-  }
+function fileExtension(file: File) {
+  const extension = file.name.split(".").pop()?.toLowerCase().replace(/[^a-z0-9]/g, "");
+  if (extension) return extension;
+  if (file.type === "image/png") return "png";
+  if (file.type === "image/webp") return "webp";
+  if (file.type === "image/gif") return "gif";
+  return "jpg";
+}
+
+function requiredImageFile(formData: FormData, key: string) {
+  const value = formData.get(key);
+  if (!(value instanceof File) || value.size === 0) return null;
+  if (!ALLOWED_ATTACHMENT_TYPES.has(value.type)) return null;
+  if (value.size > MAX_ATTACHMENT_BYTES) return null;
+  return value;
 }
 
 export async function registerClientAccount(formData: FormData) {
@@ -206,22 +218,33 @@ export async function addTaskAttachment(formData: FormData) {
   if (!hasSupabaseEnv() || !process.env.SUPABASE_SERVICE_ROLE_KEY) redirect("/dashboard?error=config");
 
   const taskId = requiredString(formData, "task_id");
-  const imageUrl = normalizedImageUrl(requiredString(formData, "image_url"));
+  const imageFile = requiredImageFile(formData, "image_file");
   const caption = optionalString(formData, "caption");
   const authSupabase = await createServerSupabaseClient();
   const { data: { user } } = await authSupabase.auth.getUser();
 
   if (!user) redirect("/prihlaseni?error=login_required");
-  if (!imageUrl) redirect(`/ukol/${taskId}?error=image_url`);
+  if (!imageFile) redirect(`/ukol/${taskId}?error=image_file`);
 
   const service = createServiceSupabaseClient();
   const { data: task, error: taskError } = await service.from("tasks").select("id,client_auth_user_id").eq("id", taskId).maybeSingle();
   if (taskError) throw new Error(taskError.message);
   if (!task || task.client_auth_user_id !== user.id) redirect(`/ukol/${taskId}?error=forbidden`);
 
+  const storagePath = `${taskId}/${randomUUID()}.${fileExtension(imageFile)}`;
+  const { error: uploadError } = await service.storage.from(ATTACHMENT_BUCKET).upload(storagePath, imageFile, {
+    cacheControl: "31536000",
+    contentType: imageFile.type,
+    upsert: false,
+  });
+
+  if (uploadError) throw new Error(uploadError.message);
+
+  const { data: publicUrl } = service.storage.from(ATTACHMENT_BUCKET).getPublicUrl(storagePath);
   const { error } = await service.from("task_attachments").insert({
     task_id: taskId,
-    image_url: imageUrl,
+    image_url: publicUrl.publicUrl,
+    storage_path: storagePath,
     caption,
     created_by_auth_user_id: user.id,
   });
