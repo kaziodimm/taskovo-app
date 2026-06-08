@@ -13,8 +13,8 @@ export function Header() {
       <nav className="site-nav" aria-label="Hlavní navigace">
         <a href="/#jak-to-funguje">Jak to funguje</a>
         <a href="/kategorie">Kategorie</a>
-        <a href="/poskytovatele">Poskytovatelé</a>
-        <a href="/registrace-poskytovatel">Pro poskytovatele</a>
+        <a href="/poskytovatele">Taskeři</a>
+        <a href="/registrace-poskytovatel">Chci být tasker</a>
         <a href="/bezpecnost">Bezpečnost</a>
       </nav>
       <div className="header-actions">
