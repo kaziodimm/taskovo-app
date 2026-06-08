@@ -131,7 +131,7 @@ export async function createTask(formData: FormData) {
   const { data: { user } } = await authSupabase.auth.getUser();
   const service = createServiceSupabaseClient();
   const clientName = optionalString(formData, "client_name") || user?.user_metadata?.name || user?.email || "Klient Taskovo";
-  const clientContact = optionalString(formData, "client_contact") || user?.email || "kontakt po přihlášení";
+  const clientContact = optionalString(formData, "client_contact") || user?.email || "kontakt po prihlaseni";
 
   const { error } = await service.from("tasks").insert({
     client_auth_user_id: user?.id || null,
@@ -169,7 +169,7 @@ export async function createOffer(formData: FormData) {
   }
 
   const taskerName = optionalString(formData, "tasker_name") || profile?.name || user?.user_metadata?.name || user?.email || "Tasker Taskovo";
-  const taskerContact = optionalString(formData, "tasker_contact") || profile?.contact || profile?.email || user?.email || "kontakt po přihlášení";
+  const taskerContact = optionalString(formData, "tasker_contact") || profile?.contact || profile?.email || user?.email || "kontakt po prihlaseni";
 
   const { error } = await service.from("offers").insert({
     task_id: taskId,
@@ -189,6 +189,48 @@ export async function createOffer(formData: FormData) {
   revalidatePath("/dashboard");
   revalidatePath("/poskytovatel/dashboard");
   redirect(user?.user_metadata?.role === "tasker" ? "/poskytovatel/dashboard" : "/tasks");
+}
+
+export async function acceptOffer(formData: FormData) {
+  if (!hasSupabaseEnv() || !process.env.SUPABASE_SERVICE_ROLE_KEY) redirect("/dashboard?error=config");
+
+  const taskId = requiredString(formData, "task_id");
+  const offerId = requiredString(formData, "offer_id");
+  const authSupabase = await createServerSupabaseClient();
+  const { data: { user } } = await authSupabase.auth.getUser();
+
+  if (!user) redirect("/prihlaseni?error=login_required");
+  if (user.user_metadata?.role === "tasker") redirect("/poskytovatel/dashboard");
+
+  const service = createServiceSupabaseClient();
+  const { data: task, error: taskError } = await service.from("tasks").select("id,client_auth_user_id,status").eq("id", taskId).maybeSingle();
+  if (taskError) throw new Error(taskError.message);
+  if (!task || task.client_auth_user_id !== user.id) redirect("/dashboard?error=forbidden");
+
+  const { data: offer, error: offerError } = await service.from("offers").select("id,task_id,tasker_auth_user_id,tasker_profile_id").eq("id", offerId).eq("task_id", taskId).maybeSingle();
+  if (offerError) throw new Error(offerError.message);
+  if (!offer) redirect("/dashboard?error=offer_missing");
+
+  const { error: acceptError } = await service.from("offers").update({ status: "accepted" }).eq("id", offerId);
+  if (acceptError) throw new Error(acceptError.message);
+
+  const { error: declineError } = await service.from("offers").update({ status: "declined" }).eq("task_id", taskId).neq("id", offerId);
+  if (declineError) throw new Error(declineError.message);
+
+  const { error: taskUpdateError } = await service.from("tasks").update({
+    status: "assigned",
+    accepted_offer_id: offer.id,
+    assigned_tasker_auth_user_id: offer.tasker_auth_user_id || null,
+    assigned_tasker_profile_id: offer.tasker_profile_id || null,
+  }).eq("id", taskId);
+  if (taskUpdateError) throw new Error(taskUpdateError.message);
+
+  revalidatePath("/");
+  revalidatePath("/tasks");
+  revalidatePath("/dashboard");
+  revalidatePath("/poskytovatel/dashboard");
+  revalidatePath("/admin");
+  redirect("/dashboard");
 }
 
 export async function createTaskerProfile(formData: FormData) {
