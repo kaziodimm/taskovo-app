@@ -44,3 +44,14 @@ export type TaskerProfile = {
   verified: boolean;
   created_at: string;
 };
+
+export type ClientProfile = {
+  id: string;
+  name: string;
+  email: string;
+  phone: string | null;
+  city: string | null;
+  preferred_language: string;
+  marketing_consent: boolean;
+  created_at: string;
+};
