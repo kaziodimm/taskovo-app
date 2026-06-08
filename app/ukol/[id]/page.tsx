@@ -79,9 +79,10 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
               {isClientOwner ? (
                 <form className={`compact-form ${styles.attachmentForm}`} action={addTaskAttachment}>
                   <input type="hidden" name="task_id" value={task.id} />
-                  <label className="span-full">URL fotky<input name="image_url" type="url" placeholder="https://..." required /></label>
+                  <label className="span-full">Fotka<input name="image_file" type="file" accept="image/jpeg,image/png,image/webp,image/gif" required /></label>
                   <label className="span-full">Popis<input name="caption" type="text" placeholder="Například: chodba před stěhováním" /></label>
-                  <button className="button secondary span-full" type="submit">Přidat fotku</button>
+                  <p className="fine-print span-full">JPG, PNG, WebP nebo GIF. Maximálně 8 MB na fotku.</p>
+                  <button className="button secondary span-full" type="submit">Nahrát fotku</button>
                 </form>
               ) : null}
             </section>
