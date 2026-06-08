@@ -23,19 +23,19 @@ export default async function DashboardPage() {
       <main className="page-shell">
         <section className="page-hero">
           <div>
-            <p className="kicker">Klientský dashboard</p>
-            <h1 className="page-title">Vítejte, {displayName}</h1>
-            <p className="hero-lead">Tady budou vaše úkoly, nabídky od taskerů a zprávy. Nové úkoly se už ukládají přímo k vašemu účtu.</p>
+            <p className="kicker">Klientsky dashboard</p>
+            <h1 className="page-title">Vitejte, {displayName}</h1>
+            <p className="hero-lead">Tady budou vase ukoly, nabidky od taskeru a zpravy. Nove ukoly se uz ukladaji primo k vasemu uctu.</p>
           </div>
-          <div className="page-hero-card"><strong>{tasks.length}</strong><p>vašich úkolů</p></div>
+          <div className="page-hero-card"><strong>{tasks.length}</strong><p>vasich ukolu</p></div>
         </section>
-        <form action={logoutAccount} className="admin-toolbar"><span>{user.email}</span><button className="button secondary" type="submit">Odhlásit se</button></form>
+        <form action={logoutAccount} className="admin-toolbar"><span>{user.email}</span><button className="button secondary" type="submit">Odhlasit se</button></form>
 
         <section className="section split dashboard-create-section">
           <div className="section-title">
-            <p className="kicker">Rychlé zadání</p>
-            <h2>Vytvořte nový úkol</h2>
-            <p>Po odeslání se úkol automaticky objeví v tomto dashboardu. Taskerům ho potom zobrazíme v marketplace.</p>
+            <p className="kicker">Rychle zadani</p>
+            <h2>Vytvorte novy ukol</h2>
+            <p>Po odeslani se ukol automaticky objevi v tomto dashboardu. Taskerum ho potom zobrazime v marketplace.</p>
           </div>
           <TaskForm />
         </section>
@@ -43,17 +43,17 @@ export default async function DashboardPage() {
         <section className="section">
           <div className="section-heading-row">
             <div className="section-title">
-              <p className="kicker">Moje úkoly</p>
-              <h2>Poptávky navázané na váš účet</h2>
+              <p className="kicker">Moje ukoly</p>
+              <h2>Poptavky navazane na vas ucet</h2>
             </div>
-            <a className="button secondary" href="/tasks">Veřejný marketplace</a>
+            <a className="button secondary" href="/tasks">Verejny marketplace</a>
           </div>
           {tasks.length > 0 ? (
             <div className="task-grid">
-              {tasks.map((task) => <TaskCard key={task.id} task={task} offers={offers.filter((offer) => offer.task_id === task.id)} />)}
+              {tasks.map((task) => <TaskCard key={task.id} task={task} offers={offers.filter((offer) => offer.task_id === task.id)} canSelectOffer showOfferForm={false} />)}
             </div>
           ) : (
-            <div className="dashboard-panel"><h3>Zatím nemáte žádný úkol</h3><p>Vyplňte rychlé zadání výše. První úkol je nejlepší test celého toku.</p></div>
+            <div className="dashboard-panel"><h3>Zatim nemate zadny ukol</h3><p>Vyplnte rychle zadani vyse. Prvni ukol je nejlepsi test celeho toku.</p></div>
           )}
         </section>
       </main>
