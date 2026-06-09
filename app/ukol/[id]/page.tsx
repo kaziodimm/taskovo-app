@@ -119,7 +119,7 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
                 </div>
                 <span className="pill">{offers.length} nabídek</span>
               </div>
-              <TaskCard task={task} offers={offers} canSelectOffer={isClientOwner} showOfferForm={!isClientOwner && task.status !== "assigned" && task.status !== "in_progress" && task.status !== "awaiting_confirmation" && task.status !== "completed"} />
+              <TaskCard task={task} offers={offers} canSelectOffer={isClientOwner} canManageTask={isClientOwner} showOfferForm={!isClientOwner && task.status !== "assigned" && task.status !== "in_progress" && task.status !== "awaiting_confirmation" && task.status !== "completed"} />
             </section>
 
             <section className={styles.orderPanel}>
