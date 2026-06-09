@@ -7,6 +7,7 @@ const statusLabels: Record<string, string> = {
   offers_received: "Nabídky",
   assigned: "Přiřazeno",
   in_progress: "Probíhá",
+  awaiting_confirmation: "Čeká na potvrzení",
   completed: "Hotovo",
   cancelled: "Zrušeno",
   disputed: "Spor",
@@ -36,7 +37,7 @@ type TaskCardProps = {
 export function TaskCard({ task, offers, canSelectOffer = false, showOfferForm = true }: TaskCardProps) {
   const fee = platformFee(task.budget_czk);
   const payout = task.budget_czk - fee;
-  const canChoose = canSelectOffer && task.status !== "assigned" && task.status !== "completed" && task.status !== "cancelled";
+  const canChoose = canSelectOffer && ["open", "offers_received"].includes(task.status);
 
   return (
     <article className="task-card">
