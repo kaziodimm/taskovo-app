@@ -1,5 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import { acceptAdminOffer, cancelAdminTask, declineAdminOffer, reopenAdminTask, updateAdminTaskStatus } from "@/app/admin-actions";
+import { sendAdminTaskMessage } from "@/app/admin-message-actions";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import { getAdminTaskById, getOffersForTask, getTaskAttachments, getTaskMessages } from "@/lib/data";
@@ -15,6 +16,12 @@ const statusLabels: Record<string, string> = {
   completed: "Hotovo",
   cancelled: "Zrušeno",
   disputed: "Spor",
+};
+
+const roleLabels: Record<string, string> = {
+  client: "Klient",
+  tasker: "Tasker",
+  admin: "Taskovo",
 };
 
 const adminStatusOptions = [
@@ -76,6 +83,7 @@ export default async function AdminTaskDetailPage({ params }: { params: Promise<
               <p>{task.city} · {task.district || "bez části města"} · {task.desired_time} · {task.category}</p>
               <p>Klient: {task.client_name} · {task.client_contact || "kontakt neuveden"}</p>
               <p>Vybraný tasker: {acceptedOffer?.tasker_name || "zatím nevybrán"}</p>
+              {task.status === "disputed" ? <p><strong>Spor:</strong> zkontrolujte zprávy níže a rozhodněte další stav objednávky.</p> : null}
               <div className="hero-actions">
                 <a className="button secondary" href={`/ukol/${task.id}`}>Veřejný detail</a>
                 <form className="compact-form" action={updateAdminTaskStatus}>
@@ -137,11 +145,16 @@ export default async function AdminTaskDetailPage({ params }: { params: Promise<
               {messages.length ? messages.map((message) => (
                 <article className="admin-item" key={message.id}>
                   <strong>{message.sender_name}</strong>
-                  <p>{message.sender_role} · {dateTime(message.created_at)}</p>
+                  <p>{roleLabels[message.sender_role] ?? message.sender_role} · {dateTime(message.created_at)}</p>
                   <p>{message.body}</p>
                 </article>
               )) : <article className="admin-item"><strong>Bez zpráv</strong><p>Soukromá domluva zatím nezačala.</p></article>}
             </div>
+            <form className="compact-form" action={sendAdminTaskMessage}>
+              <input type="hidden" name="task_id" value={task.id} />
+              <label className="span-full">Odpověď Taskovo<textarea name="body" rows={4} maxLength={1200} placeholder="Napište klientovi a taskerovi oficiální zprávu k objednávce..." required /></label>
+              <button className="button primary span-full" type="submit">Poslat zprávu</button>
+            </form>
           </section>
 
           <section className="admin-panel">
