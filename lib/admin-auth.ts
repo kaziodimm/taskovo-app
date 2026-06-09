@@ -1,9 +1,10 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { cookies } from "next/headers";
+import { createServerSupabaseClient, hasSupabaseEnv } from "@/lib/supabase";
 
 const ADMIN_COOKIE = "taskovo_admin";
 
-function adminEmail() {
+export function adminEmail() {
   return process.env.ADMIN_EMAIL?.trim().toLowerCase() || "";
 }
 
@@ -12,6 +13,14 @@ function adminPassword() {
 }
 
 export function hasAdminConfig() {
+  return Boolean(adminEmail());
+}
+
+export function isAdminEmail(email?: string | null) {
+  return Boolean(email && adminEmail() && email.trim().toLowerCase() === adminEmail());
+}
+
+function hasLegacyAdminPassword() {
   return Boolean(adminEmail() && adminPassword());
 }
 
@@ -26,7 +35,7 @@ function safeEqual(a: string, b: string) {
 }
 
 export function validateAdminCredentials(email: string, password: string) {
-  return hasAdminConfig() && email.trim().toLowerCase() === adminEmail() && safeEqual(password, adminPassword());
+  return hasLegacyAdminPassword() && isAdminEmail(email) && safeEqual(password, adminPassword());
 }
 
 export async function setAdminSession(email: string) {
@@ -47,8 +56,8 @@ export async function clearAdminSession() {
   cookieStore.delete(ADMIN_COOKIE);
 }
 
-export async function isAdminAuthenticated() {
-  if (!hasAdminConfig()) return false;
+async function hasLegacyAdminSession() {
+  if (!hasLegacyAdminPassword()) return false;
   const cookieStore = await cookies();
   const token = cookieStore.get(ADMIN_COOKIE)?.value;
   if (!token) return false;
@@ -59,8 +68,24 @@ export async function isAdminAuthenticated() {
     if (separatorIndex === -1) return false;
     const email = decoded.slice(0, separatorIndex);
     const tokenSignature = decoded.slice(separatorIndex + 1);
-    return email === adminEmail() && safeEqual(tokenSignature, signature(email));
+    return isAdminEmail(email) && safeEqual(tokenSignature, signature(email));
   } catch {
     return false;
   }
+}
+
+export async function isAdminAuthenticated() {
+  if (!hasAdminConfig()) return false;
+
+  if (hasSupabaseEnv()) {
+    try {
+      const supabase = await createServerSupabaseClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (isAdminEmail(user?.email)) return true;
+    } catch {
+      // Fall back to the legacy admin cookie if Supabase auth cannot be read.
+    }
+  }
+
+  return hasLegacyAdminSession();
 }
