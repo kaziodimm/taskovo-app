@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { logoutAccount } from "@/app/actions";
+import { updateClientOwnProfile } from "@/app/profile-actions";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import { TaskCard } from "@/components/TaskCard";
@@ -7,6 +8,7 @@ import { TaskForm } from "@/components/TaskForm";
 import { getOffers, getTasksForClient } from "@/lib/data";
 import { isAdminEmail } from "@/lib/admin-auth";
 import { getUnreadTaskMessageCounts } from "@/lib/message-data";
+import { getClientProfileForUser } from "@/lib/profile-data";
 import { createServerSupabaseClient } from "@/lib/supabase";
 import type { Task } from "@/lib/types";
 
@@ -32,9 +34,9 @@ export default async function DashboardPage() {
   if (isAdminEmail(user.email)) redirect("/admin");
   if (user.user_metadata?.role === "tasker") redirect("/poskytovatel/dashboard");
 
-  const [tasks, offers] = await Promise.all([getTasksForClient(user.id), getOffers()]);
+  const [tasks, offers, profile] = await Promise.all([getTasksForClient(user.id), getOffers(), getClientProfileForUser(user.id)]);
   const unreadCounts = await getUnreadTaskMessageCounts(tasks.map((task) => task.id), user.id);
-  const displayName = user.user_metadata?.name || user.email;
+  const displayName = profile?.name || user.user_metadata?.name || user.email;
   const offersByTask = new Map<string, number>();
   offers.forEach((offer) => offersByTask.set(offer.task_id, (offersByTask.get(offer.task_id) || 0) + 1));
   const actionTasks = tasks.filter((task) => needsClientAction(task, offersByTask.get(task.id) || 0));
@@ -60,6 +62,23 @@ export default async function DashboardPage() {
           <article className="dashboard-panel"><h3>Nové zprávy</h3><p>{unreadTotal ? `${unreadTotal} nových zpráv v objednávkách.` : "Žádné nové zprávy."}</p></article>
           <article className="dashboard-panel"><h3>Aktivní práce</h3><p>{activeTasks.length ? `${activeTasks.length} zakázka právě běží nebo čeká na potvrzení.` : "Zatím žádná aktivní zakázka."}</p></article>
         </div>
+
+        <section className="section admin-panel">
+          <div className="section-title">
+            <p className="kicker">Můj profil</p>
+            <h2>Kontaktní údaje klienta</h2>
+            <p>Tyto údaje používáme pro vaše objednávky a komunikaci s podporou. Přihlašovací email zatím zůstává stejný.</p>
+          </div>
+          <form className="compact-form" action={updateClientOwnProfile}>
+            <label>Jméno<input name="name" type="text" defaultValue={profile?.name || user.user_metadata?.name || ""} required /></label>
+            <label>Přihlašovací email<input type="email" defaultValue={user.email || ""} disabled /></label>
+            <label>Telefon<input name="phone" type="text" defaultValue={profile?.phone || ""} placeholder="+420..." /></label>
+            <label>Město<input name="city" type="text" defaultValue={profile?.city || ""} placeholder="Praha, Plzeň, Tábor..." /></label>
+            <label>Jazyk<select name="preferred_language" defaultValue={profile?.preferred_language || "cs"}><option value="cs">Čeština</option><option value="en">English</option><option value="uk">Українська</option><option value="ru">Русский</option></select></label>
+            <label className="checkbox-row"><input name="marketing_consent" type="checkbox" defaultChecked={Boolean(profile?.marketing_consent)} /> Novinky a tipy od Taskovo</label>
+            <button className="button primary span-full" type="submit">Uložit profil</button>
+          </form>
+        </section>
 
         {actionTasks.length ? (
           <section className="section">
