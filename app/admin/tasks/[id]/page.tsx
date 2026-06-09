@@ -91,12 +91,6 @@ export default async function AdminTaskDetailPage({ params }: { params: Promise<
                   <label>Stav<select name="status" defaultValue={task.status}>{adminStatusOptions.map((status) => <option key={status} value={status}>{statusLabels[status] ?? status}</option>)}</select></label>
                   <button className="button secondary" type="submit">Uložit stav</button>
                 </form>
-                {task.status !== "cancelled" ? (
-                  <form action={cancelAdminTask}>
-                    <input type="hidden" name="task_id" value={task.id} />
-                    <button className="button secondary" type="submit">Zrušit</button>
-                  </form>
-                ) : null}
                 {acceptedOffer ? (
                   <form action={reopenAdminTask}>
                     <input type="hidden" name="task_id" value={task.id} />
@@ -104,6 +98,16 @@ export default async function AdminTaskDetailPage({ params }: { params: Promise<
                   </form>
                 ) : null}
               </div>
+              {task.status !== "cancelled" ? (
+                <details className="admin-danger-box">
+                  <summary>Zrušit objednávku</summary>
+                  <form className="compact-form" action={cancelAdminTask}>
+                    <input type="hidden" name="task_id" value={task.id} />
+                    <label className="span-full">Důvod zrušení<textarea name="reason" rows={3} placeholder="Například: nevhodný obsah, duplicitní úkol, porušení pravidel..." required /></label>
+                    <button className="button secondary span-full" type="submit">Potvrdit zrušení</button>
+                  </form>
+                </details>
+              ) : null}
             </article>
           </div>
         </section>
