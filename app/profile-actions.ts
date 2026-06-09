@@ -70,9 +70,10 @@ export async function updateClientOwnProfile(formData: FormData) {
   const { data: existing, error: existingError } = await service.from("client_profiles").select("id").eq("auth_user_id", user.id).maybeSingle();
   if (existingError) throw new Error(existingError.message);
 
+  const writePayload = payload as never;
   const { error } = existing
-    ? await service.from("client_profiles").update(payload).eq("id", existing.id)
-    : await service.from("client_profiles").insert(payload);
+    ? await service.from("client_profiles").update(writePayload).eq("id", existing.id)
+    : await service.from("client_profiles").insert(writePayload);
 
   if (error) throw new Error(error.message);
 
@@ -116,9 +117,10 @@ export async function updateTaskerOwnProfile(formData: FormData) {
   const { data: existing, error: existingError } = await service.from("tasker_profiles").select("id").eq("auth_user_id", user.id).order("created_at", { ascending: false }).limit(1).maybeSingle();
   if (existingError) throw new Error(existingError.message);
 
+  const writePayload = payload as never;
   const { error } = existing
-    ? await service.from("tasker_profiles").update(payload).eq("id", existing.id)
-    : await service.from("tasker_profiles").insert(payload);
+    ? await service.from("tasker_profiles").update(writePayload).eq("id", existing.id)
+    : await service.from("tasker_profiles").insert(writePayload);
 
   if (error) throw new Error(error.message);
 
@@ -155,7 +157,7 @@ export async function submitProfilePhotoForReview(formData: FormData) {
       pending_avatar_url: avatarUrl,
       avatar_review_status: "pending",
       avatar_review_note: null,
-    })
+    } as never)
     .eq("id", profile.id);
   if (error) throw new Error(error.message);
 
