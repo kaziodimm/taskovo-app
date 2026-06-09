@@ -4,6 +4,7 @@ import { createServiceSupabaseClient, hasSupabaseEnv } from "./supabase";
 import type { ClientProfile, Offer, Task, TaskAttachment, TaskerProfile, TaskMessage } from "./types";
 
 const visibleStatuses = ["open", "offers_received", "assigned", "in_progress", "awaiting_confirmation", "completed"];
+const adminVisibleStatuses = ["pending_review", "open", "offers_received", "assigned", "in_progress", "awaiting_confirmation", "completed", "cancelled", "disputed"];
 const taskerVisibleStatuses = ["open", "offers_received"];
 const activeAssignedStatuses = ["assigned", "in_progress", "awaiting_confirmation", "completed"];
 
@@ -23,6 +24,22 @@ export async function getTasks(): Promise<Task[]> {
   return data as Task[];
 }
 
+export async function getAdminTasks(): Promise<Task[]> {
+  noStore();
+
+  if (!hasSupabaseEnv() || !process.env.SUPABASE_SERVICE_ROLE_KEY) return demoTasks;
+
+  const supabase = createServiceSupabaseClient();
+  const { data, error } = await supabase.from("tasks").select("*").in("status", adminVisibleStatuses).order("created_at", { ascending: false });
+
+  if (error) {
+    console.error(error);
+    return demoTasks;
+  }
+
+  return data as Task[];
+}
+
 export async function getTaskById(taskId: string): Promise<Task | null> {
   noStore();
 
@@ -30,6 +47,22 @@ export async function getTaskById(taskId: string): Promise<Task | null> {
 
   const supabase = createServiceSupabaseClient();
   const { data, error } = await supabase.from("tasks").select("*").eq("id", taskId).in("status", visibleStatuses).maybeSingle();
+
+  if (error) {
+    console.error(error);
+    return null;
+  }
+
+  return data as Task | null;
+}
+
+export async function getAdminTaskById(taskId: string): Promise<Task | null> {
+  noStore();
+
+  if (!hasSupabaseEnv() || !process.env.SUPABASE_SERVICE_ROLE_KEY) return demoTasks.find((task) => task.id === taskId) || null;
+
+  const supabase = createServiceSupabaseClient();
+  const { data, error } = await supabase.from("tasks").select("*").eq("id", taskId).in("status", adminVisibleStatuses).maybeSingle();
 
   if (error) {
     console.error(error);
@@ -202,6 +235,22 @@ export async function getTaskers(): Promise<TaskerProfile[]> {
   return data as TaskerProfile[];
 }
 
+export async function getTaskerById(taskerId: string): Promise<TaskerProfile | null> {
+  noStore();
+
+  if (!hasSupabaseEnv() || !process.env.SUPABASE_SERVICE_ROLE_KEY) return demoTaskers.find((tasker) => tasker.id === taskerId) || null;
+
+  const supabase = createServiceSupabaseClient();
+  const { data, error } = await supabase.from("tasker_profiles").select("*").eq("id", taskerId).maybeSingle();
+
+  if (error) {
+    console.error(error);
+    return null;
+  }
+
+  return data as TaskerProfile | null;
+}
+
 export async function getTaskerProfileForUser(authUserId: string): Promise<TaskerProfile | null> {
   noStore();
 
@@ -232,4 +281,20 @@ export async function getClients(): Promise<ClientProfile[]> {
   }
 
   return data as ClientProfile[];
+}
+
+export async function getClientById(clientId: string): Promise<ClientProfile | null> {
+  noStore();
+
+  if (!hasSupabaseEnv() || !process.env.SUPABASE_SERVICE_ROLE_KEY) return null;
+
+  const supabase = createServiceSupabaseClient();
+  const { data, error } = await supabase.from("client_profiles").select("*").eq("id", clientId).maybeSingle();
+
+  if (error) {
+    console.error(error);
+    return null;
+  }
+
+  return data as ClientProfile | null;
 }
