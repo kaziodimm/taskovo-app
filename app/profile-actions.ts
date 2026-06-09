@@ -15,6 +15,29 @@ function optionalString(formData: FormData, key: string) {
   return typeof value === "string" && value.trim() ? value.trim() : null;
 }
 
+function optionalImageUrl(formData: FormData) {
+  const value = optionalString(formData, "avatar_url");
+  if (!value) return null;
+
+  try {
+    const url = new URL(value);
+    if (!["http:", "https:"].includes(url.protocol)) return null;
+    return url.toString();
+  } catch {
+    return null;
+  }
+}
+
+function avatarReviewPayload(avatarUrl: string | null) {
+  if (!avatarUrl) return {};
+
+  return {
+    pending_avatar_url: avatarUrl,
+    avatar_review_status: "pending",
+    avatar_review_note: null,
+  };
+}
+
 export async function updateClientOwnProfile(formData: FormData) {
   if (!hasSupabaseEnv() || !process.env.SUPABASE_SERVICE_ROLE_KEY) redirect("/dashboard?error=config");
 
@@ -29,6 +52,7 @@ export async function updateClientOwnProfile(formData: FormData) {
   const city = optionalString(formData, "city");
   const preferredLanguage = optionalString(formData, "preferred_language") || "cs";
   const marketingConsent = formData.get("marketing_consent") === "on";
+  const avatarUrl = optionalImageUrl(formData);
   const service = createServiceSupabaseClient();
 
   const payload = {
@@ -40,6 +64,7 @@ export async function updateClientOwnProfile(formData: FormData) {
     preferred_language: preferredLanguage,
     marketing_consent: marketingConsent,
     password_auth_enabled: true,
+    ...avatarReviewPayload(avatarUrl),
   };
 
   const { data: existing, error: existingError } = await service.from("client_profiles").select("id").eq("auth_user_id", user.id).maybeSingle();
@@ -73,6 +98,7 @@ export async function updateTaskerOwnProfile(formData: FormData) {
   const categories = requiredString(formData, "categories");
   const contact = optionalString(formData, "contact") || user.email || null;
   const bio = optionalString(formData, "bio");
+  const avatarUrl = optionalImageUrl(formData);
   const service = createServiceSupabaseClient();
 
   const payload = {
@@ -84,6 +110,7 @@ export async function updateTaskerOwnProfile(formData: FormData) {
     contact,
     bio,
     password_auth_enabled: true,
+    ...avatarReviewPayload(avatarUrl),
   };
 
   const { data: existing, error: existingError } = await service.from("tasker_profiles").select("id").eq("auth_user_id", user.id).order("created_at", { ascending: false }).limit(1).maybeSingle();
@@ -101,6 +128,7 @@ export async function updateTaskerOwnProfile(formData: FormData) {
   revalidatePath("/poskytovatel/dashboard");
   revalidatePath("/taskeri");
   revalidatePath("/taskers");
+  revalidatePath("/poskytovatele");
   revalidatePath("/admin");
   redirect("/poskytovatel/dashboard?updated=profile");
 }
