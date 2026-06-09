@@ -5,6 +5,7 @@ import { Header } from "@/components/Header";
 import { TaskCard } from "@/components/TaskCard";
 import { TaskForm } from "@/components/TaskForm";
 import { getOffers, getTasksForClient } from "@/lib/data";
+import { isAdminEmail } from "@/lib/admin-auth";
 import { getUnreadTaskMessageCounts } from "@/lib/message-data";
 import { createServerSupabaseClient } from "@/lib/supabase";
 import type { Task } from "@/lib/types";
@@ -16,6 +17,7 @@ const nextStepCopy: Record<string, string> = {
   in_progress: "Tasker pracuje. Sledujte zprávy a detail objednávky.",
   awaiting_confirmation: "Tasker označil práci jako hotovou. Potvrďte dokončení.",
   completed: "Objednávka je dokončená.",
+  cancelled: "Objednávka je zrušená.",
 };
 
 function needsClientAction(task: Task, offerCount: number) {
@@ -27,6 +29,7 @@ export default async function DashboardPage() {
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) redirect("/prihlaseni?error=login_required");
+  if (isAdminEmail(user.email)) redirect("/admin");
   if (user.user_metadata?.role === "tasker") redirect("/poskytovatel/dashboard");
 
   const [tasks, offers] = await Promise.all([getTasksForClient(user.id), getOffers()]);
@@ -92,7 +95,7 @@ export default async function DashboardPage() {
           </div>
           {tasks.length > 0 ? (
             <div className="task-grid">
-              {tasks.map((task) => <TaskCard key={task.id} task={task} offers={offers.filter((offer) => offer.task_id === task.id)} canSelectOffer showOfferForm={false} />)}
+              {tasks.map((task) => <TaskCard key={task.id} task={task} offers={offers.filter((offer) => offer.task_id === task.id)} canSelectOffer showOfferForm={false} canManageTask />)}
             </div>
           ) : (
             <div className="dashboard-panel"><h3>Zatím nemáte žádný úkol</h3><p>Vyplňte rychlé zadání výše. První úkol je nejlepší test celého toku.</p></div>
