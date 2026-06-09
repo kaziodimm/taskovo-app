@@ -90,7 +90,6 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
                 <label>Email<input name="email" type="email" placeholder="vas@email.cz" required /></label>
                 <label>Heslo<input name="password" type="password" placeholder="••••••••" required /></label>
                 <button className="button primary" type="submit">Přihlásit se</button>
-                <a className="button secondary" href="/admin/prihlaseni">Vstup pro admina</a>
                 <p className="fine-print">Nemáte účet? <a href="/prihlaseni?mode=client">Registrace klienta</a> nebo <a href="/prihlaseni?mode=tasker">registrace taskera</a>.</p>
               </form>
             ) : null}
