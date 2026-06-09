@@ -3,7 +3,8 @@ import { logoutAccount } from "@/app/actions";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import { TaskCard } from "@/components/TaskCard";
-import { getAssignedTasksForTasker, getOffers, getOffersForTasker, getOpenTasksForTaskers, getTaskerProfileForUser, getTaskMessageCounts } from "@/lib/data";
+import { getAssignedTasksForTasker, getOffers, getOffersForTasker, getOpenTasksForTaskers, getTaskerProfileForUser } from "@/lib/data";
+import { getUnreadTaskMessageCounts } from "@/lib/message-data";
 import { createServerSupabaseClient } from "@/lib/supabase";
 import type { Task } from "@/lib/types";
 
@@ -39,13 +40,13 @@ export default async function ProviderDashboardPage() {
     getOffersForTasker(user.id),
     getAssignedTasksForTasker(user.id),
   ]);
-  const messageCounts = await getTaskMessageCounts(assignedTasks.map((task) => task.id));
+  const unreadCounts = await getUnreadTaskMessageCounts(assignedTasks.map((task) => task.id), user.id);
 
   const myOfferTaskIds = new Set(myOffers.map((offer) => offer.task_id));
   const availableTasks = openTasks.filter((task) => !myOfferTaskIds.has(task.id));
   const actionTasks = assignedTasks.filter(needsTaskerAction);
   const waitingTasks = assignedTasks.filter((task) => task.status === "awaiting_confirmation");
-  const messageTotal = Object.values(messageCounts).reduce((total, count) => total + count, 0);
+  const unreadTotal = Object.values(unreadCounts).reduce((total, count) => total + count, 0);
 
   return (
     <>
@@ -64,7 +65,7 @@ export default async function ProviderDashboardPage() {
         <div className="dashboard-grid">
           <article className="dashboard-panel"><h3>Můj profil</h3><p>{profile?.categories || "Doplňte kategorie služeb v profilu taskera."}</p></article>
           <article className="dashboard-panel"><h3>Čeká na vás</h3><p>{actionTasks.length ? `${actionTasks.length} zakázka potřebuje další krok.` : "Momentálně není potřeba žádná akce."}</p></article>
-          <article className="dashboard-panel"><h3>Zprávy</h3><p>{messageTotal ? `${messageTotal} zpráv v aktivních zakázkách.` : "Zprávy se objeví po výběru vaší nabídky."}</p></article>
+          <article className="dashboard-panel"><h3>Nové zprávy</h3><p>{unreadTotal ? `${unreadTotal} nových zpráv v aktivních zakázkách.` : "Žádné nové zprávy."}</p></article>
         </div>
 
         <section className="section">
@@ -77,7 +78,7 @@ export default async function ProviderDashboardPage() {
                 <article className="admin-item" key={task.id}>
                   <strong>{task.title}</strong>
                   <p>{task.city} · {task.desired_time} · stav: {statusLabels[task.status] ?? task.status}</p>
-                  <p>{nextStepCopy[task.status] ?? "Otevřete detail objednávky."} · {messageCounts[task.id] || 0} zpráv</p>
+                  <p>{nextStepCopy[task.status] ?? "Otevřete detail objednávky."} · {unreadCounts[task.id] || 0} nových zpráv</p>
                   <a className="button secondary" href={`/ukol/${task.id}`}>Otevřít objednávku</a>
                 </article>
               ))}
