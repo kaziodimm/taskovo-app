@@ -1,0 +1,70 @@
+.marketLayout {
+  display: grid;
+  grid-template-columns: minmax(240px, 300px) minmax(0, 1fr);
+  gap: 22px;
+  align-items: start;
+}
+
+.filterPanel {
+  position: sticky;
+  top: 96px;
+  display: grid;
+  gap: 12px;
+  padding: 18px;
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: 0 14px 32px rgba(13, 27, 42, 0.06);
+}
+
+.filterPanel h2 {
+  font-size: 1.2rem;
+}
+
+.filterGroup {
+  padding: 12px 0;
+  border-top: 1px solid var(--line);
+}
+
+.filterGroup summary {
+  display: flex;
+  justify-content: space-between;
+  color: var(--navy);
+  font-weight: 950;
+}
+
+.filterFields {
+  display: grid;
+  gap: 10px;
+  padding-top: 12px;
+}
+
+.resultsHeader {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
+
+.resultsHeader h2 {
+  font-size: 1.45rem;
+}
+
+.emptyResults {
+  padding: 24px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+@media (max-width: 920px) {
+  .marketLayout {
+    grid-template-columns: 1fr;
+  }
+
+  .filterPanel {
+    position: static;
+  }
+}
