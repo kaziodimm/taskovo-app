@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { cancelAdminTask, toggleTaskerVerification, updateAdminTaskStatus } from "@/app/admin-actions";
+import { acceptAdminOffer, cancelAdminTask, declineAdminOffer, reopenAdminTask, toggleTaskerVerification, updateAdminTaskStatus } from "@/app/admin-actions";
 import { logoutAccount } from "@/app/actions";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
@@ -105,6 +105,12 @@ export default async function AdminPage() {
                         <button className="button secondary" type="submit">Zrušit</button>
                       </form>
                     ) : null}
+                    {acceptedOffer ? (
+                      <form action={reopenAdminTask}>
+                        <input type="hidden" name="task_id" value={task.id} />
+                        <button className="button secondary" type="submit">Vrátit do hledání</button>
+                      </form>
+                    ) : null}
                   </div>
                 </article>
               );
@@ -139,7 +145,29 @@ export default async function AdminPage() {
           <section className="admin-panel">
             <h2>Nabídky</h2>
             <div className="admin-list">
-              {offers.map((offer) => <article className="admin-item" key={offer.id}><strong>{offer.tasker_name}</strong><p>{money(offer.price_czk)} Kč · {offer.status} · {offer.message}</p><a className="button secondary" href={`/ukol/${offer.task_id}`}>Objednávka</a></article>)}
+              {offers.map((offer) => (
+                <article className="admin-item" key={offer.id}>
+                  <strong>{offer.tasker_name}</strong>
+                  <p>{money(offer.price_czk)} Kč · {offer.status} · {offer.message}</p>
+                  <div className="hero-actions">
+                    <a className="button secondary" href={`/ukol/${offer.task_id}`}>Objednávka</a>
+                    {offer.status !== "accepted" ? (
+                      <form action={acceptAdminOffer}>
+                        <input type="hidden" name="task_id" value={offer.task_id} />
+                        <input type="hidden" name="offer_id" value={offer.id} />
+                        <button className="button secondary" type="submit">Vybrat taskera</button>
+                      </form>
+                    ) : null}
+                    {offer.status !== "declined" ? (
+                      <form action={declineAdminOffer}>
+                        <input type="hidden" name="task_id" value={offer.task_id} />
+                        <input type="hidden" name="offer_id" value={offer.id} />
+                        <button className="button secondary" type="submit">Odmítnout nabídku</button>
+                      </form>
+                    ) : null}
+                  </div>
+                </article>
+              ))}
             </div>
           </section>
         </div>
