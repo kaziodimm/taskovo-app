@@ -1,4 +1,5 @@
 import { notFound, redirect } from "next/navigation";
+import { updateAdminClientProfile } from "@/app/admin-actions";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import { getAdminTasks, getClientById, getOffers } from "@/lib/data";
@@ -63,6 +64,17 @@ export default async function AdminClientDetailPage({ params }: { params: Promis
             <article className="dashboard-panel"><h3>Marketing</h3><p>{client.marketing_consent ? "souhlas" : "bez souhlasu"}</p></article>
             <article className="dashboard-panel"><h3>Registrace</h3><p>{dateTime(client.created_at)}</p></article>
           </div>
+
+          <form className="compact-form section-action" action={updateAdminClientProfile}>
+            <input type="hidden" name="client_id" value={client.id} />
+            <label>Jméno<input name="name" type="text" defaultValue={client.name} required /></label>
+            <label>Email<input name="email" type="email" defaultValue={client.email} required /></label>
+            <label>Telefon<input name="phone" type="text" defaultValue={client.phone || ""} /></label>
+            <label>Město<input name="city" type="text" defaultValue={client.city || ""} /></label>
+            <label>Jazyk<input name="preferred_language" type="text" defaultValue={client.preferred_language || "cs"} /></label>
+            <label className="checkbox-row"><input name="marketing_consent" type="checkbox" defaultChecked={client.marketing_consent} /> Souhlas s marketingem</label>
+            <button className="button primary span-full" type="submit">Uložit profil klienta</button>
+          </form>
         </section>
 
         <section className="section admin-panel">
