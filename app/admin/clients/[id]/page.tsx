@@ -2,6 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import { updateAdminClientProfile } from "@/app/admin-actions";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
+import { ProfilePhotoModeration } from "@/components/ProfilePhotoModeration";
 import { getAdminTasks, getClientById, getOffers } from "@/lib/data";
 import { isAdminAuthenticated } from "@/lib/admin-auth";
 
@@ -64,6 +65,15 @@ export default async function AdminClientDetailPage({ params }: { params: Promis
             <article className="dashboard-panel"><h3>Marketing</h3><p>{client.marketing_consent ? "souhlas" : "bez souhlasu"}</p></article>
             <article className="dashboard-panel"><h3>Registrace</h3><p>{dateTime(client.created_at)}</p></article>
           </div>
+
+          <ProfilePhotoModeration
+            profileId={client.id}
+            role="client"
+            approvedUrl={client.avatar_url}
+            pendingUrl={client.pending_avatar_url}
+            status={client.avatar_review_status}
+            note={client.avatar_review_note}
+          />
 
           <form className="compact-form section-action" action={updateAdminClientProfile}>
             <input type="hidden" name="client_id" value={client.id} />
