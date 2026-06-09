@@ -1,8 +1,11 @@
+import { redirect } from "next/navigation";
 import { BrandMark } from "@/components/BrandMark";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import { registerClientAccount, registerTaskerAccount } from "@/app/actions";
 import { loginAccount } from "@/app/auth-actions";
+import { isAdminEmail } from "@/lib/admin-auth";
+import { createServerSupabaseClient, hasSupabaseEnv } from "@/lib/supabase";
 
 type AuthMode = "client" | "tasker" | "login";
 
@@ -15,7 +18,21 @@ function tabClass(active: boolean) {
   return active ? "button primary" : "button secondary";
 }
 
+async function redirectSignedInUser() {
+  if (!hasSupabaseEnv()) return;
+
+  const supabase = await createServerSupabaseClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return;
+
+  if (isAdminEmail(user.email)) redirect("/admin");
+  if (user.user_metadata?.role === "tasker") redirect("/poskytovatel/dashboard");
+  redirect("/dashboard");
+}
+
 export default async function LoginPage({ searchParams }: { searchParams: Promise<{ mode?: string; registered?: string; error?: string }> }) {
+  await redirectSignedInUser();
+
   const params = await searchParams;
   const mode = normalizeMode(params.mode);
   const registered = params.registered;
