@@ -249,6 +249,24 @@
   color: var(--muted);
 }
 
+.disputeForm {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  background: #fff6f4;
+  border: 1px solid #ffd1c7;
+  border-radius: 8px;
+}
+
+.disputeForm textarea {
+  min-height: 104px;
+  resize: vertical;
+}
+
+.disputeForm button {
+  width: 100%;
+}
+
 @media (max-width: 920px) {
   .orderGrid {
     grid-template-columns: 1fr;
