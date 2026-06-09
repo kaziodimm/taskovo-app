@@ -2,6 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import { toggleTaskerVerification, updateAdminTaskerProfile } from "@/app/admin-actions";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
+import { ProfilePhotoModeration } from "@/components/ProfilePhotoModeration";
 import { getAdminTasks, getOffersForTasker, getTaskerById } from "@/lib/data";
 import { isAdminAuthenticated } from "@/lib/admin-auth";
 
@@ -67,6 +68,15 @@ export default async function AdminTaskerDetailPage({ params }: { params: Promis
             <article className="dashboard-panel"><h3>Registrace</h3><p>{dateTime(tasker.created_at)}</p></article>
             <article className="dashboard-panel"><h3>Stav</h3><p>{tasker.verified ? "ověřen" : "čeká na ověření"}</p></article>
           </div>
+
+          <ProfilePhotoModeration
+            profileId={tasker.id}
+            role="tasker"
+            approvedUrl={tasker.avatar_url}
+            pendingUrl={tasker.pending_avatar_url}
+            status={tasker.avatar_review_status}
+            note={tasker.avatar_review_note}
+          />
 
           <form className="compact-form section-action" action={updateAdminTaskerProfile}>
             <input type="hidden" name="tasker_id" value={tasker.id} />
