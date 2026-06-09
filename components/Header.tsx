@@ -23,8 +23,11 @@ function dashboardHref(role: unknown, email?: string | null) {
 export async function Header() {
   const user = await getSignedInUser();
   const role = user?.user_metadata?.role;
+  const isAdmin = isAdminEmail(user?.email);
   const accountName = user?.user_metadata?.name || user?.email || "Můj účet";
   const accountHref = dashboardHref(role, user?.email);
+  const primaryMarketplaceHref = role === "tasker" ? "/tasks" : "/poskytovatele";
+  const primaryMarketplaceLabel = role === "tasker" ? "Úkoly" : "Taskeři";
 
   return (
     <header className="site-header">
@@ -38,8 +41,10 @@ export async function Header() {
       <nav className="site-nav" aria-label="Hlavní navigace">
         <a href="/#jak-to-funguje">Jak to funguje</a>
         <a href="/kategorie">Kategorie</a>
-        <a href="/poskytovatele">Taskeři</a>
-        <a href="/prihlaseni?mode=tasker">Chci být tasker</a>
+        {user ? <a href={primaryMarketplaceHref}>{primaryMarketplaceLabel}</a> : <a href="/poskytovatele">Taskeři</a>}
+        {role === "tasker" ? <a href="/poskytovatel/dashboard">Moje práce</a> : null}
+        {user && role !== "tasker" && !isAdmin ? <a href="/dashboard">Moje objednávky</a> : null}
+        {!user ? <a href="/prihlaseni?mode=tasker">Chci být tasker</a> : null}
         <a href="/bezpecnost">Bezpečnost</a>
       </nav>
       <div className="header-actions">
