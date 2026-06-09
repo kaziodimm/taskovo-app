@@ -2,7 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import { acceptAdminOffer, cancelAdminTask, declineAdminOffer, reopenAdminTask, updateAdminTaskStatus } from "@/app/admin-actions";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
-import { getOffersForTask, getTaskAttachments, getTaskById, getTaskMessages } from "@/lib/data";
+import { getAdminTaskById, getOffersForTask, getTaskAttachments, getTaskMessages } from "@/lib/data";
 import { isAdminAuthenticated } from "@/lib/admin-auth";
 
 const statusLabels: Record<string, string> = {
@@ -42,7 +42,7 @@ export default async function AdminTaskDetailPage({ params }: { params: Promise<
 
   const { id } = await params;
   const [task, offers, attachments, messages] = await Promise.all([
-    getTaskById(id),
+    getAdminTaskById(id),
     getOffersForTask(id),
     getTaskAttachments(id),
     getTaskMessages(id),
