@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { addTaskAttachment, confirmTaskCompletion, requestTaskCompletion, sendTaskMessage, startTaskWork } from "@/app/actions";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
+import { MarkMessagesRead } from "@/components/MarkMessagesRead";
 import { TaskCard } from "@/components/TaskCard";
 import { getOffersForTask, getTaskAttachments, getTaskById, getTaskMessages } from "@/lib/data";
 import { createServerSupabaseClient } from "@/lib/supabase";
@@ -55,6 +56,7 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
 
   return (
     <>
+      <MarkMessagesRead taskId={task.id} enabled={canMessage} />
       <Header />
       <main className={`page-shell ${styles.detailShell}`}>
         <section className={`page-hero ${styles.detailHero}`}>
