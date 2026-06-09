@@ -18,10 +18,6 @@ function dashboardHref(role: unknown) {
   return role === "tasker" ? "/poskytovatel/dashboard" : "/dashboard";
 }
 
-function roleLabel(role: unknown) {
-  return role === "tasker" ? "Tasker" : "Klient";
-}
-
 export async function Header() {
   const user = await getSignedInUser();
   const role = user?.user_metadata?.role;
@@ -46,15 +42,12 @@ export async function Header() {
       </nav>
       <div className="header-actions">
         {user ? (
-          <div className="account-actions">
-            <a className="account-pill" href={accountHref} aria-label="Otevřít můj účet">
-              <span>{accountName}</span>
-              <small>{roleLabel(role)}</small>
-            </a>
+          <>
+            <a className="login-link" href={accountHref} aria-label="Otevřít můj účet">{accountName}</a>
             <form action={logoutAccount}>
-              <button className="logout-link" type="submit">Odhlásit</button>
+              <button className="button secondary" type="submit">Odhlásit</button>
             </form>
-          </div>
+          </>
         ) : (
           <a className="login-link" href="/prihlaseni?mode=login">Přihlásit se</a>
         )}
