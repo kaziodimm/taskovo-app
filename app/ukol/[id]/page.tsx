@@ -1,9 +1,9 @@
 import { notFound } from "next/navigation";
-import { addTaskAttachment, confirmTaskCompletion, requestTaskCompletion, startTaskWork } from "@/app/actions";
+import { addTaskAttachment, confirmTaskCompletion, requestTaskCompletion, sendTaskMessage, startTaskWork } from "@/app/actions";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import { TaskCard } from "@/components/TaskCard";
-import { getOffersForTask, getTaskAttachments, getTaskById } from "@/lib/data";
+import { getOffersForTask, getTaskAttachments, getTaskById, getTaskMessages } from "@/lib/data";
 import { createServerSupabaseClient } from "@/lib/supabase";
 import styles from "./page.module.css";
 
@@ -16,6 +16,12 @@ const statusLabels: Record<string, string> = {
   completed: "Hotovo",
   cancelled: "Zrušeno",
   disputed: "Spor",
+};
+
+const roleLabels: Record<string, string> = {
+  client: "Klient",
+  tasker: "Tasker",
+  admin: "Taskovo",
 };
 
 const workflowCopy: Record<string, string> = {
@@ -31,15 +37,20 @@ function money(value: number) {
   return value.toLocaleString("cs-CZ");
 }
 
+function dateTime(value: string) {
+  return new Date(value).toLocaleString("cs-CZ", { dateStyle: "short", timeStyle: "short" });
+}
+
 export default async function TaskDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const [task, offers, attachments] = await Promise.all([getTaskById(id), getOffersForTask(id), getTaskAttachments(id)]);
+  const [task, offers, attachments, messages] = await Promise.all([getTaskById(id), getOffersForTask(id), getTaskAttachments(id), getTaskMessages(id)]);
   if (!task) notFound();
 
   const supabase = await createServerSupabaseClient();
   const { data: { user } } = await supabase.auth.getUser();
   const isClientOwner = Boolean(user?.id && task.client_auth_user_id === user.id);
   const isAssignedTasker = Boolean(user?.id && task.assigned_tasker_auth_user_id === user.id);
+  const canMessage = Boolean(task.assigned_tasker_auth_user_id && (isClientOwner || isAssignedTasker));
   const acceptedOffer = offers.find((offer) => offer.id === task.accepted_offer_id || offer.status === "accepted");
 
   return (
@@ -107,6 +118,58 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
                 <span className="pill">{offers.length} nabídek</span>
               </div>
               <TaskCard task={task} offers={offers} canSelectOffer={isClientOwner} showOfferForm={!isClientOwner && task.status !== "assigned" && task.status !== "in_progress" && task.status !== "awaiting_confirmation" && task.status !== "completed"} />
+            </section>
+
+            <section className={styles.orderPanel}>
+              <div className={`section-heading-row ${styles.compactHeading}`}>
+                <div>
+                  <p className="kicker">Zprávy</p>
+                  <h2>Domluva k objednávce</h2>
+                </div>
+                <span className="pill">{messages.length} zpráv</span>
+              </div>
+
+              {!task.assigned_tasker_auth_user_id ? (
+                <div className={styles.emptyState}>
+                  <h3>Zprávy se otevřou po výběru taskera</h3>
+                  <p>Klient nejdřív vybere nabídku. Potom se tady objeví soukromá domluva mezi klientem a vybraným taskerem.</p>
+                </div>
+              ) : !canMessage ? (
+                <div className={styles.emptyState}>
+                  <h3>Soukromá domluva</h3>
+                  <p>Zprávy vidí jen klient a vybraný tasker této objednávky.</p>
+                </div>
+              ) : (
+                <div className={styles.messageThread}>
+                  {messages.length ? (
+                    <div className={styles.messageList}>
+                      {messages.map((message) => (
+                        <article key={message.id} className={`${styles.messageBubble} ${message.sender_auth_user_id === user?.id ? styles.ownMessage : ""}`}>
+                          <div className={styles.messageHeader}>
+                            <strong>{message.sender_name}</strong>
+                            <span>{roleLabels[message.sender_role] ?? message.sender_role} · {dateTime(message.created_at)}</span>
+                          </div>
+                          <p>{message.body}</p>
+                        </article>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className={styles.emptyState}>
+                      <h3>Zatím bez zpráv</h3>
+                      <p>Napište první zprávu a domluvte termín, adresu nebo detaily práce.</p>
+                    </div>
+                  )}
+
+                  <form className={`compact-form ${styles.messageForm}`} action={sendTaskMessage}>
+                    <input type="hidden" name="task_id" value={task.id} />
+                    <label className="span-full">Zpráva<textarea name="body" rows={4} maxLength={1200} placeholder="Napište krátkou zprávu k objednávce..." required /></label>
+                    <div className={styles.messageActions}>
+                      <p className="fine-print">Maximálně 1200 znaků. Zpráva zůstane u této objednávky.</p>
+                      <button className="button primary" type="submit">Poslat zprávu</button>
+                    </div>
+                  </form>
+                </div>
+              )}
             </section>
           </div>
 
