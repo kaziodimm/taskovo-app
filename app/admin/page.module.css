@@ -1,0 +1,102 @@
+.adminShell {
+  padding-bottom: 72px;
+}
+
+.adminJumpNav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 18px 0 28px;
+}
+
+.adminJumpNav a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 38px;
+  padding: 0 12px;
+  color: var(--steel);
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-size: .9rem;
+  font-weight: 900;
+}
+
+.adminJumpNav a:hover {
+  color: var(--orange);
+  border-color: rgba(255, 107, 53, .45);
+}
+
+.sectionCard {
+  padding: clamp(18px, 3vw, 28px);
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: 0 14px 32px rgba(13, 27, 42, .06);
+}
+
+.sectionCard + .sectionCard {
+  margin-top: 20px;
+}
+
+.adminList {
+  display: grid;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.directoryList {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  align-items: start;
+  max-height: 760px;
+  overflow: auto;
+  padding-right: 6px;
+}
+
+.directoryList::-webkit-scrollbar {
+  width: 10px;
+}
+
+.directoryList::-webkit-scrollbar-thumb {
+  background: #cbd6e3;
+  border-radius: 999px;
+}
+
+.adminItem {
+  min-width: 0;
+}
+
+.dangerBox {
+  margin-top: 14px;
+  padding: 14px;
+  background: linear-gradient(180deg, #fff8f5, #fff);
+  border: 1px solid rgba(255, 107, 53, .35);
+  border-radius: 8px;
+}
+
+.dangerBox summary {
+  color: #8f2d12;
+}
+
+.dangerBox textarea {
+  background: #fff;
+}
+
+.taskMetaLine {
+  color: var(--muted);
+}
+
+@media (max-width: 640px) {
+  .adminJumpNav a {
+    flex: 1 1 100%;
+    justify-content: center;
+  }
+
+  .directoryList {
+    grid-template-columns: 1fr;
+    max-height: none;
+    overflow: visible;
+    padding-right: 0;
+  }
+}
