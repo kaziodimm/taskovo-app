@@ -1,0 +1,12 @@
+{
+  "name": "Taskovo",
+  "short_name": "Taskovo",
+  "description": "Český marketplace pro lokální služby a úkoly.",
+  "icons": [
+    { "src": "/taskovo-logo.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ],
+  "theme_color": "#0D1B2A",
+  "background_color": "#F7F9FB",
+  "display": "standalone",
+  "start_url": "/"
+}
