@@ -24,6 +24,11 @@ function requiredString(formData: FormData, key: string) {
   return value.trim();
 }
 
+function optionalString(formData: FormData, key: string) {
+  const value = formData.get(key);
+  return typeof value === "string" && value.trim() ? value.trim() : null;
+}
+
 async function requireAdmin() {
   if (!hasSupabaseEnv() || !process.env.SUPABASE_SERVICE_ROLE_KEY) redirect("/admin?error=config");
   if (!(await isAdminAuthenticated())) redirect("/prihlaseni?mode=login&error=login_required");
@@ -36,6 +41,53 @@ function revalidateAdminViews(taskId?: string) {
   revalidatePath("/dashboard");
   revalidatePath("/poskytovatel/dashboard");
   if (taskId) revalidatePath(`/ukol/${taskId}`);
+}
+
+export async function updateAdminClientProfile(formData: FormData) {
+  const clientId = requiredString(formData, "client_id");
+  const service = await requireAdmin();
+  const marketingConsent = formData.get("marketing_consent") === "on";
+
+  const { error } = await service
+    .from("client_profiles")
+    .update({
+      name: requiredString(formData, "name"),
+      email: requiredString(formData, "email").toLowerCase(),
+      phone: optionalString(formData, "phone"),
+      city: optionalString(formData, "city"),
+      preferred_language: optionalString(formData, "preferred_language") || "cs",
+      marketing_consent: marketingConsent,
+    })
+    .eq("id", clientId);
+  if (error) throw new Error(error.message);
+
+  revalidateAdminViews();
+  revalidatePath(`/admin/clients/${clientId}`);
+  redirect(`/admin/clients/${clientId}`);
+}
+
+export async function updateAdminTaskerProfile(formData: FormData) {
+  const taskerId = requiredString(formData, "tasker_id");
+  const service = await requireAdmin();
+  const verified = formData.get("verified") === "on";
+
+  const { error } = await service
+    .from("tasker_profiles")
+    .update({
+      name: requiredString(formData, "name"),
+      email: optionalString(formData, "email"),
+      city: requiredString(formData, "city"),
+      categories: requiredString(formData, "categories"),
+      contact: optionalString(formData, "contact"),
+      bio: optionalString(formData, "bio"),
+      verified,
+    })
+    .eq("id", taskerId);
+  if (error) throw new Error(error.message);
+
+  revalidateAdminViews();
+  revalidatePath(`/admin/taskers/${taskerId}`);
+  redirect(`/admin/taskers/${taskerId}`);
 }
 
 export async function updateAdminTaskStatus(formData: FormData) {
