@@ -1,7 +1,8 @@
 import { BrandMark } from "@/components/BrandMark";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
-import { loginAccount, registerClientAccount, registerTaskerAccount } from "@/app/actions";
+import { registerClientAccount, registerTaskerAccount } from "@/app/actions";
+import { loginAccount } from "@/app/auth-actions";
 
 type AuthMode = "client" | "tasker" | "login";
 
