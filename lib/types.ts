@@ -9,6 +9,8 @@ export type TaskStatus =
   | "cancelled"
   | "disputed";
 
+export type AvatarReviewStatus = "none" | "pending" | "approved" | "rejected";
+
 export type Task = {
   id: string;
   client_auth_user_id?: string | null;
@@ -71,6 +73,10 @@ export type TaskerProfile = {
   contact?: string;
   bio: string | null;
   verified: boolean;
+  avatar_url?: string | null;
+  pending_avatar_url?: string | null;
+  avatar_review_status?: AvatarReviewStatus;
+  avatar_review_note?: string | null;
   password_auth_enabled?: boolean;
   created_at: string;
 };
@@ -84,6 +90,10 @@ export type ClientProfile = {
   city: string | null;
   preferred_language: string;
   marketing_consent: boolean;
+  avatar_url?: string | null;
+  pending_avatar_url?: string | null;
+  avatar_review_status?: AvatarReviewStatus;
+  avatar_review_note?: string | null;
   password_auth_enabled?: boolean;
   created_at: string;
 };
