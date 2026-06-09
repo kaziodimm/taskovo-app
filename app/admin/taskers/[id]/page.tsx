@@ -1,5 +1,5 @@
 import { notFound, redirect } from "next/navigation";
-import { toggleTaskerVerification } from "@/app/admin-actions";
+import { toggleTaskerVerification, updateAdminTaskerProfile } from "@/app/admin-actions";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import { getAdminTasks, getOffersForTasker, getTaskerById } from "@/lib/data";
@@ -67,10 +67,23 @@ export default async function AdminTaskerDetailPage({ params }: { params: Promis
             <article className="dashboard-panel"><h3>Registrace</h3><p>{dateTime(tasker.created_at)}</p></article>
             <article className="dashboard-panel"><h3>Stav</h3><p>{tasker.verified ? "ověřen" : "čeká na ověření"}</p></article>
           </div>
+
+          <form className="compact-form section-action" action={updateAdminTaskerProfile}>
+            <input type="hidden" name="tasker_id" value={tasker.id} />
+            <label>Jméno<input name="name" type="text" defaultValue={tasker.name} required /></label>
+            <label>Email<input name="email" type="email" defaultValue={tasker.email || ""} /></label>
+            <label>Město<input name="city" type="text" defaultValue={tasker.city} required /></label>
+            <label>Kategorie<input name="categories" type="text" defaultValue={tasker.categories} required /></label>
+            <label>Kontakt<input name="contact" type="text" defaultValue={tasker.contact || ""} /></label>
+            <label className="checkbox-row"><input name="verified" type="checkbox" defaultChecked={tasker.verified} /> Ověřený tasker</label>
+            <label className="span-full">Bio<textarea name="bio" rows={4} defaultValue={tasker.bio || ""} /></label>
+            <button className="button primary span-full" type="submit">Uložit profil taskera</button>
+          </form>
+
           <form action={toggleTaskerVerification} className="section-action">
             <input type="hidden" name="tasker_id" value={tasker.id} />
             <input type="hidden" name="verified" value={tasker.verified ? "false" : "true"} />
-            <button className="button primary" type="submit">{tasker.verified ? "Odebrat ověření" : "Ověřit taskera"}</button>
+            <button className="button secondary" type="submit">{tasker.verified ? "Odebrat ověření" : "Ověřit taskera"}</button>
           </form>
         </section>
 
