@@ -3,10 +3,11 @@ import { demoOffers, demoTaskers, demoTasks } from "./demo-data";
 import { createServiceSupabaseClient, hasSupabaseEnv } from "./supabase";
 import type { ClientProfile, Offer, Task, TaskAttachment, TaskerProfile, TaskMessage } from "./types";
 
-const visibleStatuses = ["open", "offers_received", "assigned", "in_progress", "awaiting_confirmation", "completed"];
+const listVisibleStatuses = ["open", "offers_received", "assigned", "in_progress", "awaiting_confirmation", "completed"];
+const detailVisibleStatuses = ["open", "offers_received", "assigned", "in_progress", "awaiting_confirmation", "completed", "cancelled", "disputed"];
 const adminVisibleStatuses = ["pending_review", "open", "offers_received", "assigned", "in_progress", "awaiting_confirmation", "completed", "cancelled", "disputed"];
 const taskerVisibleStatuses = ["open", "offers_received"];
-const activeAssignedStatuses = ["assigned", "in_progress", "awaiting_confirmation", "completed"];
+const activeAssignedStatuses = ["assigned", "in_progress", "awaiting_confirmation", "completed", "disputed", "cancelled"];
 
 export async function getTasks(): Promise<Task[]> {
   noStore();
@@ -14,7 +15,7 @@ export async function getTasks(): Promise<Task[]> {
   if (!hasSupabaseEnv() || !process.env.SUPABASE_SERVICE_ROLE_KEY) return demoTasks;
 
   const supabase = createServiceSupabaseClient();
-  const { data, error } = await supabase.from("tasks").select("*").in("status", visibleStatuses).order("created_at", { ascending: false });
+  const { data, error } = await supabase.from("tasks").select("*").in("status", listVisibleStatuses).order("created_at", { ascending: false });
 
   if (error) {
     console.error(error);
@@ -46,7 +47,7 @@ export async function getTaskById(taskId: string): Promise<Task | null> {
   if (!hasSupabaseEnv() || !process.env.SUPABASE_SERVICE_ROLE_KEY) return demoTasks.find((task) => task.id === taskId) || null;
 
   const supabase = createServiceSupabaseClient();
-  const { data, error } = await supabase.from("tasks").select("*").eq("id", taskId).in("status", visibleStatuses).maybeSingle();
+  const { data, error } = await supabase.from("tasks").select("*").eq("id", taskId).in("status", detailVisibleStatuses).maybeSingle();
 
   if (error) {
     console.error(error);
