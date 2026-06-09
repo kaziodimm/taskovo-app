@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { addTaskAttachment, confirmTaskCompletion, requestTaskCompletion, sendTaskMessage, startTaskWork } from "@/app/actions";
+import { requestTaskDispute } from "@/app/dispute-actions";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import { MarkMessagesRead } from "@/components/MarkMessagesRead";
@@ -32,7 +33,10 @@ const workflowCopy: Record<string, string> = {
   in_progress: "Tasker pracuje na objednávce.",
   awaiting_confirmation: "Tasker označil práci jako hotovou. Klient ji může potvrdit.",
   completed: "Objednávka je dokončená.",
+  disputed: "Objednávka je pozastavená kvůli problému. Administrátor Taskovo může zkontrolovat zprávy a rozhodnout další krok.",
 };
+
+const disputableStatuses = new Set(["assigned", "in_progress", "awaiting_confirmation"]);
 
 function money(value: number) {
   return value.toLocaleString("cs-CZ");
@@ -52,6 +56,7 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
   const isClientOwner = Boolean(user?.id && task.client_auth_user_id === user.id);
   const isAssignedTasker = Boolean(user?.id && task.assigned_tasker_auth_user_id === user.id);
   const canMessage = Boolean(task.assigned_tasker_auth_user_id && (isClientOwner || isAssignedTasker));
+  const canReportProblem = Boolean((isClientOwner || isAssignedTasker) && disputableStatuses.has(task.status));
   const acceptedOffer = offers.find((offer) => offer.id === task.accepted_offer_id || offer.status === "accepted");
 
   return (
@@ -217,6 +222,14 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
               ) : (
                 <p className="fine-print">Jakmile klient vybere nabídku, objednávka se přesune do stavu “Tasker vybrán”.</p>
               )}
+              {canReportProblem ? (
+                <form className={styles.disputeForm} action={requestTaskDispute}>
+                  <input type="hidden" name="task_id" value={task.id} />
+                  <label>Nahlásit problém<textarea name="reason" rows={4} maxLength={1200} placeholder="Stručně popište, co se stalo..." required /></label>
+                  <p className="fine-print">Objednávka se pozastaví a administrátor uvidí váš popis ve zprávách.</p>
+                  <button className="button secondary" type="submit">Nahlásit problém</button>
+                </form>
+              ) : null}
             </section>
           </aside>
         </section>
