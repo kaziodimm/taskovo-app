@@ -1,5 +1,6 @@
 import { logoutAccount } from "@/app/actions";
 import { BrandMark } from "@/components/BrandMark";
+import { isAdminEmail } from "@/lib/admin-auth";
 import { createServerSupabaseClient, hasSupabaseEnv } from "@/lib/supabase";
 
 async function getSignedInUser() {
@@ -14,7 +15,8 @@ async function getSignedInUser() {
   }
 }
 
-function dashboardHref(role: unknown) {
+function dashboardHref(role: unknown, email?: string | null) {
+  if (isAdminEmail(email)) return "/admin";
   return role === "tasker" ? "/poskytovatel/dashboard" : "/dashboard";
 }
 
@@ -22,7 +24,7 @@ export async function Header() {
   const user = await getSignedInUser();
   const role = user?.user_metadata?.role;
   const accountName = user?.user_metadata?.name || user?.email || "Můj účet";
-  const accountHref = dashboardHref(role);
+  const accountHref = dashboardHref(role, user?.email);
 
   return (
     <header className="site-header">
