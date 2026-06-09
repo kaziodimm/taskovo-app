@@ -3,7 +3,7 @@ import { acceptAdminOffer, cancelAdminTask, declineAdminOffer, reopenAdminTask, 
 import { logoutAccount } from "@/app/actions";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
-import { getClients, getOffers, getTaskMessageCounts, getTaskers, getTasks } from "@/lib/data";
+import { getAdminTasks, getClients, getOffers, getTaskMessageCounts, getTaskers } from "@/lib/data";
 import { isAdminAuthenticated } from "@/lib/admin-auth";
 
 const statusLabels: Record<string, string> = {
@@ -39,7 +39,7 @@ export default async function AdminPage() {
     redirect("/prihlaseni?mode=login&error=login_required");
   }
 
-  const [tasks, offers, taskers, clients] = await Promise.all([getTasks(), getOffers(), getTaskers(), getClients()]);
+  const [tasks, offers, taskers, clients] = await Promise.all([getAdminTasks(), getOffers(), getTaskers(), getClients()]);
   const messageCounts = await getTaskMessageCounts(tasks.map((task) => task.id));
   const offersByTask = new Map<string, typeof offers>();
   offers.forEach((offer) => offersByTask.set(offer.task_id, [...(offersByTask.get(offer.task_id) || []), offer]));
@@ -123,7 +123,13 @@ export default async function AdminPage() {
           <section className="admin-panel">
             <h2>Klienti</h2>
             <div className="admin-list">
-              {clients.map((client) => <article className="admin-item" key={client.id}><strong>{client.name}</strong><p>{client.email} · {client.phone || "bez telefonu"} · {client.city || "město neuvedeno"}</p></article>)}
+              {clients.map((client) => (
+                <article className="admin-item" key={client.id}>
+                  <strong>{client.name}</strong>
+                  <p>{client.email} · {client.phone || "bez telefonu"} · {client.city || "město neuvedeno"}</p>
+                  <a className="button secondary" href={`/admin/clients/${client.id}`}>Detail klienta</a>
+                </article>
+              ))}
             </div>
           </section>
           <section className="admin-panel">
@@ -134,11 +140,14 @@ export default async function AdminPage() {
                   <strong>{tasker.name}</strong>
                   <p>{tasker.city} · {tasker.categories} · {tasker.verified ? "ověřen" : "čeká na ověření"}</p>
                   <p>{tasker.email || "email neuveden"} · {tasker.contact || "kontakt neuveden"}</p>
-                  <form action={toggleTaskerVerification} className="inline-action-form">
-                    <input type="hidden" name="tasker_id" value={tasker.id} />
-                    <input type="hidden" name="verified" value={tasker.verified ? "false" : "true"} />
-                    <button className="button secondary" type="submit">{tasker.verified ? "Odebrat ověření" : "Ověřit taskera"}</button>
-                  </form>
+                  <div className="hero-actions">
+                    <a className="button secondary" href={`/admin/taskers/${tasker.id}`}>Detail taskera</a>
+                    <form action={toggleTaskerVerification} className="inline-action-form">
+                      <input type="hidden" name="tasker_id" value={tasker.id} />
+                      <input type="hidden" name="verified" value={tasker.verified ? "false" : "true"} />
+                      <button className="button secondary" type="submit">{tasker.verified ? "Odebrat ověření" : "Ověřit taskera"}</button>
+                    </form>
+                  </div>
                 </article>
               ))}
             </div>
