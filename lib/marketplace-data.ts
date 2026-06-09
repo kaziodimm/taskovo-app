@@ -22,6 +22,7 @@ export type FeaturedProvider = {
   verified: boolean;
   responseTime: string;
   bio: string;
+  avatarUrl?: string | null;
 };
 
 export const cities = ["Praha", "Brno", "Ostrava", "Plzeň", "Olomouc", "Liberec", "České Budějovice", "Hradec Králové"];
