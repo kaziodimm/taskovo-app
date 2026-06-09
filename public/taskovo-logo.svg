@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Taskovo</title>
+  <desc id="desc">Taskovo logo with a road shaped like T, city and sunrise.</desc>
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#F7F9FB"/>
+      <stop offset="0.34" stop-color="#FF9A3D" stop-opacity="0.55"/>
+      <stop offset="0.7" stop-color="#6D859E"/>
+      <stop offset="1" stop-color="#1B263B"/>
+    </linearGradient>
+    <linearGradient id="road" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#D8E0E8"/>
+    </linearGradient>
+    <linearGradient id="building" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#415A77"/>
+      <stop offset="1" stop-color="#0D1B2A"/>
+    </linearGradient>
+    <filter id="softShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="14" stdDeviation="16" flood-color="#0D1B2A" flood-opacity="0.22"/>
+    </filter>
+    <clipPath id="round">
+      <rect x="36" y="36" width="440" height="440" rx="92"/>
+    </clipPath>
+  </defs>
+  <rect x="36" y="36" width="440" height="440" rx="92" fill="url(#sky)" filter="url(#softShadow)"/>
+  <g clip-path="url(#round)">
+    <circle cx="258" cy="150" r="98" fill="#FF6B35" opacity="0.28"/>
+    <circle cx="258" cy="152" r="66" fill="#F5C542" opacity="0.22"/>
+    <path d="M70 254h372v54H70z" fill="url(#road)"/>
+    <path d="M212 254h88l54 222H158z" fill="url(#road)"/>
+    <path d="M252 275h8v22h-8zm0 43h8v25h-8zm0 47h8v29h-8zm0 54h8v35h-8z" fill="#6D859E" opacity="0.72"/>
+    <path d="M42 278h92v198H42zM378 276h98v200h-98zM108 322h78v154h-78zM326 328h72v148h-72z" fill="url(#building)"/>
+    <path d="M80 226h56v52H80zm296-4h62v54h-62zm-190-42h28v74h-28zm112-58h34v132h-34zm-50 18h30v114h-30zm-92 38h34v76h-34zm202 22h34v76h-34z" fill="#1B263B" opacity="0.92"/>
+    <path d="M322 118l-17 20h34zM262 138l-15 18h30zM202 176l-15 18h30zM374 198l-16 18h32z" fill="#0D1B2A"/>
+    <g fill="#F5C542">
+      <rect x="72" y="330" width="12" height="18" rx="2"/><rect x="112" y="356" width="12" height="18" rx="2"/><rect x="404" y="326" width="12" height="18" rx="2"/><rect x="438" y="370" width="12" height="18" rx="2"/>
+      <rect x="136" y="356" width="10" height="16" rx="2"/><rect x="166" y="392" width="10" height="16" rx="2"/><rect x="348" y="370" width="10" height="16" rx="2"/><rect x="374" y="408" width="10" height="16" rx="2"/>
+      <rect x="306" y="172" width="10" height="16" rx="2"/><rect x="254" y="186" width="9" height="14" rx="2"/><rect x="190" y="216" width="9" height="14" rx="2"/>
+    </g>
+    <path d="M92 418h54v18H92z" fill="#FF6B35" opacity="0.9"/>
+    <g fill="#0D1B2A">
+      <circle cx="256" cy="405" r="10"/>
+      <path d="M244 418c0-8 6-14 12-14s12 6 12 14v42h-24z"/>
+      <path d="M240 444h9v30h-9zm23 0h9v30h-9z"/>
+    </g>
+  </g>
+  <rect x="36" y="36" width="440" height="440" rx="92" fill="none" stroke="#D8E0E8" stroke-width="2" opacity="0.8"/>
+</svg>
