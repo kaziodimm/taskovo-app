@@ -8,6 +8,7 @@ import { createServerSupabaseClient, createServiceSupabaseClient, hasSupabaseEnv
 
 const ATTACHMENT_BUCKET = "task-attachments";
 const MAX_ATTACHMENT_BYTES = 8 * 1024 * 1024;
+const MAX_MESSAGE_LENGTH = 1200;
 const ALLOWED_ATTACHMENT_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
 
 function requiredString(formData: FormData, key: string) {
@@ -362,6 +363,49 @@ export async function confirmTaskCompletion(formData: FormData) {
   if (task.status !== "awaiting_confirmation") redirect(`/ukol/${taskId}?error=status`);
 
   const { error } = await service.from("tasks").update({ status: "completed" }).eq("id", taskId);
+  if (error) throw new Error(error.message);
+
+  revalidateTaskViews(taskId);
+  redirect(`/ukol/${taskId}`);
+}
+
+export async function sendTaskMessage(formData: FormData) {
+  if (!hasSupabaseEnv() || !process.env.SUPABASE_SERVICE_ROLE_KEY) redirect("/dashboard?error=config");
+
+  const taskId = requiredString(formData, "task_id");
+  const body = requiredString(formData, "body");
+  if (body.length > MAX_MESSAGE_LENGTH) redirect(`/ukol/${taskId}?error=message_too_long`);
+
+  const authSupabase = await createServerSupabaseClient();
+  const { data: { user } } = await authSupabase.auth.getUser();
+
+  if (!user) redirect("/prihlaseni?error=login_required");
+
+  const service = createServiceSupabaseClient();
+  const { data: task, error: taskError } = await service
+    .from("tasks")
+    .select("id,client_auth_user_id,assigned_tasker_auth_user_id,status")
+    .eq("id", taskId)
+    .maybeSingle();
+
+  if (taskError) throw new Error(taskError.message);
+  if (!task) redirect("/tasks?error=task_missing");
+
+  const isClientOwner = task.client_auth_user_id === user.id;
+  const isAssignedTasker = task.assigned_tasker_auth_user_id === user.id;
+  if (!isClientOwner && !isAssignedTasker) redirect(`/ukol/${taskId}?error=forbidden`);
+  if (!task.assigned_tasker_auth_user_id) redirect(`/ukol/${taskId}?error=messages_closed`);
+
+  const senderRole = isClientOwner ? "client" : "tasker";
+  const senderName = user.user_metadata?.name || user.email || (senderRole === "client" ? "Klient Taskovo" : "Tasker Taskovo");
+  const { error } = await service.from("messages").insert({
+    task_id: taskId,
+    sender_auth_user_id: user.id,
+    sender_role: senderRole,
+    sender_name: senderName,
+    body,
+  });
+
   if (error) throw new Error(error.message);
 
   revalidateTaskViews(taskId);
