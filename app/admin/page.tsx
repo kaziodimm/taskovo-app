@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { cancelAdminTask, toggleTaskerVerification, updateAdminTaskStatus } from "@/app/admin-actions";
 import { logoutAccount } from "@/app/actions";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
@@ -6,6 +7,7 @@ import { getClients, getOffers, getTaskMessageCounts, getTaskers, getTasks } fro
 import { isAdminAuthenticated } from "@/lib/admin-auth";
 
 const statusLabels: Record<string, string> = {
+  pending_review: "Kontrola",
   open: "Otevřeno",
   offers_received: "Nabídky",
   assigned: "Tasker vybrán",
@@ -15,6 +17,18 @@ const statusLabels: Record<string, string> = {
   cancelled: "Zrušeno",
   disputed: "Spor",
 };
+
+const adminStatusOptions = [
+  "pending_review",
+  "open",
+  "offers_received",
+  "assigned",
+  "in_progress",
+  "awaiting_confirmation",
+  "completed",
+  "cancelled",
+  "disputed",
+];
 
 function money(value: number) {
   return value.toLocaleString("cs-CZ");
@@ -78,7 +92,20 @@ export default async function AdminPage() {
                   <p>{task.city} · {task.desired_time} · {money(task.budget_czk)} Kč · {statusLabels[task.status] ?? task.status}</p>
                   <p>Klient: {task.client_name} · {task.client_contact || "kontakt není uveden"}</p>
                   <p>Tasker: {acceptedOffer?.tasker_name || "zatím nevybrán"} · {taskOffers.length} nabídek · {messageCounts[task.id] || 0} zpráv</p>
-                  <a className="button secondary" href={`/ukol/${task.id}`}>Otevřít objednávku</a>
+                  <div className="hero-actions">
+                    <a className="button secondary" href={`/ukol/${task.id}`}>Otevřít objednávku</a>
+                    <form className="compact-form" action={updateAdminTaskStatus}>
+                      <input type="hidden" name="task_id" value={task.id} />
+                      <label>Stav<select name="status" defaultValue={task.status}>{adminStatusOptions.map((status) => <option key={status} value={status}>{statusLabels[status] ?? status}</option>)}</select></label>
+                      <button className="button secondary" type="submit">Uložit stav</button>
+                    </form>
+                    {task.status !== "cancelled" ? (
+                      <form action={cancelAdminTask}>
+                        <input type="hidden" name="task_id" value={task.id} />
+                        <button className="button secondary" type="submit">Zrušit</button>
+                      </form>
+                    ) : null}
+                  </div>
                 </article>
               );
             })}
@@ -95,7 +122,18 @@ export default async function AdminPage() {
           <section className="admin-panel">
             <h2>Taskeři</h2>
             <div className="admin-list">
-              {taskers.map((tasker) => <article className="admin-item" key={tasker.id}><strong>{tasker.name}</strong><p>{tasker.city} · {tasker.categories} · {tasker.verified ? "ověřen" : "čeká na ověření"}</p></article>)}
+              {taskers.map((tasker) => (
+                <article className="admin-item" key={tasker.id}>
+                  <strong>{tasker.name}</strong>
+                  <p>{tasker.city} · {tasker.categories} · {tasker.verified ? "ověřen" : "čeká na ověření"}</p>
+                  <p>{tasker.email || "email neuveden"} · {tasker.contact || "kontakt neuveden"}</p>
+                  <form action={toggleTaskerVerification} className="inline-action-form">
+                    <input type="hidden" name="tasker_id" value={tasker.id} />
+                    <input type="hidden" name="verified" value={tasker.verified ? "false" : "true"} />
+                    <button className="button secondary" type="submit">{tasker.verified ? "Odebrat ověření" : "Ověřit taskera"}</button>
+                  </form>
+                </article>
+              ))}
             </div>
           </section>
           <section className="admin-panel">
