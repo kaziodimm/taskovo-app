@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { addTaskAttachment } from "@/app/actions";
+import { addTaskAttachment, confirmTaskCompletion, requestTaskCompletion, startTaskWork } from "@/app/actions";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import { TaskCard } from "@/components/TaskCard";
@@ -12,9 +12,19 @@ const statusLabels: Record<string, string> = {
   offers_received: "Nabídky dorazily",
   assigned: "Tasker vybrán",
   in_progress: "Probíhá",
+  awaiting_confirmation: "Čeká na potvrzení",
   completed: "Hotovo",
   cancelled: "Zrušeno",
   disputed: "Spor",
+};
+
+const workflowCopy: Record<string, string> = {
+  open: "Čekáme na první nabídky od taskerů.",
+  offers_received: "Klient si může vybrat nejlepší nabídku.",
+  assigned: "Vybraný tasker může začít práci.",
+  in_progress: "Tasker pracuje na objednávce.",
+  awaiting_confirmation: "Tasker označil práci jako hotovou. Klient ji může potvrdit.",
+  completed: "Objednávka je dokončená.",
 };
 
 function money(value: number) {
@@ -29,6 +39,7 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
   const supabase = await createServerSupabaseClient();
   const { data: { user } } = await supabase.auth.getUser();
   const isClientOwner = Boolean(user?.id && task.client_auth_user_id === user.id);
+  const isAssignedTasker = Boolean(user?.id && task.assigned_tasker_auth_user_id === user.id);
   const acceptedOffer = offers.find((offer) => offer.id === task.accepted_offer_id || offer.status === "accepted");
 
   return (
@@ -95,7 +106,7 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
                 </div>
                 <span className="pill">{offers.length} nabídek</span>
               </div>
-              <TaskCard task={task} offers={offers} canSelectOffer={isClientOwner} showOfferForm={!isClientOwner && task.status !== "assigned" && task.status !== "completed"} />
+              <TaskCard task={task} offers={offers} canSelectOffer={isClientOwner} showOfferForm={!isClientOwner && task.status !== "assigned" && task.status !== "in_progress" && task.status !== "awaiting_confirmation" && task.status !== "completed"} />
             </section>
           </div>
 
@@ -109,6 +120,28 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
                 <div><dt>Rozpočet</dt><dd>{money(task.budget_czk)} Kč</dd></div>
                 <div><dt>Nabídky</dt><dd>{offers.length}</dd></div>
               </dl>
+              <div className={styles.workflowBox}>
+                <span className="pill">Další krok</span>
+                <p>{workflowCopy[task.status] ?? "Objednávka čeká na další akci."}</p>
+                {isAssignedTasker && task.status === "assigned" ? (
+                  <form action={startTaskWork}>
+                    <input type="hidden" name="task_id" value={task.id} />
+                    <button className="button primary" type="submit">Začít práci</button>
+                  </form>
+                ) : null}
+                {isAssignedTasker && task.status === "in_progress" ? (
+                  <form action={requestTaskCompletion}>
+                    <input type="hidden" name="task_id" value={task.id} />
+                    <button className="button primary" type="submit">Označit jako hotové</button>
+                  </form>
+                ) : null}
+                {isClientOwner && task.status === "awaiting_confirmation" ? (
+                  <form action={confirmTaskCompletion}>
+                    <input type="hidden" name="task_id" value={task.id} />
+                    <button className="button primary" type="submit">Potvrdit dokončení</button>
+                  </form>
+                ) : null}
+              </div>
               {acceptedOffer ? (
                 <div className={styles.selectedTaskerBox}>
                   <span className="pill status-assigned">Vybráno</span>
