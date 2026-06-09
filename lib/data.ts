@@ -3,8 +3,9 @@ import { demoOffers, demoTaskers, demoTasks } from "./demo-data";
 import { createServiceSupabaseClient, hasSupabaseEnv } from "./supabase";
 import type { ClientProfile, Offer, Task, TaskAttachment, TaskerProfile } from "./types";
 
-const visibleStatuses = ["open", "offers_received", "assigned", "in_progress", "completed"];
+const visibleStatuses = ["open", "offers_received", "assigned", "in_progress", "awaiting_confirmation", "completed"];
 const taskerVisibleStatuses = ["open", "offers_received"];
+const activeAssignedStatuses = ["assigned", "in_progress", "awaiting_confirmation", "completed"];
 
 export async function getTasks(): Promise<Task[]> {
   noStore();
@@ -45,6 +46,22 @@ export async function getOpenTasksForTaskers(): Promise<Task[]> {
 
   const supabase = createServiceSupabaseClient();
   const { data, error } = await supabase.from("tasks").select("*").in("status", taskerVisibleStatuses).order("created_at", { ascending: false });
+
+  if (error) {
+    console.error(error);
+    return [];
+  }
+
+  return data as Task[];
+}
+
+export async function getAssignedTasksForTasker(taskerAuthUserId: string): Promise<Task[]> {
+  noStore();
+
+  if (!hasSupabaseEnv() || !process.env.SUPABASE_SERVICE_ROLE_KEY) return [];
+
+  const supabase = createServiceSupabaseClient();
+  const { data, error } = await supabase.from("tasks").select("*").eq("assigned_tasker_auth_user_id", taskerAuthUserId).in("status", activeAssignedStatuses).order("created_at", { ascending: false });
 
   if (error) {
     console.error(error);
