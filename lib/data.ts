@@ -167,6 +167,25 @@ export async function getTaskMessages(taskId: string): Promise<TaskMessage[]> {
   return data as TaskMessage[];
 }
 
+export async function getTaskMessageCounts(taskIds: string[]): Promise<Record<string, number>> {
+  noStore();
+
+  if (!taskIds.length || !hasSupabaseEnv() || !process.env.SUPABASE_SERVICE_ROLE_KEY) return {};
+
+  const supabase = createServiceSupabaseClient();
+  const { data, error } = await supabase.from("messages").select("task_id").in("task_id", taskIds);
+
+  if (error) {
+    console.error(error);
+    return {};
+  }
+
+  return (data || []).reduce<Record<string, number>>((counts, message) => {
+    counts[message.task_id] = (counts[message.task_id] || 0) + 1;
+    return counts;
+  }, {});
+}
+
 export async function getTaskers(): Promise<TaskerProfile[]> {
   noStore();
 
