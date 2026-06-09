@@ -4,7 +4,8 @@ import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import { TaskCard } from "@/components/TaskCard";
 import { TaskForm } from "@/components/TaskForm";
-import { getOffers, getTaskMessageCounts, getTasksForClient } from "@/lib/data";
+import { getOffers, getTasksForClient } from "@/lib/data";
+import { getUnreadTaskMessageCounts } from "@/lib/message-data";
 import { createServerSupabaseClient } from "@/lib/supabase";
 import type { Task } from "@/lib/types";
 
@@ -29,13 +30,13 @@ export default async function DashboardPage() {
   if (user.user_metadata?.role === "tasker") redirect("/poskytovatel/dashboard");
 
   const [tasks, offers] = await Promise.all([getTasksForClient(user.id), getOffers()]);
-  const messageCounts = await getTaskMessageCounts(tasks.map((task) => task.id));
+  const unreadCounts = await getUnreadTaskMessageCounts(tasks.map((task) => task.id), user.id);
   const displayName = user.user_metadata?.name || user.email;
   const offersByTask = new Map<string, number>();
   offers.forEach((offer) => offersByTask.set(offer.task_id, (offersByTask.get(offer.task_id) || 0) + 1));
   const actionTasks = tasks.filter((task) => needsClientAction(task, offersByTask.get(task.id) || 0));
   const activeTasks = tasks.filter((task) => ["assigned", "in_progress", "awaiting_confirmation"].includes(task.status));
-  const messageTotal = Object.values(messageCounts).reduce((total, count) => total + count, 0);
+  const unreadTotal = Object.values(unreadCounts).reduce((total, count) => total + count, 0);
 
   return (
     <>
@@ -53,7 +54,7 @@ export default async function DashboardPage() {
 
         <div className="dashboard-grid">
           <article className="dashboard-panel"><h3>Čeká na vás</h3><p>{actionTasks.length ? `${actionTasks.length} objednávka vyžaduje rozhodnutí.` : "Momentálně není potřeba žádná akce."}</p></article>
-          <article className="dashboard-panel"><h3>Zprávy</h3><p>{messageTotal ? `${messageTotal} zpráv v aktivních objednávkách.` : "Zprávy se objeví po výběru taskera."}</p></article>
+          <article className="dashboard-panel"><h3>Nové zprávy</h3><p>{unreadTotal ? `${unreadTotal} nových zpráv v objednávkách.` : "Žádné nové zprávy."}</p></article>
           <article className="dashboard-panel"><h3>Aktivní práce</h3><p>{activeTasks.length ? `${activeTasks.length} zakázka právě běží nebo čeká na potvrzení.` : "Zatím žádná aktivní zakázka."}</p></article>
         </div>
 
@@ -64,7 +65,7 @@ export default async function DashboardPage() {
               {actionTasks.map((task) => (
                 <article className="admin-item" key={task.id}>
                   <strong>{task.title}</strong>
-                  <p>{nextStepCopy[task.status] ?? "Otevřete detail objednávky."} · {offersByTask.get(task.id) || 0} nabídek · {messageCounts[task.id] || 0} zpráv</p>
+                  <p>{nextStepCopy[task.status] ?? "Otevřete detail objednávky."} · {offersByTask.get(task.id) || 0} nabídek · {unreadCounts[task.id] || 0} nových zpráv</p>
                   <a className="button secondary" href={`/ukol/${task.id}`}>Otevřít objednávku</a>
                 </article>
               ))}
