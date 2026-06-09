@@ -132,3 +132,34 @@ export async function updateTaskerOwnProfile(formData: FormData) {
   revalidatePath("/admin");
   redirect("/poskytovatel/dashboard?updated=profile");
 }
+
+export async function submitProfilePhotoForReview(formData: FormData) {
+  if (!hasSupabaseEnv() || !process.env.SUPABASE_SERVICE_ROLE_KEY) redirect("/profil/foto?error=config");
+
+  const supabase = await createServerSupabaseClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect("/prihlaseni?error=login_required");
+
+  const avatarUrl = optionalImageUrl(formData);
+  if (!avatarUrl) redirect("/profil/foto?error=bad_url");
+
+  const service = createServiceSupabaseClient();
+  const table = user.user_metadata?.role === "tasker" ? "tasker_profiles" : "client_profiles";
+  const { data: profile, error: profileError } = await service.from(table).select("id").eq("auth_user_id", user.id).order("created_at", { ascending: false }).limit(1).maybeSingle();
+  if (profileError) throw new Error(profileError.message);
+  if (!profile) redirect(user.user_metadata?.role === "tasker" ? "/poskytovatel/dashboard?error=profile_missing" : "/dashboard?error=profile_missing");
+
+  const { error } = await service
+    .from(table)
+    .update({
+      pending_avatar_url: avatarUrl,
+      avatar_review_status: "pending",
+      avatar_review_note: null,
+    })
+    .eq("id", profile.id);
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/profil/foto");
+  revalidatePath("/admin");
+  redirect("/profil/foto?updated=photo_pending");
+}
