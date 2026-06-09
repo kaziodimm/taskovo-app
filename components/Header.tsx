@@ -44,6 +44,7 @@ export async function Header() {
         {user ? <a href={primaryMarketplaceHref}>{primaryMarketplaceLabel}</a> : <a href="/poskytovatele">Taskeři</a>}
         {role === "tasker" ? <a href="/poskytovatel/dashboard">Moje práce</a> : null}
         {user && role !== "tasker" && !isAdmin ? <a href="/dashboard">Moje objednávky</a> : null}
+        {user ? <a href="/profil/foto">Foto profilu</a> : null}
         {!user ? <a href="/prihlaseni?mode=tasker">Chci být tasker</a> : null}
         <a href="/bezpecnost">Bezpečnost</a>
       </nav>
