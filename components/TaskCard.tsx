@@ -1,4 +1,5 @@
 import { acceptOffer, createOffer } from "@/app/actions";
+import { cancelClientTask, updateClientTask } from "@/app/client-task-actions";
 import type { Offer, Task } from "@/lib/types";
 
 const statusLabels: Record<string, string> = {
@@ -32,12 +33,15 @@ type TaskCardProps = {
   offers: Offer[];
   canSelectOffer?: boolean;
   showOfferForm?: boolean;
+  canManageTask?: boolean;
 };
 
-export function TaskCard({ task, offers, canSelectOffer = false, showOfferForm = true }: TaskCardProps) {
+export function TaskCard({ task, offers, canSelectOffer = false, showOfferForm = true, canManageTask = false }: TaskCardProps) {
   const fee = platformFee(task.budget_czk);
   const payout = task.budget_czk - fee;
   const canChoose = canSelectOffer && ["open", "offers_received"].includes(task.status);
+  const canEdit = canManageTask && ["open", "offers_received"].includes(task.status);
+  const canCancel = canManageTask && !["completed", "cancelled"].includes(task.status);
 
   return (
     <article className="task-card">
@@ -54,6 +58,31 @@ export function TaskCard({ task, offers, canSelectOffer = false, showOfferForm =
         <div><span>Nabídky</span><strong>{offers.length}</strong></div>
       </div>
       <a className="button secondary" href={`/ukol/${task.id}`}>Detail objednávky</a>
+
+      {canEdit || canCancel ? (
+        <details>
+          <summary>Správa objednávky</summary>
+          {canEdit ? (
+            <form className="offer-form" action={updateClientTask}>
+              <input type="hidden" name="task_id" value={task.id} />
+              <label className="span-full">Popis<textarea name="description" rows={3} defaultValue={task.description} required /></label>
+              <label>Kategorie<input name="category" type="text" defaultValue={task.category} required /></label>
+              <label>Město<input name="city" type="text" defaultValue={task.city} required /></label>
+              <label>Část města<input name="district" type="text" defaultValue={task.district || ""} /></label>
+              <label>Termín<input name="desired_time" type="text" defaultValue={task.desired_time} required /></label>
+              <label>Rozpočet<span className="money-field"><input name="budget_czk" type="number" min="100" step="50" defaultValue={task.budget_czk} required /><span>Kč</span></span></label>
+              <button className="button secondary span-full" type="submit">Uložit změny</button>
+            </form>
+          ) : <p className="fine-print">Objednávku už nelze upravit, protože je přiřazená nebo dokončená.</p>}
+          {canCancel ? (
+            <form action={cancelClientTask} className="inline-action-form">
+              <input type="hidden" name="task_id" value={task.id} />
+              <button className="button secondary" type="submit">Zrušit objednávku</button>
+            </form>
+          ) : null}
+        </details>
+      ) : null}
+
       <details>
         <summary>Nabídky</summary>
         <ul className="offer-list">
