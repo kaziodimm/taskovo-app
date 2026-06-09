@@ -33,6 +33,7 @@ function profileToProvider(profile: TaskerProfile): FeaturedProvider {
     verified: profile.verified,
     responseTime: "odpověď podle dostupnosti",
     bio: profile.bio || "Tasker připravený přijímat lokální úkoly přes Taskovo.",
+    avatarUrl: profile.avatar_url || null,
   };
 }
 
