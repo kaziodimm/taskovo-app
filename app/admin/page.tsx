@@ -93,7 +93,8 @@ export default async function AdminPage() {
                   <p>Klient: {task.client_name} · {task.client_contact || "kontakt není uveden"}</p>
                   <p>Tasker: {acceptedOffer?.tasker_name || "zatím nevybrán"} · {taskOffers.length} nabídek · {messageCounts[task.id] || 0} zpráv</p>
                   <div className="hero-actions">
-                    <a className="button secondary" href={`/ukol/${task.id}`}>Otevřít objednávku</a>
+                    <a className="button primary" href={`/admin/tasks/${task.id}`}>Řídit objednávku</a>
+                    <a className="button secondary" href={`/ukol/${task.id}`}>Veřejný detail</a>
                     <form className="compact-form" action={updateAdminTaskStatus}>
                       <input type="hidden" name="task_id" value={task.id} />
                       <label>Stav<select name="status" defaultValue={task.status}>{adminStatusOptions.map((status) => <option key={status} value={status}>{statusLabels[status] ?? status}</option>)}</select></label>
@@ -150,7 +151,7 @@ export default async function AdminPage() {
                   <strong>{offer.tasker_name}</strong>
                   <p>{money(offer.price_czk)} Kč · {offer.status} · {offer.message}</p>
                   <div className="hero-actions">
-                    <a className="button secondary" href={`/ukol/${offer.task_id}`}>Objednávka</a>
+                    <a className="button secondary" href={`/admin/tasks/${offer.task_id}`}>Objednávka</a>
                     {offer.status !== "accepted" ? (
                       <form action={acceptAdminOffer}>
                         <input type="hidden" name="task_id" value={offer.task_id} />
