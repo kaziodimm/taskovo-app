@@ -6,11 +6,19 @@ const verifiedBadgeStyle = {
   boxShadow: "0 8px 20px rgba(255, 107, 53, 0.22)",
 } as const;
 
+function initials(name: string) {
+  return name.split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase();
+}
+
 export function ProviderCard({ provider }: { provider: FeaturedProvider }) {
   return (
     <article className="provider-card">
       <div className="provider-top">
-        <div className="avatar" aria-hidden="true">{provider.name.split(" ").map((part) => part[0]).join("")}</div>
+        {provider.avatarUrl ? (
+          <img className="avatar" src={provider.avatarUrl} alt={`Profilové foto ${provider.name}`} />
+        ) : (
+          <div className="avatar" aria-hidden="true">{initials(provider.name)}</div>
+        )}
         <div>
           <h3>{provider.name}</h3>
           <p>{provider.city} · {provider.responseTime}</p>
