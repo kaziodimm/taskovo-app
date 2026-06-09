@@ -2,8 +2,23 @@ import { redirect } from "next/navigation";
 import { adminLogout } from "@/app/actions";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
-import { getClients, getOffers, getTaskers, getTasks } from "@/lib/data";
+import { getClients, getOffers, getTaskMessageCounts, getTaskers, getTasks } from "@/lib/data";
 import { isAdminAuthenticated } from "@/lib/admin-auth";
+
+const statusLabels: Record<string, string> = {
+  open: "Otevřeno",
+  offers_received: "Nabídky",
+  assigned: "Tasker vybrán",
+  in_progress: "Probíhá",
+  awaiting_confirmation: "Čeká na klienta",
+  completed: "Hotovo",
+  cancelled: "Zrušeno",
+  disputed: "Spor",
+};
+
+function money(value: number) {
+  return value.toLocaleString("cs-CZ");
+}
 
 export default async function AdminPage() {
   if (!(await isAdminAuthenticated())) {
@@ -11,6 +26,14 @@ export default async function AdminPage() {
   }
 
   const [tasks, offers, taskers, clients] = await Promise.all([getTasks(), getOffers(), getTaskers(), getClients()]);
+  const messageCounts = await getTaskMessageCounts(tasks.map((task) => task.id));
+  const offersByTask = new Map<string, typeof offers>();
+  offers.forEach((offer) => offersByTask.set(offer.task_id, [...(offersByTask.get(offer.task_id) || []), offer]));
+
+  const activeTasks = tasks.filter((task) => ["assigned", "in_progress", "awaiting_confirmation"].includes(task.status));
+  const waitingClientTasks = tasks.filter((task) => task.status === "awaiting_confirmation");
+  const openTasks = tasks.filter((task) => ["open", "offers_received"].includes(task.status));
+  const completedTasks = tasks.filter((task) => task.status === "completed");
 
   return (
     <>
@@ -20,9 +43,9 @@ export default async function AdminPage() {
           <div>
             <p className="kicker">Admin</p>
             <h1 className="page-title">Operační centrum Taskovo</h1>
-            <p className="hero-lead">Ručný přehled pro pilot: klienti, úkoly, taskeři, nabídky a bezpečnostní kontrola.</p>
+            <p className="hero-lead">Kontrola objednávek, klientů, taskerů, nabídek a stavu práce v pilotním marketplace.</p>
           </div>
-          <div className="page-hero-card"><strong>{tasks.length + offers.length + taskers.length + clients.length}</strong><p>záznamů v pilotním marketplace</p></div>
+          <div className="page-hero-card"><strong>{tasks.length}</strong><p>objednávek · {activeTasks.length} aktivních</p></div>
         </section>
 
         <form action={adminLogout} className="admin-toolbar">
@@ -31,10 +54,36 @@ export default async function AdminPage() {
         </form>
 
         <div className="dashboard-grid">
-          <article className="dashboard-panel"><h3>Klienti</h3><p>{clients.length} registrovaných klientů z formuláře.</p></article>
-          <article className="dashboard-panel"><h3>Taskeři</h3><p>{taskers.length} lidí připravených nabízet služby.</p></article>
-          <article className="dashboard-panel"><h3>Úkoly</h3><p>{tasks.length} poptávek pro ruční kontrolu.</p></article>
+          <article className="dashboard-panel"><h3>Otevřené</h3><p>{openTasks.length} objednávek čeká na nabídky nebo výběr taskera.</p></article>
+          <article className="dashboard-panel"><h3>Aktivní</h3><p>{activeTasks.length} objednávek je přiřazených, probíhá nebo čeká na potvrzení.</p></article>
+          <article className="dashboard-panel"><h3>Čeká na klienta</h3><p>{waitingClientTasks.length} objednávek čeká na potvrzení dokončení.</p></article>
+          <article className="dashboard-panel"><h3>Dokončeno</h3><p>{completedTasks.length} objednávek je hotových.</p></article>
+          <article className="dashboard-panel"><h3>Klienti</h3><p>{clients.length} registrovaných klientů.</p></article>
+          <article className="dashboard-panel"><h3>Taskeři</h3><p>{taskers.length} registrovaných taskerů.</p></article>
         </div>
+
+        <section className="section admin-panel">
+          <div className="section-heading-row">
+            <div className="section-title"><p className="kicker">Objednávky</p><h2>Kontrola zakázek</h2><p>Rychlý přehled stavu, klienta, vybraného taskera, nabídek a zpráv.</p></div>
+            <a className="button secondary" href="/tasks">Veřejný marketplace</a>
+          </div>
+          <div className="admin-list">
+            {tasks.map((task) => {
+              const taskOffers = offersByTask.get(task.id) || [];
+              const acceptedOffer = taskOffers.find((offer) => offer.id === task.accepted_offer_id || offer.status === "accepted");
+
+              return (
+                <article className="admin-item" key={task.id}>
+                  <strong>{task.title}</strong>
+                  <p>{task.city} · {task.desired_time} · {money(task.budget_czk)} Kč · {statusLabels[task.status] ?? task.status}</p>
+                  <p>Klient: {task.client_name} · {task.client_contact || "kontakt není uveden"}</p>
+                  <p>Tasker: {acceptedOffer?.tasker_name || "zatím nevybrán"} · {taskOffers.length} nabídek · {messageCounts[task.id] || 0} zpráv</p>
+                  <a className="button secondary" href={`/ukol/${task.id}`}>Otevřít objednávku</a>
+                </article>
+              );
+            })}
+          </div>
+        </section>
 
         <div className="admin-grid section">
           <section className="admin-panel">
@@ -44,21 +93,15 @@ export default async function AdminPage() {
             </div>
           </section>
           <section className="admin-panel">
-            <h2>Úkoly</h2>
+            <h2>Taskeři</h2>
             <div className="admin-list">
-              {tasks.map((task) => <article className="admin-item" key={task.id}><strong>{task.title}</strong><p>{task.city} · {task.budget_czk.toLocaleString("cs-CZ")} Kč · {task.status}</p></article>)}
+              {taskers.map((tasker) => <article className="admin-item" key={tasker.id}><strong>{tasker.name}</strong><p>{tasker.city} · {tasker.categories} · {tasker.verified ? "ověřen" : "čeká na ověření"}</p></article>)}
             </div>
           </section>
           <section className="admin-panel">
             <h2>Nabídky</h2>
             <div className="admin-list">
-              {offers.map((offer) => <article className="admin-item" key={offer.id}><strong>{offer.tasker_name}</strong><p>{offer.price_czk.toLocaleString("cs-CZ")} Kč · {offer.message}</p></article>)}
-            </div>
-          </section>
-          <section className="admin-panel">
-            <h2>Taskeři</h2>
-            <div className="admin-list">
-              {taskers.map((tasker) => <article className="admin-item" key={tasker.id}><strong>{tasker.name}</strong><p>{tasker.city} · {tasker.categories}</p></article>)}
+              {offers.map((offer) => <article className="admin-item" key={offer.id}><strong>{offer.tasker_name}</strong><p>{money(offer.price_czk)} Kč · {offer.status} · {offer.message}</p><a className="button secondary" href={`/ukol/${offer.task_id}`}>Objednávka</a></article>)}
             </div>
           </section>
         </div>
