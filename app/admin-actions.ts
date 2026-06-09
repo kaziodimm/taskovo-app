@@ -40,7 +40,10 @@ function revalidateAdminViews(taskId?: string) {
   revalidatePath("/tasks");
   revalidatePath("/dashboard");
   revalidatePath("/poskytovatel/dashboard");
-  if (taskId) revalidatePath(`/ukol/${taskId}`);
+  if (taskId) {
+    revalidatePath(`/ukol/${taskId}`);
+    revalidatePath(`/admin/tasks/${taskId}`);
+  }
 }
 
 export async function updateAdminClientProfile(formData: FormData) {
@@ -106,12 +109,22 @@ export async function updateAdminTaskStatus(formData: FormData) {
 
 export async function cancelAdminTask(formData: FormData) {
   const taskId = requiredString(formData, "task_id");
+  const reason = requiredString(formData, "reason");
   const service = await requireAdmin();
+
+  const { error: messageError } = await service.from("messages").insert({
+    task_id: taskId,
+    sender_role: "admin",
+    sender_name: "Taskovo",
+    body: `Objednávka byla zrušena administrátorem. Důvod: ${reason}`,
+  });
+  if (messageError) throw new Error(messageError.message);
+
   const { error } = await service.from("tasks").update({ status: "cancelled" }).eq("id", taskId);
   if (error) throw new Error(error.message);
 
   revalidateAdminViews(taskId);
-  redirect("/admin");
+  redirect("/admin?updated=task_cancelled");
 }
 
 export async function reopenAdminTask(formData: FormData) {
