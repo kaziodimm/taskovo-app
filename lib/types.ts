@@ -51,6 +51,16 @@ export type TaskAttachment = {
   created_at: string;
 };
 
+export type TaskMessage = {
+  id: string;
+  task_id: string;
+  sender_auth_user_id?: string | null;
+  sender_role: "client" | "tasker" | "admin" | string;
+  sender_name: string;
+  body: string;
+  created_at: string;
+};
+
 export type TaskerProfile = {
   id: string;
   auth_user_id?: string | null;
