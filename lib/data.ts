@@ -1,7 +1,7 @@
 import { unstable_noStore as noStore } from "next/cache";
 import { demoOffers, demoTaskers, demoTasks } from "./demo-data";
 import { createServiceSupabaseClient, hasSupabaseEnv } from "./supabase";
-import type { ClientProfile, Offer, Task, TaskAttachment, TaskerProfile } from "./types";
+import type { ClientProfile, Offer, Task, TaskAttachment, TaskerProfile, TaskMessage } from "./types";
 
 const visibleStatuses = ["open", "offers_received", "assigned", "in_progress", "awaiting_confirmation", "completed"];
 const taskerVisibleStatuses = ["open", "offers_received"];
@@ -149,6 +149,22 @@ export async function getTaskAttachments(taskId: string): Promise<TaskAttachment
   }
 
   return data as TaskAttachment[];
+}
+
+export async function getTaskMessages(taskId: string): Promise<TaskMessage[]> {
+  noStore();
+
+  if (!hasSupabaseEnv() || !process.env.SUPABASE_SERVICE_ROLE_KEY) return [];
+
+  const supabase = createServiceSupabaseClient();
+  const { data, error } = await supabase.from("messages").select("*").eq("task_id", taskId).order("created_at", { ascending: true });
+
+  if (error) {
+    console.error(error);
+    return [];
+  }
+
+  return data as TaskMessage[];
 }
 
 export async function getTaskers(): Promise<TaskerProfile[]> {
