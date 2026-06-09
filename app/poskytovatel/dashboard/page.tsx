@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { logoutAccount } from "@/app/actions";
 import { updateTaskerOwnProfile } from "@/app/profile-actions";
+import { withdrawTaskerOffer } from "@/app/tasker-offer-actions";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import { TaskCard } from "@/components/TaskCard";
@@ -14,6 +15,12 @@ const statusLabels: Record<string, string> = {
   in_progress: "Probíhá",
   awaiting_confirmation: "Čeká na klienta",
   completed: "Hotovo",
+};
+
+const offerStatusLabels: Record<string, string> = {
+  pending: "Čeká na klienta",
+  accepted: "Vybráno klientem",
+  declined: "Odmítnuto",
 };
 
 const nextStepCopy: Record<string, string> = {
@@ -130,7 +137,25 @@ export default async function ProviderDashboardPage() {
 
         <section className="section">
           <div className="section-title"><p className="kicker">Moje nabídky</p><h2>Odeslané nabídky</h2></div>
-          {myOffers.length > 0 ? <div className="admin-list">{myOffers.map((offer) => <article className="admin-item" key={offer.id}><strong>{offer.price_czk.toLocaleString("cs-CZ")} Kč</strong><p>{offer.message} · stav: {offer.status}</p><a className="button secondary" href={`/ukol/${offer.task_id}`}>Detail objednávky</a></article>)}</div> : <div className="dashboard-panel"><h3>Zatím bez nabídek</h3><p>Vyberte úkol výše a pošlete první nabídku.</p></div>}
+          {myOffers.length > 0 ? (
+            <div className="admin-list">
+              {myOffers.map((offer) => (
+                <article className="admin-item" key={offer.id}>
+                  <strong>{offer.price_czk.toLocaleString("cs-CZ")} Kč</strong>
+                  <p>{offer.message} · stav: {offerStatusLabels[offer.status] ?? offer.status}</p>
+                  <div className="hero-actions">
+                    <a className="button secondary" href={`/ukol/${offer.task_id}`}>Detail objednávky</a>
+                    {offer.status === "pending" ? (
+                      <form action={withdrawTaskerOffer}>
+                        <input type="hidden" name="offer_id" value={offer.id} />
+                        <button className="button secondary" type="submit">Stáhnout nabídku</button>
+                      </form>
+                    ) : null}
+                  </div>
+                </article>
+              ))}
+            </div>
+          ) : <div className="dashboard-panel"><h3>Zatím bez nabídek</h3><p>Vyberte úkol výše a pošlete první nabídku.</p></div>}
         </section>
       </main>
       <Footer />
