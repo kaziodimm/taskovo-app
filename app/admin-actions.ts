@@ -46,6 +46,16 @@ function revalidateAdminViews(taskId?: string) {
   }
 }
 
+function revalidateProfileViews(profileId: string, role: "client" | "tasker") {
+  revalidatePath("/admin");
+  revalidatePath("/profil/foto");
+  revalidatePath("/dashboard");
+  revalidatePath("/poskytovatel/dashboard");
+  revalidatePath("/poskytovatele");
+  revalidatePath(role === "tasker" ? `/admin/taskers/${profileId}` : `/admin/clients/${profileId}`);
+  if (role === "tasker") revalidatePath(`/poskytovatel/${profileId}`);
+}
+
 export async function updateAdminClientProfile(formData: FormData) {
   const clientId = requiredString(formData, "client_id");
   const service = await requireAdmin();
@@ -91,6 +101,54 @@ export async function updateAdminTaskerProfile(formData: FormData) {
   revalidateAdminViews();
   revalidatePath(`/admin/taskers/${taskerId}`);
   redirect(`/admin/taskers/${taskerId}`);
+}
+
+export async function approveProfilePhoto(formData: FormData) {
+  const profileId = requiredString(formData, "profile_id");
+  const role = requiredString(formData, "role") === "tasker" ? "tasker" : "client";
+  const table = role === "tasker" ? "tasker_profiles" : "client_profiles";
+  const detailPath = role === "tasker" ? `/admin/taskers/${profileId}` : `/admin/clients/${profileId}`;
+  const service = await requireAdmin();
+
+  const { data: profile, error: profileError } = await service.from(table).select("pending_avatar_url").eq("id", profileId).maybeSingle();
+  if (profileError) throw new Error(profileError.message);
+  if (!profile?.pending_avatar_url) redirect(`${detailPath}?error=no_pending_photo`);
+
+  const { error } = await service
+    .from(table)
+    .update({
+      avatar_url: profile.pending_avatar_url,
+      pending_avatar_url: null,
+      avatar_review_status: "approved",
+      avatar_review_note: null,
+    })
+    .eq("id", profileId);
+  if (error) throw new Error(error.message);
+
+  revalidateProfileViews(profileId, role);
+  redirect(`${detailPath}?updated=photo_approved`);
+}
+
+export async function rejectProfilePhoto(formData: FormData) {
+  const profileId = requiredString(formData, "profile_id");
+  const role = requiredString(formData, "role") === "tasker" ? "tasker" : "client";
+  const reason = optionalString(formData, "reason") || "Fotka nebyla schválena administrátorem.";
+  const table = role === "tasker" ? "tasker_profiles" : "client_profiles";
+  const detailPath = role === "tasker" ? `/admin/taskers/${profileId}` : `/admin/clients/${profileId}`;
+  const service = await requireAdmin();
+
+  const { error } = await service
+    .from(table)
+    .update({
+      pending_avatar_url: null,
+      avatar_review_status: "rejected",
+      avatar_review_note: reason,
+    })
+    .eq("id", profileId);
+  if (error) throw new Error(error.message);
+
+  revalidateProfileViews(profileId, role);
+  redirect(`${detailPath}?updated=photo_rejected`);
 }
 
 export async function updateAdminTaskStatus(formData: FormData) {
