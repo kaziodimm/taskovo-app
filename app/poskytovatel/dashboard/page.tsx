@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { logoutAccount } from "@/app/actions";
+import { updateTaskerOwnProfile } from "@/app/profile-actions";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import { TaskCard } from "@/components/TaskCard";
@@ -67,6 +68,24 @@ export default async function ProviderDashboardPage() {
           <article className="dashboard-panel"><h3>Čeká na vás</h3><p>{actionTasks.length ? `${actionTasks.length} zakázka potřebuje další krok.` : "Momentálně není potřeba žádná akce."}</p></article>
           <article className="dashboard-panel"><h3>Nové zprávy</h3><p>{unreadTotal ? `${unreadTotal} nových zpráv v aktivních zakázkách.` : "Žádné nové zprávy."}</p></article>
         </div>
+
+        <section className="section admin-panel">
+          <div className="section-title">
+            <p className="kicker">Profil taskera</p>
+            <h2>Pracovní údaje</h2>
+            <p>Tyto informace vidí klienti v marketplace a v nabídkách. Ověření profilu nastavuje pouze administrátor.</p>
+          </div>
+          <form className="compact-form" action={updateTaskerOwnProfile}>
+            <label>Jméno<input name="name" type="text" defaultValue={profile?.name || user.user_metadata?.name || ""} required /></label>
+            <label>Přihlašovací email<input type="email" defaultValue={user.email || ""} disabled /></label>
+            <label>Město<input name="city" type="text" defaultValue={profile?.city || ""} required /></label>
+            <label>Kategorie<input name="categories" type="text" defaultValue={profile?.categories || ""} placeholder="Úklid, stěhování, montáž..." required /></label>
+            <label>Kontakt pro klienty<input name="contact" type="text" defaultValue={profile?.contact || user.email || ""} /></label>
+            <label>Stav ověření<input type="text" defaultValue={profile?.verified ? "Ověřený tasker" : "Čeká na ověření"} disabled /></label>
+            <label className="span-full">Bio<textarea name="bio" rows={4} defaultValue={profile?.bio || ""} placeholder="Krátce popište zkušenosti, dostupnost a typické služby." /></label>
+            <button className="button primary span-full" type="submit">Uložit profil taskera</button>
+          </form>
+        </section>
 
         <section className="section">
           <div className="section-heading-row">
