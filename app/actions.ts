@@ -30,6 +30,15 @@ function authRedirect(role: string | undefined) {
   redirect("/dashboard");
 }
 
+function revalidateTaskViews(taskId: string) {
+  revalidatePath("/");
+  revalidatePath("/tasks");
+  revalidatePath("/dashboard");
+  revalidatePath("/poskytovatel/dashboard");
+  revalidatePath(`/ukol/${taskId}`);
+  revalidatePath("/admin");
+}
+
 function fileExtension(file: File) {
   const extension = file.name.split(".").pop()?.toLowerCase().replace(/[^a-z0-9]/g, "");
   if (extension) return extension;
@@ -206,11 +215,7 @@ export async function createOffer(formData: FormData) {
   if (error) throw new Error(error.message);
 
   await service.from("tasks").update({ status: "offers_received" }).eq("id", taskId);
-  revalidatePath("/");
-  revalidatePath("/tasks");
-  revalidatePath("/dashboard");
-  revalidatePath("/poskytovatel/dashboard");
-  revalidatePath(`/ukol/${taskId}`);
+  revalidateTaskViews(taskId);
   redirect(user?.user_metadata?.role === "tasker" ? "/poskytovatel/dashboard" : "/tasks");
 }
 
@@ -290,13 +295,77 @@ export async function acceptOffer(formData: FormData) {
   }).eq("id", taskId);
   if (taskUpdateError) throw new Error(taskUpdateError.message);
 
-  revalidatePath("/");
-  revalidatePath("/tasks");
-  revalidatePath("/dashboard");
-  revalidatePath("/poskytovatel/dashboard");
-  revalidatePath(`/ukol/${taskId}`);
-  revalidatePath("/admin");
+  revalidateTaskViews(taskId);
   redirect("/dashboard");
+}
+
+export async function startTaskWork(formData: FormData) {
+  if (!hasSupabaseEnv() || !process.env.SUPABASE_SERVICE_ROLE_KEY) redirect("/poskytovatel/dashboard?error=config");
+
+  const taskId = requiredString(formData, "task_id");
+  const authSupabase = await createServerSupabaseClient();
+  const { data: { user } } = await authSupabase.auth.getUser();
+
+  if (!user) redirect("/prihlaseni?error=login_required");
+  if (user.user_metadata?.role !== "tasker") redirect("/dashboard");
+
+  const service = createServiceSupabaseClient();
+  const { data: task, error: taskError } = await service.from("tasks").select("id,status,assigned_tasker_auth_user_id").eq("id", taskId).maybeSingle();
+  if (taskError) throw new Error(taskError.message);
+  if (!task || task.assigned_tasker_auth_user_id !== user.id) redirect(`/ukol/${taskId}?error=forbidden`);
+  if (task.status !== "assigned") redirect(`/ukol/${taskId}?error=status`);
+
+  const { error } = await service.from("tasks").update({ status: "in_progress" }).eq("id", taskId);
+  if (error) throw new Error(error.message);
+
+  revalidateTaskViews(taskId);
+  redirect(`/ukol/${taskId}`);
+}
+
+export async function requestTaskCompletion(formData: FormData) {
+  if (!hasSupabaseEnv() || !process.env.SUPABASE_SERVICE_ROLE_KEY) redirect("/poskytovatel/dashboard?error=config");
+
+  const taskId = requiredString(formData, "task_id");
+  const authSupabase = await createServerSupabaseClient();
+  const { data: { user } } = await authSupabase.auth.getUser();
+
+  if (!user) redirect("/prihlaseni?error=login_required");
+  if (user.user_metadata?.role !== "tasker") redirect("/dashboard");
+
+  const service = createServiceSupabaseClient();
+  const { data: task, error: taskError } = await service.from("tasks").select("id,status,assigned_tasker_auth_user_id").eq("id", taskId).maybeSingle();
+  if (taskError) throw new Error(taskError.message);
+  if (!task || task.assigned_tasker_auth_user_id !== user.id) redirect(`/ukol/${taskId}?error=forbidden`);
+  if (task.status !== "in_progress") redirect(`/ukol/${taskId}?error=status`);
+
+  const { error } = await service.from("tasks").update({ status: "awaiting_confirmation" }).eq("id", taskId);
+  if (error) throw new Error(error.message);
+
+  revalidateTaskViews(taskId);
+  redirect(`/ukol/${taskId}`);
+}
+
+export async function confirmTaskCompletion(formData: FormData) {
+  if (!hasSupabaseEnv() || !process.env.SUPABASE_SERVICE_ROLE_KEY) redirect("/dashboard?error=config");
+
+  const taskId = requiredString(formData, "task_id");
+  const authSupabase = await createServerSupabaseClient();
+  const { data: { user } } = await authSupabase.auth.getUser();
+
+  if (!user) redirect("/prihlaseni?error=login_required");
+  if (user.user_metadata?.role === "tasker") redirect("/poskytovatel/dashboard");
+
+  const service = createServiceSupabaseClient();
+  const { data: task, error: taskError } = await service.from("tasks").select("id,status,client_auth_user_id").eq("id", taskId).maybeSingle();
+  if (taskError) throw new Error(taskError.message);
+  if (!task || task.client_auth_user_id !== user.id) redirect(`/ukol/${taskId}?error=forbidden`);
+  if (task.status !== "awaiting_confirmation") redirect(`/ukol/${taskId}?error=status`);
+
+  const { error } = await service.from("tasks").update({ status: "completed" }).eq("id", taskId);
+  if (error) throw new Error(error.message);
+
+  revalidateTaskViews(taskId);
+  redirect(`/ukol/${taskId}`);
 }
 
 export async function createTaskerProfile(formData: FormData) {
