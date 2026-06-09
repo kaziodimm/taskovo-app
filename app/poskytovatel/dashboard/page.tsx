@@ -3,8 +3,9 @@ import { logoutAccount } from "@/app/actions";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import { TaskCard } from "@/components/TaskCard";
-import { getAssignedTasksForTasker, getOffers, getOffersForTasker, getOpenTasksForTaskers, getTaskerProfileForUser } from "@/lib/data";
+import { getAssignedTasksForTasker, getOffers, getOffersForTasker, getOpenTasksForTaskers, getTaskerProfileForUser, getTaskMessageCounts } from "@/lib/data";
 import { createServerSupabaseClient } from "@/lib/supabase";
+import type { Task } from "@/lib/types";
 
 const statusLabels: Record<string, string> = {
   assigned: "Tasker vybrán",
@@ -12,6 +13,17 @@ const statusLabels: Record<string, string> = {
   awaiting_confirmation: "Čeká na klienta",
   completed: "Hotovo",
 };
+
+const nextStepCopy: Record<string, string> = {
+  assigned: "Začněte práci, až máte s klientem domluvené detaily.",
+  in_progress: "Po dokončení označte práci jako hotovou.",
+  awaiting_confirmation: "Čeká se na potvrzení klienta.",
+  completed: "Objednávka je dokončená.",
+};
+
+function needsTaskerAction(task: Task) {
+  return task.status === "assigned" || task.status === "in_progress";
+}
 
 export default async function ProviderDashboardPage() {
   const supabase = await createServerSupabaseClient();
@@ -27,9 +39,13 @@ export default async function ProviderDashboardPage() {
     getOffersForTasker(user.id),
     getAssignedTasksForTasker(user.id),
   ]);
+  const messageCounts = await getTaskMessageCounts(assignedTasks.map((task) => task.id));
 
   const myOfferTaskIds = new Set(myOffers.map((offer) => offer.task_id));
   const availableTasks = openTasks.filter((task) => !myOfferTaskIds.has(task.id));
+  const actionTasks = assignedTasks.filter(needsTaskerAction);
+  const waitingTasks = assignedTasks.filter((task) => task.status === "awaiting_confirmation");
+  const messageTotal = Object.values(messageCounts).reduce((total, count) => total + count, 0);
 
   return (
     <>
@@ -47,8 +63,8 @@ export default async function ProviderDashboardPage() {
 
         <div className="dashboard-grid">
           <article className="dashboard-panel"><h3>Můj profil</h3><p>{profile?.categories || "Doplňte kategorie služeb v profilu taskera."}</p></article>
-          <article className="dashboard-panel"><h3>Město</h3><p>{profile?.city || "Město zatím není uvedeno."}</p></article>
-          <article className="dashboard-panel"><h3>Kontakt</h3><p>{profile?.contact || user.email}</p></article>
+          <article className="dashboard-panel"><h3>Čeká na vás</h3><p>{actionTasks.length ? `${actionTasks.length} zakázka potřebuje další krok.` : "Momentálně není potřeba žádná akce."}</p></article>
+          <article className="dashboard-panel"><h3>Zprávy</h3><p>{messageTotal ? `${messageTotal} zpráv v aktivních zakázkách.` : "Zprávy se objeví po výběru vaší nabídky."}</p></article>
         </div>
 
         <section className="section">
@@ -61,12 +77,28 @@ export default async function ProviderDashboardPage() {
                 <article className="admin-item" key={task.id}>
                   <strong>{task.title}</strong>
                   <p>{task.city} · {task.desired_time} · stav: {statusLabels[task.status] ?? task.status}</p>
+                  <p>{nextStepCopy[task.status] ?? "Otevřete detail objednávky."} · {messageCounts[task.id] || 0} zpráv</p>
                   <a className="button secondary" href={`/ukol/${task.id}`}>Otevřít objednávku</a>
                 </article>
               ))}
             </div>
           ) : <div className="dashboard-panel"><h3>Zatím žádná aktivní zakázka</h3><p>Až si klient vybere vaši nabídku, uvidíte ji v této sekci.</p></div>}
         </section>
+
+        {waitingTasks.length ? (
+          <section className="section">
+            <div className="section-title"><p className="kicker">Potvrzení</p><h2>Čeká se na klienta</h2></div>
+            <div className="admin-list">
+              {waitingTasks.map((task) => (
+                <article className="admin-item" key={task.id}>
+                  <strong>{task.title}</strong>
+                  <p>Práce je označená jako hotová. Klient teď potvrzuje dokončení.</p>
+                  <a className="button secondary" href={`/ukol/${task.id}`}>Otevřít objednávku</a>
+                </article>
+              ))}
+            </div>
+          </section>
+        ) : null}
 
         <section className="section">
           <div className="section-heading-row">
