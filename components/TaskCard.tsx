@@ -42,6 +42,7 @@ export function TaskCard({ task, offers, canSelectOffer = false, showOfferForm =
   const canChoose = canSelectOffer && ["open", "offers_received"].includes(task.status);
   const canEdit = canManageTask && ["open", "offers_received"].includes(task.status);
   const canCancel = canManageTask && !["completed", "cancelled"].includes(task.status);
+  const canSendOffer = showOfferForm && ["open", "offers_received"].includes(task.status);
 
   return (
     <article className="task-card">
@@ -109,7 +110,7 @@ export function TaskCard({ task, offers, canSelectOffer = false, showOfferForm =
         </ul>
         <p className="contact-note">Kontakt klienta se ukáže až po potvrzení vybraného taskera.</p>
       </details>
-      {showOfferForm ? (
+      {canSendOffer ? (
         <form className="offer-form" action={createOffer}>
           <input type="hidden" name="task_id" value={task.id} />
           <label>Jméno<input name="tasker_name" type="text" placeholder="Jen bez účtu" /></label>
