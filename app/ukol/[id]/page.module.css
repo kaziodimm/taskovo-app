@@ -98,6 +98,82 @@
   border-top: 1px solid var(--line);
 }
 
+.messageThread {
+  display: grid;
+  gap: 16px;
+}
+
+.messageList {
+  display: grid;
+  gap: 10px;
+  max-height: 520px;
+  overflow: auto;
+  padding-right: 4px;
+}
+
+.messageBubble {
+  display: grid;
+  gap: 8px;
+  width: min(100%, 680px);
+  padding: 14px;
+  background: #f7f9fb;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.ownMessage {
+  margin-left: auto;
+  background: #fff8e3;
+  border-color: #f4dc94;
+}
+
+.messageHeader {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.messageHeader strong {
+  color: var(--ink);
+}
+
+.messageHeader span {
+  color: var(--muted);
+  font-size: 0.86rem;
+  font-weight: 800;
+}
+
+.messageBubble p {
+  margin: 0;
+  color: var(--ink);
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+
+.messageForm {
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+
+.messageForm textarea {
+  min-height: 118px;
+  resize: vertical;
+}
+
+.messageActions {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.messageActions p {
+  margin: 0;
+}
+
 .orderSidebar {
   min-width: 0;
 }
@@ -194,5 +270,14 @@
 
   .attachmentGrid {
     grid-template-columns: 1fr;
+  }
+
+  .messageActions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .messageActions button {
+    width: 100%;
   }
 }
