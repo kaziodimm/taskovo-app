@@ -4,6 +4,7 @@ export type TaskStatus =
   | "offers_received"
   | "assigned"
   | "in_progress"
+  | "awaiting_confirmation"
   | "completed"
   | "cancelled"
   | "disputed";
