@@ -5,6 +5,7 @@ import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import { getAdminTasks, getClients, getOffers, getTaskMessageCounts, getTaskers } from "@/lib/data";
 import { isAdminAuthenticated } from "@/lib/admin-auth";
+import styles from "./page.module.css";
 
 const statusLabels: Record<string, string> = {
   pending_review: "Kontrola",
@@ -36,7 +37,7 @@ function money(value: number) {
 
 function taskCancelForm(taskId: string) {
   return (
-    <details className="admin-danger-box">
+    <details className={styles.dangerBox}>
       <summary>Zrušit objednávku</summary>
       <form className="compact-form" action={cancelAdminTask}>
         <input type="hidden" name="task_id" value={taskId} />
@@ -68,7 +69,7 @@ export default async function AdminPage() {
   return (
     <>
       <Header />
-      <main className="page-shell">
+      <main className={`page-shell ${styles.adminShell}`}>
         <section className="page-hero">
           <div>
             <p className="kicker">Admin</p>
@@ -83,27 +84,35 @@ export default async function AdminPage() {
           <button className="button secondary" type="submit">Odhlásit se</button>
         </form>
 
+        <nav className={styles.adminJumpNav} aria-label="Rychlá navigace administrace">
+          <a href="#orders">Objednávky</a>
+          <a href="#clients">Klienti</a>
+          <a href="#taskers">Taskeři</a>
+          <a href="#offers">Nabídky</a>
+          <a href="/tasks">Marketplace</a>
+        </nav>
+
         <div className="dashboard-grid">
           <article className="dashboard-panel"><h3>Otevřené</h3><p>{openTasks.length} objednávek čeká na nabídky nebo výběr taskera.</p></article>
           <article className="dashboard-panel"><h3>Aktivní</h3><p>{activeTasks.length} objednávek je přiřazených, probíhá nebo čeká na potvrzení.</p></article>
           <article className="dashboard-panel"><h3>Spory</h3><p>{disputedTasks.length} objednávek čeká na zásah administrátora.</p></article>
           <article className="dashboard-panel"><h3>Čeká na klienta</h3><p>{waitingClientTasks.length} objednávek čeká na potvrzení dokončení.</p></article>
           <article className="dashboard-panel"><h3>Dokončeno</h3><p>{completedTasks.length} objednávek je hotových.</p></article>
-          <article className="dashboard-panel"><h3>Taskeři</h3><p>{taskers.length} registrovaných taskerů · {clients.length} klientů.</p></article>
+          <article className="dashboard-panel"><h3>Účty</h3><p>{taskers.length} registrovaných taskerů · {clients.length} klientů.</p></article>
         </div>
 
-        <section className="section admin-panel">
+        <section id="orders" className={`section ${styles.sectionCard}`}>
           <div className="section-heading-row">
             <div className="section-title"><p className="kicker">Objednávky</p><h2>Kontrola zakázek</h2><p>Hlavní operativní seznam bez zrušených objednávek. Zrušené objednávky zůstávají jen v archivu kvůli historii.</p></div>
             <a className="button secondary" href="/tasks">Veřejný marketplace</a>
           </div>
-          <div className="admin-list">
+          <div className={styles.adminList}>
             {visibleTasks.map((task) => {
               const taskOffers = offersByTask.get(task.id) || [];
               const acceptedOffer = taskOffers.find((offer) => offer.id === task.accepted_offer_id || offer.status === "accepted");
 
               return (
-                <article className="admin-item" key={task.id}>
+                <article className={`admin-item ${styles.adminItem}`} key={task.id}>
                   <strong>{task.title}</strong>
                   <p>{task.city} · {task.desired_time} · {money(task.budget_czk)} Kč · {statusLabels[task.status] ?? task.status}</p>
                   <p>Klient: {task.client_name} · {task.client_contact || "kontakt není uveden"}</p>
@@ -131,11 +140,11 @@ export default async function AdminPage() {
         </section>
 
         <div className="admin-grid section">
-          <section className="admin-panel">
-            <h2>Klienti</h2>
-            <div className="admin-list">
+          <section id="clients" className={styles.sectionCard}>
+            <div className="section-title"><p className="kicker">Klienti</p><h2>Klientské účty</h2></div>
+            <div className={`${styles.adminList} ${styles.directoryList}`}>
               {clients.map((client) => (
-                <article className="admin-item" key={client.id}>
+                <article className={`admin-item ${styles.adminItem}`} key={client.id}>
                   <strong>{client.name}</strong>
                   <p>{client.email} · {client.phone || "bez telefonu"} · {client.city || "město neuvedeno"}</p>
                   <a className="button secondary" href={`/admin/clients/${client.id}`}>Detail klienta</a>
@@ -143,11 +152,11 @@ export default async function AdminPage() {
               ))}
             </div>
           </section>
-          <section className="admin-panel">
-            <h2>Taskeři</h2>
-            <div className="admin-list admin-compact-list">
+          <section id="taskers" className={styles.sectionCard}>
+            <div className="section-title"><p className="kicker">Taskeři</p><h2>Profily taskerů</h2></div>
+            <div className={`${styles.adminList} ${styles.directoryList}`}>
               {taskers.map((tasker) => (
-                <article className="admin-item" key={tasker.id}>
+                <article className={`admin-item ${styles.adminItem}`} key={tasker.id}>
                   <strong>{tasker.name}</strong>
                   <p>{tasker.city} · {tasker.categories} · {tasker.verified ? "ověřen" : "čeká na ověření"}</p>
                   <p>{tasker.email || "email neuveden"} · {tasker.contact || "kontakt neuveden"}</p>
@@ -163,11 +172,11 @@ export default async function AdminPage() {
               ))}
             </div>
           </section>
-          <section className="admin-panel">
-            <h2>Nabídky</h2>
-            <div className="admin-list">
+          <section id="offers" className={styles.sectionCard}>
+            <div className="section-title"><p className="kicker">Nabídky</p><h2>Nabídky taskerů</h2></div>
+            <div className={styles.adminList}>
               {offers.map((offer) => (
-                <article className="admin-item" key={offer.id}>
+                <article className={`admin-item ${styles.adminItem}`} key={offer.id}>
                   <strong>{offer.tasker_name}</strong>
                   <p>{money(offer.price_czk)} Kč · {offer.status} · {offer.message}</p>
                   <div className="hero-actions">
