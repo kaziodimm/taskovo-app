@@ -134,6 +134,26 @@
   text-align: right;
 }
 
+.workflowBox {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  background: #fff8e3;
+  border: 1px solid #f4dc94;
+  border-radius: 8px;
+}
+
+.workflowBox p {
+  margin: 0;
+  color: #5f4a16;
+  font-weight: 800;
+}
+
+.workflowBox form,
+.workflowBox button {
+  width: 100%;
+}
+
 .selectedTaskerBox {
   display: grid;
   gap: 8px;
