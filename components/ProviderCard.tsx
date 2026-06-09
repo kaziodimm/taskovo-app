@@ -1,5 +1,11 @@
 import type { FeaturedProvider } from "@/lib/marketplace-data";
 
+const verifiedBadgeStyle = {
+  color: "#0d1b2a",
+  background: "linear-gradient(135deg, #f5c542 0%, #ff6b35 100%)",
+  boxShadow: "0 8px 20px rgba(255, 107, 53, 0.22)",
+} as const;
+
 export function ProviderCard({ provider }: { provider: FeaturedProvider }) {
   return (
     <article className="provider-card">
@@ -9,7 +15,7 @@ export function ProviderCard({ provider }: { provider: FeaturedProvider }) {
           <h3>{provider.name}</h3>
           <p>{provider.city} · {provider.responseTime}</p>
         </div>
-        {provider.verified ? <span className="verified-badge">Ověřeno</span> : null}
+        {provider.verified ? <span className="verified-badge" style={verifiedBadgeStyle}>✓ Ověřeno</span> : null}
       </div>
       <p>{provider.bio}</p>
       <div className="provider-metrics">
