@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { adminLogout } from "@/app/actions";
+import { logoutAccount } from "@/app/actions";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import { getClients, getOffers, getTaskMessageCounts, getTaskers, getTasks } from "@/lib/data";
@@ -22,7 +22,7 @@ function money(value: number) {
 
 export default async function AdminPage() {
   if (!(await isAdminAuthenticated())) {
-    redirect("/admin/prihlaseni");
+    redirect("/prihlaseni?mode=login&error=login_required");
   }
 
   const [tasks, offers, taskers, clients] = await Promise.all([getTasks(), getOffers(), getTaskers(), getClients()]);
@@ -48,8 +48,8 @@ export default async function AdminPage() {
           <div className="page-hero-card"><strong>{tasks.length}</strong><p>objednávek · {activeTasks.length} aktivních</p></div>
         </section>
 
-        <form action={adminLogout} className="admin-toolbar">
-          <span>Přihlášený správce</span>
+        <form action={logoutAccount} className="admin-toolbar">
+          <span>Přihlášený účet správce</span>
           <button className="button secondary" type="submit">Odhlásit se</button>
         </form>
 
