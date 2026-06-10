@@ -1,0 +1,57 @@
+.card {
+  grid-template-rows: auto minmax(48px, auto) auto auto auto;
+  min-height: 360px;
+}
+
+.header {
+  min-height: 62px;
+}
+
+.titleBlock {
+  min-width: 0;
+}
+
+.titleBlock h3 {
+  display: -webkit-box;
+  min-height: 2.6em;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.status {
+  flex: 0 0 auto;
+}
+
+.description {
+  display: -webkit-box;
+  min-height: 48px;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.meta {
+  min-height: 34px;
+  max-height: 74px;
+  overflow: hidden;
+}
+
+.price {
+  min-height: 92px;
+}
+
+.detailAction {
+  align-self: end;
+}
+
+@media (max-width: 640px) {
+  .card {
+    min-height: auto;
+  }
+
+  .titleBlock h3,
+  .description {
+    min-height: auto;
+  }
+}
