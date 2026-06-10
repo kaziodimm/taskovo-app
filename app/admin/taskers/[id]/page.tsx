@@ -1,5 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import { toggleTaskerVerification, updateAdminTaskerProfile } from "@/app/admin-actions";
+import detailListStyles from "@/components/AdminDetailList.module.css";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import { ProfilePhotoModeration } from "@/components/ProfilePhotoModeration";
@@ -99,30 +100,32 @@ export default async function AdminTaskerDetailPage({ params }: { params: Promis
 
         <section className="section admin-panel">
           <div className="section-title"><p className="kicker">Zakázky</p><h2>Přiřazené práce</h2></div>
-          <div className="admin-list">
+          <div className={detailListStyles.list}>
             {assignedTasks.length ? assignedTasks.map((task) => (
-              <article className="admin-item" key={task.id}>
-                <strong>{task.title}</strong>
-                <p>{task.city} · {task.desired_time} · {money(task.budget_czk)} Kč · {statusLabels[task.status] ?? task.status}</p>
-                <div className="hero-actions">
+              <article className={detailListStyles.item} key={task.id}>
+                <strong className={detailListStyles.title}>{task.title}</strong>
+                <p className={detailListStyles.text}>{task.city} · {task.desired_time} · {money(task.budget_czk)} Kč · {statusLabels[task.status] ?? task.status}</p>
+                <div className={detailListStyles.actions}>
                   <a className="button primary" href={`/admin/tasks/${task.id}`}>Řídit objednávku</a>
                   <a className="button secondary" href={`/ukol/${task.id}`}>Veřejný detail</a>
                 </div>
               </article>
-            )) : <article className="admin-item"><strong>Bez přiřazených prací</strong><p>Tasker zatím nemá vybranou zakázku.</p></article>}
+            )) : <article className={`${detailListStyles.item} ${detailListStyles.empty}`}><strong className={detailListStyles.title}>Bez přiřazených prací</strong><p className={detailListStyles.text}>Tasker zatím nemá vybranou zakázku.</p></article>}
           </div>
         </section>
 
         <section className="section admin-panel">
           <div className="section-title"><p className="kicker">Nabídky</p><h2>Historie nabídek</h2></div>
-          <div className="admin-list">
+          <div className={detailListStyles.list}>
             {offers.length ? offers.map((offer) => (
-              <article className="admin-item" key={offer.id}>
-                <strong>{money(offer.price_czk)} Kč · {offer.status}</strong>
-                <p>{offer.message}</p>
-                <a className="button secondary" href={`/admin/tasks/${offer.task_id}`}>Objednávka</a>
+              <article className={detailListStyles.item} key={offer.id}>
+                <strong className={detailListStyles.title}>{money(offer.price_czk)} Kč · {offer.status}</strong>
+                <p className={detailListStyles.text}>{offer.message}</p>
+                <div className={detailListStyles.actions}>
+                  <a className="button secondary" href={`/admin/tasks/${offer.task_id}`}>Objednávka</a>
+                </div>
               </article>
-            )) : <article className="admin-item"><strong>Bez nabídek</strong><p>Tasker zatím neposlal žádnou nabídku z účtu.</p></article>}
+            )) : <article className={`${detailListStyles.item} ${detailListStyles.empty}`}><strong className={detailListStyles.title}>Bez nabídek</strong><p className={detailListStyles.text}>Tasker zatím neposlal žádnou nabídku z účtu.</p></article>}
           </div>
         </section>
 
