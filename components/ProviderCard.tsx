@@ -1,4 +1,5 @@
 import type { FeaturedProvider } from "@/lib/marketplace-data";
+import styles from "./ProviderCard.module.css";
 
 const verifiedBadgeStyle = {
   color: "#0d1b2a",
@@ -12,29 +13,29 @@ function initials(name: string) {
 
 export function ProviderCard({ provider }: { provider: FeaturedProvider }) {
   return (
-    <article className="provider-card">
-      <div className="provider-top">
+    <article className={`provider-card ${styles.card}`}>
+      <div className={`provider-top ${styles.top}`}>
         {provider.avatarUrl ? (
-          <img className="avatar" src={provider.avatarUrl} alt={`Profilové foto ${provider.name}`} />
+          <img className={`avatar ${styles.avatarImage}`} src={provider.avatarUrl} alt={`Profilové foto ${provider.name}`} />
         ) : (
-          <div className="avatar" aria-hidden="true">{initials(provider.name)}</div>
+          <div className={`avatar ${styles.avatarImage}`} aria-hidden="true">{initials(provider.name)}</div>
         )}
-        <div>
+        <div className={styles.identity}>
           <h3>{provider.name}</h3>
           <p>{provider.city} · {provider.responseTime}</p>
         </div>
-        {provider.verified ? <span className="verified-badge" style={verifiedBadgeStyle}>✓ Ověřeno</span> : null}
+        {provider.verified ? <span className={`verified-badge ${styles.badge}`} style={verifiedBadgeStyle}>✓ Ověřeno</span> : null}
       </div>
-      <p>{provider.bio}</p>
-      <div className="provider-metrics">
+      <p className={styles.bio}>{provider.bio}</p>
+      <div className={`provider-metrics ${styles.metrics}`}>
         <span><strong>{provider.rating.toFixed(1)}</strong> hodnocení</span>
         <span><strong>{provider.completedTasks}</strong> úkolů</span>
         <span><strong>{provider.priceFrom}</strong> od</span>
       </div>
-      <div className="chip-row">
+      <div className={`chip-row ${styles.chips}`}>
         {provider.categories.map((category) => <span key={category}>{category}</span>)}
       </div>
-      <a className="button secondary" href={`/poskytovatel/${provider.id}`}>Zobrazit profil</a>
+      <a className={`button secondary ${styles.action}`} href={`/poskytovatel/${provider.id}`}>Zobrazit profil</a>
     </article>
   );
 }
