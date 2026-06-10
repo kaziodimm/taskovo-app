@@ -16,18 +16,12 @@ type TaskSearchParams = {
   sort?: string;
 };
 
+const availableTaskStatuses = new Set(["open", "offers_received"]);
+
 const statusOptions = [
   { value: "open", label: "Otevřené" },
   { value: "offers_received", label: "S nabídkami" },
-  { value: "assigned", label: "Přiřazené" },
-  { value: "in_progress", label: "Probíhá" },
-  { value: "awaiting_confirmation", label: "Čeká na potvrzení" },
-  { value: "completed", label: "Hotové" },
 ];
-
-function selected(value: string | undefined, option: string) {
-  return value === option;
-}
 
 function includesText(value: string | null | undefined, query: string | undefined) {
   if (!query) return true;
@@ -59,8 +53,9 @@ function filterTasks(tasks: Task[], params: TaskSearchParams) {
 export default async function TasksPage({ searchParams }: { searchParams: Promise<TaskSearchParams> }) {
   const params = await searchParams;
   const [tasks, offers] = await Promise.all([getTasks(), getOffers()]);
-  const filteredTasks = filterTasks(tasks, params);
-  const cities = Array.from(new Set(tasks.map((task) => task.city).filter(Boolean))).sort((a, b) => a.localeCompare(b, "cs-CZ"));
+  const availableTasks = tasks.filter((task) => availableTaskStatuses.has(task.status));
+  const filteredTasks = filterTasks(availableTasks, params);
+  const cities = Array.from(new Set(availableTasks.map((task) => task.city).filter(Boolean))).sort((a, b) => a.localeCompare(b, "cs-CZ"));
 
   return (
     <>
@@ -68,8 +63,8 @@ export default async function TasksPage({ searchParams }: { searchParams: Promis
       <main className="page-shell">
         <section className="section-title">
           <p className="kicker">Marketplace</p>
-          <h1 className="page-title">Aktuální úkoly</h1>
-          <p>Filtrovaný přehled úkolů pro taskery. Vyberte město, kategorii, rozpočet, stav a termín.</p>
+          <h1 className="page-title">Dostupné úkoly</h1>
+          <p>Filtrovaný přehled zakázek, na které může tasker poslat nabídku. Vyberte město, kategorii, rozpočet, stav a termín.</p>
         </section>
 
         <section className={styles.marketLayout}>
@@ -112,7 +107,7 @@ export default async function TasksPage({ searchParams }: { searchParams: Promis
               <div className={styles.filterFields}>
                 <label>Stav
                   <select name="status" defaultValue={params.status || ""}>
-                    <option value="">Všechny stavy</option>
+                    <option value="">Všechny dostupné</option>
                     {statusOptions.map((status) => <option key={status.value} value={status.value}>{status.label}</option>)}
                   </select>
                 </label>
@@ -140,8 +135,8 @@ export default async function TasksPage({ searchParams }: { searchParams: Promis
 
           <div>
             <div className={styles.resultsHeader}>
-              <h2>{filteredTasks.length} úkolů</h2>
-              <span className="pill">{tasks.length} celkem</span>
+              <h2>{filteredTasks.length} dostupných úkolů</h2>
+              <span className="pill">{availableTasks.length} dostupných celkem</span>
             </div>
             {filteredTasks.length ? (
               <div className="task-grid">
@@ -151,8 +146,8 @@ export default async function TasksPage({ searchParams }: { searchParams: Promis
               </div>
             ) : (
               <div className={styles.emptyResults}>
-                <h3>Žádné úkoly podle filtrů</h3>
-                <p>Zkuste rozšířit město, cenu nebo stav. U pilotní verze bude počet úkolů růst postupně.</p>
+                <h3>Žádné dostupné úkoly podle filtrů</h3>
+                <p>Zkuste rozšířit město, cenu nebo termín. U pilotní verze bude počet dostupných zakázek růst postupně.</p>
               </div>
             )}
           </div>
