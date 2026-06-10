@@ -1,5 +1,20 @@
+import type { Metadata } from "next";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
+
+export const metadata: Metadata = {
+  title: "Jak Taskovo funguje | Marketplace sluzeb",
+  description:
+    "Jak Taskovo propojuje klienty a nezavisle taskery: zadani ukolu, nabidky, vyber taskera, recenze, bezpecnost a budouci platby.",
+  alternates: { canonical: "/jak-to-funguje" },
+  openGraph: {
+    title: "Jak Taskovo funguje",
+    description: "Prehledny postup pro klienty i taskery v ceskem marketplace lokalnich sluzeb.",
+    url: "https://taskovo-app.vercel.app/jak-to-funguje",
+    siteName: "Taskovo",
+    type: "website",
+  },
+};
 
 const clientSteps = [
   ["01", "Zadáte úkol", "Popíšete, co potřebujete, kde, kdy a jaký máte rozpočet. Čím přesnější zadání, tím lepší nabídky dostanete."],
@@ -23,10 +38,24 @@ const platformRules = [
 ];
 
 export default function HowItWorksPage() {
+  const howToJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "HowTo",
+    name: "Jak zadat ukol pres Taskovo",
+    description: "Klient zada ukol, porovna nabidky, vybere taskera a po dokonceni prida recenzi.",
+    step: clientSteps.map(([, title, text], index) => ({
+      "@type": "HowToStep",
+      position: index + 1,
+      name: title,
+      text,
+    })),
+  };
+
   return (
     <>
       <Header />
       <main className="page-shell">
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(howToJsonLd) }} />
         <section className="page-hero">
           <div>
             <p className="kicker">Jak to funguje</p>
