@@ -27,7 +27,7 @@ export function TaskForm() {
         <label>Jméno<input name="client_name" type="text" placeholder="Vyplňte jen bez účtu" /></label>
         <label>Kontakt<input name="client_contact" type="text" placeholder="+420 ... / email" /></label>
         <label className="span-full">Fotky k úkolu<input name="image_files" type="file" accept="image/jpeg,image/png,image/webp,image/gif" multiple /></label>
-        <p className="fine-print span-full">Můžete přidat až 4 fotky, které se zobrazí jen na detailu objednávky. Přesnou adresu sdílejte až po výběru taskera.</p>
+        <p className="fine-print span-full">Můžete přidat až 4 fotky. Zobrazí se jen na detailu objednávky a pomohou taskerům lépe odhadnout práci.</p>
         <button className="button primary span-full" type="submit">Odeslat úkol</button>
         <p className="fine-print span-full">Pokud jste přihlášeni, úkol se uloží k vašemu účtu a kontakt se vezme z profilu. Bez účtu bude úkol veřejně dostupný pro nabídky taskerů.</p>
       </form>
