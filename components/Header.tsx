@@ -70,19 +70,21 @@ export async function Header() {
         <details style={navDetailsStyle}>
           <summary style={navSummaryStyle}>Jak to funguje</summary>
           <div style={navDropdownStyle}>
-            <a href="/#jak-to-funguje">Postup pro klienta</a>
-            <a href="/#pro-taskery">Pro taskery</a>
-            <a href="/#bezpecnost">Důvěra a bezpečnost</a>
-            <a href="/#faq">FAQ</a>
+            <a href="/jak-to-funguje">Postup platformy</a>
+            <a href="/pro-zakazniky">Pro zákazníky</a>
+            <a href="/pro-taskery">Pro taskery</a>
+            <a href="/platby">Platby</a>
+            <a href="/vyplaty">Výplaty</a>
           </div>
         </details>
-        <a href="/#pro-zakazniky">Pro zákazníky</a>
-        <a href="/#pro-taskery">Pro taskery</a>
+        <a href="/pro-zakazniky">Pro zákazníky</a>
+        <a href="/pro-taskery">Pro taskery</a>
         {user ? <a href={primaryMarketplaceHref}>{primaryMarketplaceLabel}</a> : <a href="/poskytovatele">Taskeři</a>}
         {role === "tasker" ? <a href="/poskytovatel/dashboard">Moje práce</a> : null}
         {user && role !== "tasker" && !isAdmin ? <a href="/dashboard">Moje objednávky</a> : null}
         {user ? <a href="/profil/foto">Foto profilu</a> : null}
         <a href="/bezpecnost">Bezpečnost</a>
+        <a href="/faq">FAQ</a>
       </nav>
       <div className="header-actions">
         {user ? (
