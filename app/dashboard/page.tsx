@@ -35,6 +35,10 @@ function needsClientAction(task: Task, offerCount: number) {
   return (task.status === "offers_received" && offerCount > 0) || task.status === "awaiting_confirmation";
 }
 
+function isArchivedTask(task: Task) {
+  return task.status === "completed" || task.status === "cancelled";
+}
+
 export default async function DashboardPage() {
   const supabase = await createServerSupabaseClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -48,8 +52,10 @@ export default async function DashboardPage() {
   const displayName = profile?.name || user.user_metadata?.name || user.email;
   const offersByTask = new Map<string, number>();
   offers.forEach((offer) => offersByTask.set(offer.task_id, (offersByTask.get(offer.task_id) || 0) + 1));
-  const actionTasks = tasks.filter((task) => needsClientAction(task, offersByTask.get(task.id) || 0));
-  const activeTasks = tasks.filter((task) => ["assigned", "in_progress", "awaiting_confirmation"].includes(task.status));
+  const currentTasks = tasks.filter((task) => !isArchivedTask(task));
+  const archivedTasks = tasks.filter(isArchivedTask);
+  const actionTasks = currentTasks.filter((task) => needsClientAction(task, offersByTask.get(task.id) || 0));
+  const activeTasks = currentTasks.filter((task) => ["assigned", "in_progress", "awaiting_confirmation"].includes(task.status));
   const unreadTotal = Object.values(unreadCounts).reduce((total, count) => total + count, 0);
   const photoStatus = profile?.avatar_review_status || "none";
 
@@ -61,9 +67,9 @@ export default async function DashboardPage() {
           <div>
             <p className="kicker">Klientský dashboard</p>
             <h1 className="page-title">Vítejte, {displayName}</h1>
-            <p className="hero-lead">Tady budou vaše úkoly, nabídky od taskerů a zprávy. Nové úkoly se už ukládají přímo k vašemu účtu.</p>
+            <p className="hero-lead">Tady jsou vaše úkoly, nabídky od taskerů a zprávy. Nové úkoly se ukládají přímo k vašemu účtu.</p>
           </div>
-          <div className="page-hero-card"><strong>{tasks.length}</strong><p>vašich úkolů · {actionTasks.length} čeká na vás</p></div>
+          <div className="page-hero-card"><strong>{currentTasks.length}</strong><p>aktuálních úkolů · {actionTasks.length} čeká na vás</p></div>
         </section>
         <form action={logoutAccount} className="admin-toolbar"><span>{user.email}</span><button className="button secondary" type="submit">Odhlásit se</button></form>
 
@@ -144,18 +150,32 @@ export default async function DashboardPage() {
           <div className="section-heading-row">
             <div className="section-title">
               <p className="kicker">Moje úkoly</p>
-              <h2>Poptávky navázané na váš účet</h2>
+              <h2>Aktuální poptávky</h2>
+              <p>Tyto objednávky jsou otevřené, čekají na nabídky, nebo právě probíhají.</p>
             </div>
             <a className="button secondary" href="/tasks">Veřejný marketplace</a>
           </div>
-          {tasks.length > 0 ? (
+          {currentTasks.length > 0 ? (
             <div className="task-grid">
-              {tasks.map((task) => <TaskCard key={task.id} task={task} offers={offers.filter((offer) => offer.task_id === task.id)} canSelectOffer showOfferForm={false} canManageTask />)}
+              {currentTasks.map((task) => <TaskCard key={task.id} task={task} offers={offers.filter((offer) => offer.task_id === task.id)} canSelectOffer showOfferForm={false} canManageTask />)}
             </div>
           ) : (
-            <div className="dashboard-panel"><h3>Zatím nemáte žádný úkol</h3><p>Vyplňte rychlé zadání výše. První úkol je nejlepší test celého toku.</p></div>
+            <div className="dashboard-panel"><h3>Zatím nemáte žádný aktuální úkol</h3><p>Vyplňte rychlé zadání výše. První úkol je nejlepší test celého toku.</p></div>
           )}
         </section>
+
+        {archivedTasks.length ? (
+          <section className="section">
+            <div className="section-title">
+              <p className="kicker">Archiv</p>
+              <h2>Dokončené a zrušené objednávky</h2>
+              <p>Archiv zůstává v dashboardu kvůli historii, ale neplete se mezi aktuální úkoly.</p>
+            </div>
+            <div className="task-grid">
+              {archivedTasks.map((task) => <TaskCard key={task.id} task={task} offers={offers.filter((offer) => offer.task_id === task.id)} showOfferForm={false} />)}
+            </div>
+          </section>
+        ) : null}
       </main>
       <Footer />
     </>
