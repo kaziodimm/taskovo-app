@@ -6,6 +6,7 @@ import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import { ProfilePhotoUploadForm } from "@/components/ProfilePhotoUploadForm";
 import { TaskCard } from "@/components/TaskCard";
+import dashboardListStyles from "@/components/DashboardList.module.css";
 import { getAssignedTasksForTasker, getOffers, getOffersForTasker, getOpenTasksForTaskers, getTaskerProfileForUser } from "@/lib/data";
 import { getUnreadTaskMessageCounts } from "@/lib/message-data";
 import { createServerSupabaseClient } from "@/lib/supabase";
@@ -132,13 +133,15 @@ export default async function ProviderDashboardPage() {
             <div className="section-title"><p className="kicker">Moje zakázky</p><h2>Aktivní práce</h2><p>Jakmile vás klient vybere, zakázka se objeví tady. Další kroky se řeší na detailu objednávky.</p></div>
           </div>
           {assignedTasks.length > 0 ? (
-            <div className="admin-list">
+            <div className={dashboardListStyles.compactList}>
               {assignedTasks.map((task) => (
-                <article className="admin-item" key={task.id}>
-                  <strong>{task.title}</strong>
-                  <p>{task.city} · {task.desired_time} · stav: {statusLabels[task.status] ?? task.status}</p>
-                  <p>{nextStepCopy[task.status] ?? "Otevřete detail objednávky."} · {unreadCounts[task.id] || 0} nových zpráv</p>
-                  <a className="button secondary" href={`/ukol/${task.id}`}>Otevřít objednávku</a>
+                <article className={dashboardListStyles.compactItem} key={task.id}>
+                  <strong className={dashboardListStyles.itemTitle}>{task.title}</strong>
+                  <p className={dashboardListStyles.itemText}>{task.city} · {task.desired_time} · stav: {statusLabels[task.status] ?? task.status}</p>
+                  <p className={dashboardListStyles.itemText}>{nextStepCopy[task.status] ?? "Otevřete detail objednávky."} · {unreadCounts[task.id] || 0} nových zpráv</p>
+                  <div className={dashboardListStyles.itemActions}>
+                    <a className="button secondary" href={`/ukol/${task.id}`}>Otevřít objednávku</a>
+                  </div>
                 </article>
               ))}
             </div>
@@ -148,12 +151,14 @@ export default async function ProviderDashboardPage() {
         {waitingTasks.length ? (
           <section className="section">
             <div className="section-title"><p className="kicker">Potvrzení</p><h2>Čeká se na klienta</h2></div>
-            <div className="admin-list">
+            <div className={dashboardListStyles.compactList}>
               {waitingTasks.map((task) => (
-                <article className="admin-item" key={task.id}>
-                  <strong>{task.title}</strong>
-                  <p>Práce je označená jako hotová. Klient teď potvrzuje dokončení.</p>
-                  <a className="button secondary" href={`/ukol/${task.id}`}>Otevřít objednávku</a>
+                <article className={dashboardListStyles.compactItem} key={task.id}>
+                  <strong className={dashboardListStyles.itemTitle}>{task.title}</strong>
+                  <p className={dashboardListStyles.itemText}>Práce je označená jako hotová. Klient teď potvrzuje dokončení.</p>
+                  <div className={dashboardListStyles.itemActions}>
+                    <a className="button secondary" href={`/ukol/${task.id}`}>Otevřít objednávku</a>
+                  </div>
                 </article>
               ))}
             </div>
@@ -171,12 +176,12 @@ export default async function ProviderDashboardPage() {
         <section className="section">
           <div className="section-title"><p className="kicker">Moje nabídky</p><h2>Odeslané nabídky</h2></div>
           {myOffers.length > 0 ? (
-            <div className="admin-list">
+            <div className={dashboardListStyles.compactList}>
               {myOffers.map((offer) => (
-                <article className="admin-item" key={offer.id}>
-                  <strong>{offer.price_czk.toLocaleString("cs-CZ")} Kč</strong>
-                  <p>{offer.message} · stav: {offerStatusLabels[offer.status] ?? offer.status}</p>
-                  <div className="hero-actions">
+                <article className={`${dashboardListStyles.compactItem} ${dashboardListStyles.offerItem}`} key={offer.id}>
+                  <strong className={dashboardListStyles.itemTitle}>{offer.price_czk.toLocaleString("cs-CZ")} Kč</strong>
+                  <p className={dashboardListStyles.itemText}>{offer.message} · stav: {offerStatusLabels[offer.status] ?? offer.status}</p>
+                  <div className={dashboardListStyles.itemActions}>
                     <a className="button secondary" href={`/ukol/${offer.task_id}`}>Detail objednávky</a>
                     {offer.status === "pending" ? (
                       <form action={withdrawTaskerOffer}>
