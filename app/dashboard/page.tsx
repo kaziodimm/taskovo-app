@@ -3,6 +3,7 @@ import { logoutAccount } from "@/app/actions";
 import { updateClientOwnProfile } from "@/app/profile-actions";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
+import { ProfilePhotoUploadForm } from "@/components/ProfilePhotoUploadForm";
 import { TaskCard } from "@/components/TaskCard";
 import { TaskForm } from "@/components/TaskForm";
 import { getOffers, getTasksForClient } from "@/lib/data";
@@ -20,6 +21,13 @@ const nextStepCopy: Record<string, string> = {
   awaiting_confirmation: "Tasker označil práci jako hotovou. Potvrďte dokončení.",
   completed: "Objednávka je dokončená.",
   cancelled: "Objednávka je zrušená.",
+};
+
+const photoStatusCopy: Record<string, string> = {
+  none: "Zatím bez fotky ke kontrole.",
+  pending: "Nová fotka čeká na schválení administrátorem.",
+  approved: "Fotka je schválená a může se zobrazovat v profilu.",
+  rejected: "Fotka byla odmítnutá. Můžete poslat novou.",
 };
 
 function needsClientAction(task: Task, offerCount: number) {
@@ -42,6 +50,7 @@ export default async function DashboardPage() {
   const actionTasks = tasks.filter((task) => needsClientAction(task, offersByTask.get(task.id) || 0));
   const activeTasks = tasks.filter((task) => ["assigned", "in_progress", "awaiting_confirmation"].includes(task.status));
   const unreadTotal = Object.values(unreadCounts).reduce((total, count) => total + count, 0);
+  const photoStatus = profile?.avatar_review_status || "none";
 
   return (
     <>
@@ -78,6 +87,30 @@ export default async function DashboardPage() {
             <label className="checkbox-row"><input name="marketing_consent" type="checkbox" defaultChecked={Boolean(profile?.marketing_consent)} /> Novinky a tipy od Taskovo</label>
             <button className="button primary span-full" type="submit">Uložit profil</button>
           </form>
+
+          <section className="section-action">
+            <div className="section-title">
+              <p className="kicker">Foto profilu</p>
+              <h2>Profilová fotka</h2>
+              <p>Fotka se veřejně zobrazí až po kontrole administrátorem.</p>
+            </div>
+            <div className="dashboard-grid">
+              <article className="dashboard-panel">
+                <h3>Schválená fotka</h3>
+                {profile?.avatar_url ? <img className="avatar brand-mark-large" src={profile.avatar_url} alt="Schválená profilová fotka" /> : <p>Schválená fotka zatím není nastavená.</p>}
+              </article>
+              <article className="dashboard-panel">
+                <h3>Čeká na kontrolu</h3>
+                {profile?.pending_avatar_url ? <img className="avatar brand-mark-large" src={profile.pending_avatar_url} alt="Fotka čekající na kontrolu" /> : <p>Žádná nová fotka nečeká na kontrolu.</p>}
+              </article>
+              <article className="dashboard-panel">
+                <h3>Stav</h3>
+                <p>{photoStatusCopy[photoStatus] || photoStatus}</p>
+                {profile?.avatar_review_note ? <p>{profile.avatar_review_note}</p> : null}
+              </article>
+            </div>
+            <ProfilePhotoUploadForm />
+          </section>
         </section>
 
         {actionTasks.length ? (
