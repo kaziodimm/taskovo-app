@@ -1,5 +1,20 @@
+import type { Metadata } from "next";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
+
+export const metadata: Metadata = {
+  title: "Platby | Taskovo",
+  description:
+    "Cilovy platebni model Taskovo: vyber nabidky, rezervace platby pres Stripe, potvrzeni dokonceni, spory a vyplata taskerovi.",
+  alternates: { canonical: "/platby" },
+  openGraph: {
+    title: "Platby | Taskovo",
+    description: "Bezpecny platebni model pro marketplace lokalnich sluzeb po napojeni Stripe.",
+    url: "https://taskovo-app.vercel.app/platby",
+    siteName: "Taskovo",
+    type: "website",
+  },
+};
 
 const paymentSteps = [
   ["01", "Klient vybere nabídku", "Po porovnání taskerů klient potvrdí konkrétní nabídku, cenu a domluvený rozsah úkolu."],
