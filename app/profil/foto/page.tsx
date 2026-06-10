@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
-import { submitProfilePhotoForReview } from "@/app/profile-actions";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
+import { ProfilePhotoUploadForm } from "@/components/ProfilePhotoUploadForm";
 import { getTaskerProfileForUser } from "@/lib/data";
 import { getClientProfileForUser } from "@/lib/profile-data";
 import { createServerSupabaseClient } from "@/lib/supabase";
@@ -64,14 +64,7 @@ export default async function ProfilePhotoPage({ searchParams }: { searchParams:
             </article>
           </div>
 
-          <form className="search-panel section-action" action={submitProfilePhotoForReview} encType="multipart/form-data">
-            <div className="card-heading">
-              <h2>Odeslat novou fotku</h2>
-              <p>Soubor uložíme do zabezpečeného úložiště a veřejně ho zobrazíme až po schválení administrátorem.</p>
-            </div>
-            <label>Vybrat fotku<input name="avatar_file" type="file" accept="image/jpeg,image/png,image/webp" required /></label>
-            <button className="button primary" type="submit">Poslat ke kontrole</button>
-          </form>
+          <ProfilePhotoUploadForm />
         </section>
       </main>
       <Footer />
