@@ -1,25 +1,71 @@
 .card {
-  grid-template-rows: auto minmax(54px, auto) auto minmax(38px, auto) auto;
-  min-height: 360px;
+  display: grid;
+  grid-template-rows: 92px minmax(0, 1fr);
+  gap: 14px;
+  min-height: 384px;
+  height: 100%;
+  overflow: hidden;
 }
 
-.top {
-  align-items: flex-start;
-  min-height: 58px;
+.mediaFrame {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 92px;
+  overflow: hidden;
+  background: linear-gradient(135deg, #edf4fb, #f7f9fb);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.mediaImage,
+.mediaFallback {
+  width: 100%;
+  height: 100%;
+}
+
+.mediaImage {
+  display: block;
+  object-fit: cover;
+}
+
+.mediaFallback {
+  display: grid;
+  place-items: center;
+  color: #fff;
+  background: linear-gradient(135deg, var(--steel), var(--navy));
+  font-size: 2rem;
+  font-weight: 950;
+}
+
+.badge {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  z-index: 1;
+  max-width: calc(100% - 16px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.body {
+  display: grid;
+  grid-template-rows: 46px 64px 62px 44px auto;
+  gap: 12px;
+  min-width: 0;
+  min-height: 0;
 }
 
 .identity {
+  display: grid;
+  align-content: start;
+  gap: 3px;
   min-width: 0;
 }
 
-.identity h3 {
-  display: -webkit-box;
-  min-height: 1.3em;
-  overflow: hidden;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 1;
-}
-
+.identity h3,
 .identity p,
 .bio {
   display: -webkit-box;
@@ -27,42 +73,71 @@
   -webkit-box-orient: vertical;
 }
 
+.identity h3 {
+  min-height: 1.3em;
+  margin: 0;
+  font-size: 1.08rem;
+  line-height: 1.25;
+  -webkit-line-clamp: 1;
+}
+
 .identity p {
+  margin: 0;
+  color: var(--muted);
+  font-size: .88rem;
+  line-height: 1.25;
   -webkit-line-clamp: 1;
 }
 
 .bio {
-  min-height: 54px;
+  min-height: 64px;
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.42;
   -webkit-line-clamp: 3;
-}
-
-.avatarImage {
-  flex: 0 0 48px;
-  object-fit: cover;
-}
-
-.badge {
-  flex: 0 0 auto;
 }
 
 .metrics {
   min-height: 62px;
 }
 
+.metrics span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .chips {
   align-content: start;
-  min-height: 38px;
-  max-height: 72px;
+  min-height: 44px;
+  max-height: 44px;
   overflow: hidden;
+}
+
+.chips span {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .action {
   align-self: end;
+  width: 100%;
   margin-top: auto;
 }
 
 @media (max-width: 640px) {
   .card {
-    min-height: auto;
+    grid-template-rows: 86px minmax(0, 1fr);
+    min-height: 366px;
+  }
+
+  .mediaFrame {
+    height: 86px;
+  }
+
+  .body {
+    grid-template-rows: 44px 60px 62px 44px auto;
   }
 }
