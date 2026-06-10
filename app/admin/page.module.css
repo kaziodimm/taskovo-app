@@ -69,7 +69,7 @@
 
 .directoryCard {
   display: grid;
-  grid-template-rows: 82px 48px 78px 58px auto;
+  grid-template-rows: 130px 78px 58px auto;
   gap: 11px;
   min-width: 0;
   min-height: 338px;
@@ -84,7 +84,10 @@
 
 .directoryHeader {
   display: grid;
+  grid-template-rows: 82px 42px;
+  gap: 6px;
   min-width: 0;
+  overflow: hidden;
 }
 
 .directoryAvatar,
@@ -116,6 +119,7 @@
   align-content: start;
   gap: 3px;
   min-width: 0;
+  overflow: hidden;
 }
 
 .directoryIdentity strong,
