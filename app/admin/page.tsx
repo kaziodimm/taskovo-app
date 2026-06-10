@@ -46,12 +46,36 @@ type ReviewProfile = {
   email?: string | null;
   city?: string | null;
   categories?: string | null;
+  avatar_url?: string | null;
   pending_avatar_url?: string | null;
   avatar_review_status?: string | null;
 };
 
 function money(value: number) {
   return value.toLocaleString("cs-CZ");
+}
+
+function initials(name: string) {
+  return name
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join("") || "T";
+}
+
+function directoryAvatar(profile: ReviewProfile, label: string) {
+  if (profile.avatar_url) {
+    return <img className={styles.directoryAvatar} src={profile.avatar_url} alt={`${label}: ${profile.name}`} />;
+  }
+
+  return <span className={styles.directoryAvatarFallback}>{initials(profile.name)}</span>;
+}
+
+function avatarStatus(profile: ReviewProfile) {
+  if (profile.pending_avatar_url) return <span className={styles.warningPill}>fotka čeká</span>;
+  if (profile.avatar_url) return <span className={styles.okPill}>fotka schválena</span>;
+  return <span className={styles.neutralPill}>bez fotky</span>;
 }
 
 function taskCancelForm(taskId: string) {
@@ -113,11 +137,11 @@ export default async function AdminPage() {
   const activeTasks = visibleTasks.filter((task) => ["assigned", "in_progress", "awaiting_confirmation"].includes(task.status));
   const waitingClientTasks = visibleTasks.filter((task) => task.status === "awaiting_confirmation");
   const openTasks = visibleTasks.filter((task) => ["open", "offers_received"].includes(task.status));
-  const completedTasks = visibleTasks.filter((task) => task.status === "completed");
   const disputedTasks = visibleTasks.filter((task) => task.status === "disputed");
   const pendingClientPhotos = clients.filter((client) => client.pending_avatar_url);
   const pendingTaskerPhotos = taskers.filter((tasker) => tasker.pending_avatar_url);
   const pendingPhotoCount = pendingClientPhotos.length + pendingTaskerPhotos.length;
+  const verifiedTaskers = taskers.filter((tasker) => tasker.verified).length;
 
   return (
     <>
@@ -152,7 +176,7 @@ export default async function AdminPage() {
           <article className="dashboard-panel"><h3>Aktivní</h3><p>{activeTasks.length} objednávek je přiřazených, probíhá nebo čeká na potvrzení.</p></article>
           <article className="dashboard-panel"><h3>Spory</h3><p>{disputedTasks.length} objednávek čeká na zásah administrátora.</p></article>
           <article className="dashboard-panel"><h3>Čeká na klienta</h3><p>{waitingClientTasks.length} objednávek čeká na potvrzení dokončení.</p></article>
-          <article className="dashboard-panel"><h3>Účty</h3><p>{taskers.length} registrovaných taskerů · {clients.length} klientů.</p></article>
+          <article className="dashboard-panel"><h3>Účty</h3><p>{verifiedTaskers}/{taskers.length} ověřených taskerů · {clients.length} klientů.</p></article>
         </div>
 
         <section id="review" className={`section ${styles.sectionCard}`}>
@@ -215,11 +239,21 @@ export default async function AdminPage() {
             <div className="section-title"><p className="kicker">Klienti</p><h2>Klientské účty</h2></div>
             <div className={`${styles.adminList} ${styles.directoryList}`}>
               {clients.map((client) => (
-                <article className={`admin-item ${styles.adminItem}`} key={client.id}>
-                  <strong>{client.name}</strong>
-                  <p>{client.email} · {client.phone || "bez telefonu"} · {client.city || "město neuvedeno"}</p>
-                  {client.pending_avatar_url ? <span className="pill">fotka čeká na kontrolu</span> : null}
-                  <a className="button secondary" href={`/admin/clients/${client.id}`}>Detail klienta</a>
+                <article className={styles.directoryCard} key={client.id}>
+                  <div className={styles.directoryHeader}>
+                    {directoryAvatar(client, "Klient")}
+                    <div className={styles.directoryIdentity}>
+                      <strong>{client.name}</strong>
+                      <span>{client.city || "město neuvedeno"}</span>
+                    </div>
+                  </div>
+                  <div className={styles.directoryMeta}>
+                    <p>{client.email}</p>
+                    <p>{client.phone || "telefon neuveden"}</p>
+                    <p>Jazyk: {client.preferred_language || "cs"}</p>
+                  </div>
+                  <div className={styles.directoryStatusRow}>{avatarStatus(client)}</div>
+                  <a className={`button secondary ${styles.directoryButton}`} href={`/admin/clients/${client.id}`}>Detail klienta</a>
                 </article>
               ))}
             </div>
@@ -228,17 +262,29 @@ export default async function AdminPage() {
             <div className="section-title"><p className="kicker">Taskeři</p><h2>Profily taskerů</h2></div>
             <div className={`${styles.adminList} ${styles.directoryList}`}>
               {taskers.map((tasker) => (
-                <article className={`admin-item ${styles.adminItem}`} key={tasker.id}>
-                  <strong>{tasker.name}</strong>
-                  <p>{tasker.city} · {tasker.categories} · {tasker.verified ? "ověřen" : "čeká na ověření"}</p>
-                  <p>{tasker.email || "email neuveden"} · {tasker.contact || "kontakt neuveden"}</p>
-                  {tasker.pending_avatar_url ? <span className="pill">fotka čeká na kontrolu</span> : null}
-                  <div className="hero-actions">
+                <article className={styles.directoryCard} key={tasker.id}>
+                  <div className={styles.directoryHeader}>
+                    {directoryAvatar(tasker, "Tasker")}
+                    <div className={styles.directoryIdentity}>
+                      <strong>{tasker.name}</strong>
+                      <span>{tasker.city || "město neuvedeno"}</span>
+                    </div>
+                  </div>
+                  <div className={styles.directoryMeta}>
+                    <p>{tasker.categories || "kategorie neuvedeny"}</p>
+                    <p>{tasker.email || "email neuveden"}</p>
+                    <p>{tasker.contact || "kontakt neuveden"}</p>
+                  </div>
+                  <div className={styles.directoryStatusRow}>
+                    <span className={tasker.verified ? styles.verifiedPill : styles.warningPill}>{tasker.verified ? "ověřený tasker" : "čeká na ověření"}</span>
+                    {avatarStatus(tasker)}
+                  </div>
+                  <div className={styles.directoryActions}>
                     <a className="button secondary" href={`/admin/taskers/${tasker.id}`}>Detail taskera</a>
                     <form action={toggleTaskerVerification} className="inline-action-form">
                       <input type="hidden" name="tasker_id" value={tasker.id} />
                       <input type="hidden" name="verified" value={tasker.verified ? "false" : "true"} />
-                      <button className="button secondary" type="submit">{tasker.verified ? "Odebrat ověření" : "Ověřit taskera"}</button>
+                      <button className="button secondary" type="submit">{tasker.verified ? "Odebrat ověření" : "Ověřit"}</button>
                     </form>
                   </div>
                 </article>
