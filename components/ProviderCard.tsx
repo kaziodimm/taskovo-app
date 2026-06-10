@@ -14,28 +14,30 @@ function initials(name: string) {
 export function ProviderCard({ provider }: { provider: FeaturedProvider }) {
   return (
     <article className={`provider-card ${styles.card}`}>
-      <div className={`provider-top ${styles.top}`}>
+      <div className={styles.mediaFrame}>
         {provider.avatarUrl ? (
-          <img className={`avatar ${styles.avatarImage}`} src={provider.avatarUrl} alt={`Profilové foto ${provider.name}`} />
+          <img className={styles.mediaImage} src={provider.avatarUrl} alt={`Profilové foto ${provider.name}`} />
         ) : (
-          <div className={`avatar ${styles.avatarImage}`} aria-hidden="true">{initials(provider.name)}</div>
+          <div className={styles.mediaFallback} aria-hidden="true">{initials(provider.name)}</div>
         )}
+        {provider.verified ? <span className={`verified-badge ${styles.badge}`} style={verifiedBadgeStyle}>✓ Ověřeno</span> : null}
+      </div>
+      <div className={styles.body}>
         <div className={styles.identity}>
           <h3>{provider.name}</h3>
           <p>{provider.city} · {provider.responseTime}</p>
         </div>
-        {provider.verified ? <span className={`verified-badge ${styles.badge}`} style={verifiedBadgeStyle}>✓ Ověřeno</span> : null}
+        <p className={styles.bio}>{provider.bio}</p>
+        <div className={`provider-metrics ${styles.metrics}`}>
+          <span><strong>{provider.rating.toFixed(1)}</strong> hodnocení</span>
+          <span><strong>{provider.completedTasks}</strong> úkolů</span>
+          <span><strong>{provider.priceFrom}</strong> od</span>
+        </div>
+        <div className={`chip-row ${styles.chips}`}>
+          {provider.categories.map((category) => <span key={category}>{category}</span>)}
+        </div>
+        <a className={`button secondary ${styles.action}`} href={`/poskytovatel/${provider.id}`}>Zobrazit profil</a>
       </div>
-      <p className={styles.bio}>{provider.bio}</p>
-      <div className={`provider-metrics ${styles.metrics}`}>
-        <span><strong>{provider.rating.toFixed(1)}</strong> hodnocení</span>
-        <span><strong>{provider.completedTasks}</strong> úkolů</span>
-        <span><strong>{provider.priceFrom}</strong> od</span>
-      </div>
-      <div className={`chip-row ${styles.chips}`}>
-        {provider.categories.map((category) => <span key={category}>{category}</span>)}
-      </div>
-      <a className={`button secondary ${styles.action}`} href={`/poskytovatel/${provider.id}`}>Zobrazit profil</a>
     </article>
   );
 }
