@@ -13,6 +13,12 @@ const statusCopy: Record<string, string> = {
   rejected: "Fotka byla odmítnutá. Můžete poslat novou.",
 };
 
+const errorCopy: Record<string, string> = {
+  bad_file: "Vyberte fotku ve formátu JPG, PNG nebo WebP.",
+  file_too_large: "Fotka je příliš velká. Maximální velikost je 5 MB.",
+  config: "Nahrávání fotek není správně nakonfigurované.",
+};
+
 export default async function ProfilePhotoPage({ searchParams }: { searchParams: Promise<{ updated?: string; error?: string }> }) {
   const params = await searchParams;
   const supabase = await createServerSupabaseClient();
@@ -34,13 +40,13 @@ export default async function ProfilePhotoPage({ searchParams }: { searchParams:
             <div className="section-title">
               <p className="kicker">Profil</p>
               <h1 className="page-title">Fotka profilu</h1>
-              <p>Fotka se veřejně zobrazí až po kontrole administrátorem. Do pilotní verze stačí vložit odkaz na obrázek.</p>
+              <p>Fotka se veřejně zobrazí až po kontrole administrátorem. Nahrajte JPG, PNG nebo WebP do velikosti 5 MB.</p>
             </div>
             <a className="button secondary" href={dashboardHref}>Zpět do účtu</a>
           </div>
 
           {params.updated === "photo_pending" ? <p className="alert-box">Fotka byla odeslána ke kontrole.</p> : null}
-          {params.error === "bad_url" ? <p className="alert-box">Vložte platný odkaz začínající na http:// nebo https://.</p> : null}
+          {params.error ? <p className="alert-box">{errorCopy[params.error] || "Fotku se nepodařilo zpracovat."}</p> : null}
 
           <div className="dashboard-grid">
             <article className="dashboard-panel">
@@ -58,12 +64,12 @@ export default async function ProfilePhotoPage({ searchParams }: { searchParams:
             </article>
           </div>
 
-          <form className="search-panel section-action" action={submitProfilePhotoForReview}>
+          <form className="search-panel section-action" action={submitProfilePhotoForReview} encType="multipart/form-data">
             <div className="card-heading">
               <h2>Odeslat novou fotku</h2>
-              <p>Vložte přímý odkaz na obrázek. Nevhodný obsah zůstane skrytý a administrátor ho může odmítnout.</p>
+              <p>Soubor uložíme do zabezpečeného úložiště a veřejně ho zobrazíme až po schválení administrátorem.</p>
             </div>
-            <label>Odkaz na obrázek<input name="avatar_url" type="url" placeholder="https://..." required /></label>
+            <label>Vybrat fotku<input name="avatar_file" type="file" accept="image/jpeg,image/png,image/webp" required /></label>
             <button className="button primary" type="submit">Poslat ke kontrole</button>
           </form>
         </section>
