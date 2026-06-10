@@ -38,14 +38,32 @@ export async function Header() {
           <small>Pomoc. Rychle. Spolehlivě.</small>
         </span>
       </a>
-      <nav className="site-nav" aria-label="Hlavní navigace">
-        <a href="/#jak-to-funguje">Jak to funguje</a>
-        <a href="/kategorie">Kategorie</a>
+      <nav className="site-nav nav-menu" aria-label="Hlavní navigace">
+        <details>
+          <summary>Kategorie</summary>
+          <div className="nav-dropdown">
+            <a href="/kategorie/uklid">Úklid</a>
+            <a href="/kategorie/stehovani">Stěhování</a>
+            <a href="/kategorie/montaz-nabytku">Montáž nábytku</a>
+            <a href="/kategorie/doruceni">Doručení</a>
+            <a href="/kategorie">Všechny kategorie</a>
+          </div>
+        </details>
+        <details>
+          <summary>Jak to funguje</summary>
+          <div className="nav-dropdown">
+            <a href="/#jak-to-funguje">Postup pro klienta</a>
+            <a href="/#pro-taskery">Pro taskery</a>
+            <a href="/#bezpecnost">Důvěra a bezpečnost</a>
+            <a href="/#faq">FAQ</a>
+          </div>
+        </details>
+        <a href="/#pro-zakazniky">Pro zákazníky</a>
+        <a href="/#pro-taskery">Pro taskery</a>
         {user ? <a href={primaryMarketplaceHref}>{primaryMarketplaceLabel}</a> : <a href="/poskytovatele">Taskeři</a>}
         {role === "tasker" ? <a href="/poskytovatel/dashboard">Moje práce</a> : null}
         {user && role !== "tasker" && !isAdmin ? <a href="/dashboard">Moje objednávky</a> : null}
         {user ? <a href="/profil/foto">Foto profilu</a> : null}
-        {!user ? <a href="/prihlaseni?mode=tasker">Chci být tasker</a> : null}
         <a href="/bezpecnost">Bezpečnost</a>
       </nav>
       <div className="header-actions">
@@ -57,9 +75,9 @@ export async function Header() {
             </form>
           </>
         ) : (
-          <a className="login-link" href="/prihlaseni?mode=login">Přihlásit se</a>
+          <a className="login-link" href="/prihlaseni?mode=login">Přihlášení</a>
         )}
-        <a className="header-action" href={role === "tasker" ? "/tasks" : "/zadat-ukol"}>{role === "tasker" ? "Najít úkol" : "Zadám úkol"}</a>
+        <a className="header-action" href={role === "tasker" ? "/tasks" : "/zadat-ukol"}>{role === "tasker" ? "Najít úkol" : "Zadat úkol"}</a>
       </div>
     </header>
   );
