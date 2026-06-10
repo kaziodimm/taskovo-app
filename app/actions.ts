@@ -8,6 +8,7 @@ import { createServerSupabaseClient, createServiceSupabaseClient, hasSupabaseEnv
 
 const ATTACHMENT_BUCKET = "task-attachments";
 const MAX_ATTACHMENT_BYTES = 8 * 1024 * 1024;
+const MAX_TASK_CREATE_ATTACHMENTS = 4;
 const MAX_MESSAGE_LENGTH = 1200;
 const ALLOWED_ATTACHMENT_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
 
@@ -55,6 +56,36 @@ function requiredImageFile(formData: FormData, key: string) {
   if (!ALLOWED_ATTACHMENT_TYPES.has(value.type)) return null;
   if (value.size > MAX_ATTACHMENT_BYTES) return null;
   return value;
+}
+
+function optionalImageFiles(formData: FormData, key: string) {
+  return formData
+    .getAll(key)
+    .filter((value): value is File => value instanceof File && value.size > 0)
+    .filter((file) => ALLOWED_ATTACHMENT_TYPES.has(file.type) && file.size <= MAX_ATTACHMENT_BYTES)
+    .slice(0, MAX_TASK_CREATE_ATTACHMENTS);
+}
+
+async function storeTaskAttachment(service: ReturnType<typeof createServiceSupabaseClient>, taskId: string, imageFile: File, createdByAuthUserId: string | null, caption: string | null = null) {
+  const storagePath = `${taskId}/${randomUUID()}.${fileExtension(imageFile)}`;
+  const { error: uploadError } = await service.storage.from(ATTACHMENT_BUCKET).upload(storagePath, imageFile, {
+    cacheControl: "31536000",
+    contentType: imageFile.type,
+    upsert: false,
+  });
+
+  if (uploadError) throw new Error(uploadError.message);
+
+  const { data: publicUrl } = service.storage.from(ATTACHMENT_BUCKET).getPublicUrl(storagePath);
+  const { error } = await service.from("task_attachments").insert({
+    task_id: taskId,
+    image_url: publicUrl.publicUrl,
+    storage_path: storagePath,
+    caption,
+    created_by_auth_user_id: createdByAuthUserId,
+  });
+
+  if (error) throw new Error(error.message);
 }
 
 export async function registerClientAccount(formData: FormData) {
@@ -164,8 +195,9 @@ export async function createTask(formData: FormData) {
   const service = createServiceSupabaseClient();
   const clientName = optionalString(formData, "client_name") || user?.user_metadata?.name || user?.email || "Klient Taskovo";
   const clientContact = optionalString(formData, "client_contact") || user?.email || "kontakt po přihlášení";
+  const attachments = optionalImageFiles(formData, "image_files");
 
-  const { error } = await service.from("tasks").insert({
+  const { data: task, error } = await service.from("tasks").insert({
     client_auth_user_id: user?.id || null,
     title: titleFromDescription(description),
     description,
@@ -177,13 +209,17 @@ export async function createTask(formData: FormData) {
     client_name: clientName,
     client_contact: clientContact,
     status: "open",
-  });
+  }).select("id").single();
 
   if (error) throw new Error(error.message);
-  revalidatePath("/");
-  revalidatePath("/tasks");
-  revalidatePath("/dashboard");
-  redirect(user ? "/dashboard" : "/tasks");
+  if (!task?.id) throw new Error("Task was not created");
+
+  for (const imageFile of attachments) {
+    await storeTaskAttachment(service, task.id, imageFile, user?.id || null);
+  }
+
+  revalidateTaskViews(task.id);
+  redirect(user ? `/ukol/${task.id}` : "/tasks");
 }
 
 export async function createOffer(formData: FormData) {
@@ -237,25 +273,7 @@ export async function addTaskAttachment(formData: FormData) {
   if (taskError) throw new Error(taskError.message);
   if (!task || task.client_auth_user_id !== user.id) redirect(`/ukol/${taskId}?error=forbidden`);
 
-  const storagePath = `${taskId}/${randomUUID()}.${fileExtension(imageFile)}`;
-  const { error: uploadError } = await service.storage.from(ATTACHMENT_BUCKET).upload(storagePath, imageFile, {
-    cacheControl: "31536000",
-    contentType: imageFile.type,
-    upsert: false,
-  });
-
-  if (uploadError) throw new Error(uploadError.message);
-
-  const { data: publicUrl } = service.storage.from(ATTACHMENT_BUCKET).getPublicUrl(storagePath);
-  const { error } = await service.from("task_attachments").insert({
-    task_id: taskId,
-    image_url: publicUrl.publicUrl,
-    storage_path: storagePath,
-    caption,
-    created_by_auth_user_id: user.id,
-  });
-
-  if (error) throw new Error(error.message);
+  await storeTaskAttachment(service, taskId, imageFile, user.id, caption);
 
   revalidatePath(`/ukol/${taskId}`);
   revalidatePath("/dashboard");
