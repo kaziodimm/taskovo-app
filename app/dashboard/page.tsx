@@ -6,6 +6,7 @@ import { Header } from "@/components/Header";
 import { ProfilePhotoUploadForm } from "@/components/ProfilePhotoUploadForm";
 import { TaskCard } from "@/components/TaskCard";
 import { TaskForm } from "@/components/TaskForm";
+import dashboardListStyles from "@/components/DashboardList.module.css";
 import { getOffers, getTasksForClient } from "@/lib/data";
 import { isAdminEmail } from "@/lib/admin-auth";
 import { getUnreadTaskMessageCounts } from "@/lib/message-data";
@@ -116,12 +117,14 @@ export default async function DashboardPage() {
         {actionTasks.length ? (
           <section className="section">
             <div className="section-title"><p className="kicker">Priorita</p><h2>Čeká na vás</h2></div>
-            <div className="admin-list">
+            <div className={dashboardListStyles.compactList}>
               {actionTasks.map((task) => (
-                <article className="admin-item" key={task.id}>
-                  <strong>{task.title}</strong>
-                  <p>{nextStepCopy[task.status] ?? "Otevřete detail objednávky."} · {offersByTask.get(task.id) || 0} nabídek · {unreadCounts[task.id] || 0} nových zpráv</p>
-                  <a className="button secondary" href={`/ukol/${task.id}`}>Otevřít objednávku</a>
+                <article className={dashboardListStyles.compactItem} key={task.id}>
+                  <strong className={dashboardListStyles.itemTitle}>{task.title}</strong>
+                  <p className={dashboardListStyles.itemText}>{nextStepCopy[task.status] ?? "Otevřete detail objednávky."} · {offersByTask.get(task.id) || 0} nabídek · {unreadCounts[task.id] || 0} nových zpráv</p>
+                  <div className={dashboardListStyles.itemActions}>
+                    <a className="button secondary" href={`/ukol/${task.id}`}>Otevřít objednávku</a>
+                  </div>
                 </article>
               ))}
             </div>
