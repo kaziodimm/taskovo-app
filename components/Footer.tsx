@@ -6,12 +6,16 @@ const footerGroups = [
     links: [["Zadat úkol", "/zadat-ukol"], ["Kategorie", "/kategorie"], ["Taskeři", "/poskytovatele"], ["Aktuální úkoly", "/tasks"]],
   },
   {
+    title: "Jak to funguje",
+    links: [["Pro zákazníky", "/pro-zakazniky"], ["Pro taskery", "/pro-taskery"], ["Postup platformy", "/jak-to-funguje"], ["FAQ", "/faq"]],
+  },
+  {
     title: "Pro taskery",
     links: [["Registrace", "/registrace-poskytovatel"], ["Dashboard", "/poskytovatel/dashboard"], ["Výplaty", "/vyplaty"], ["Podmínky", "/podminky-pro-poskytovatele"]],
   },
   {
     title: "Důvěra",
-    links: [["Bezpečnost", "/bezpecnost"], ["Kontakt", "/kontakt"], ["Ochrana údajů", "/ochrana-osobnich-udaju"], ["Cookies", "/cookies"]],
+    links: [["Bezpečnost", "/bezpecnost"], ["Platby", "/platby"], ["Kontakt", "/kontakt"], ["Ochrana údajů", "/ochrana-osobnich-udaju"], ["Cookies", "/cookies"]],
   },
 ];
 
