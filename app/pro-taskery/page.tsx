@@ -1,5 +1,20 @@
+import type { Metadata } from "next";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
+
+export const metadata: Metadata = {
+  title: "Pro taskery | Taskovo",
+  description:
+    "Taskovo pomaha nezavislym taskerum, OSVC a malym firmam najit lokalni ukoly, posilat nabidky a budovat reputaci.",
+  alternates: { canonical: "/pro-taskery" },
+  openGraph: {
+    title: "Taskovo pro taskery",
+    description: "Lokalni zakazky, vlastni nabidky, profil, recenze a budouci vyplaty pro nezavisle taskery.",
+    url: "https://taskovo-app.vercel.app/pro-taskery",
+    siteName: "Taskovo",
+    type: "website",
+  },
+};
 
 const benefits = [
   ["Úkoly podle lokality", "Tasker může hledat práci ve městě nebo okolí, kde se skutečně pohybuje."],
