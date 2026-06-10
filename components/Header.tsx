@@ -20,6 +20,24 @@ function dashboardHref(role: unknown, email?: string | null) {
   return role === "tasker" ? "/poskytovatel/dashboard" : "/dashboard";
 }
 
+const navDetailsStyle = { borderTop: 0, padding: 0, position: "relative" as const };
+const navSummaryStyle = { listStyle: "none", cursor: "pointer", fontWeight: 780 };
+const navDropdownStyle = {
+  position: "absolute" as const,
+  top: "calc(100% + 14px)",
+  left: 0,
+  zIndex: 40,
+  display: "grid",
+  gap: 8,
+  minWidth: 220,
+  padding: 12,
+  color: "var(--navy)",
+  background: "white",
+  border: "1px solid var(--line)",
+  borderRadius: 8,
+  boxShadow: "0 18px 44px rgba(13,27,42,.14)",
+};
+
 export async function Header() {
   const user = await getSignedInUser();
   const role = user?.user_metadata?.role;
@@ -39,9 +57,9 @@ export async function Header() {
         </span>
       </a>
       <nav className="site-nav nav-menu" aria-label="Hlavní navigace">
-        <details>
-          <summary>Kategorie</summary>
-          <div className="nav-dropdown">
+        <details style={navDetailsStyle}>
+          <summary style={navSummaryStyle}>Kategorie</summary>
+          <div style={navDropdownStyle}>
             <a href="/kategorie/uklid">Úklid</a>
             <a href="/kategorie/stehovani">Stěhování</a>
             <a href="/kategorie/montaz-nabytku">Montáž nábytku</a>
@@ -49,9 +67,9 @@ export async function Header() {
             <a href="/kategorie">Všechny kategorie</a>
           </div>
         </details>
-        <details>
-          <summary>Jak to funguje</summary>
-          <div className="nav-dropdown">
+        <details style={navDetailsStyle}>
+          <summary style={navSummaryStyle}>Jak to funguje</summary>
+          <div style={navDropdownStyle}>
             <a href="/#jak-to-funguje">Postup pro klienta</a>
             <a href="/#pro-taskery">Pro taskery</a>
             <a href="/#bezpecnost">Důvěra a bezpečnost</a>
