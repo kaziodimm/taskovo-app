@@ -1,6 +1,7 @@
 import { acceptOffer, createOffer } from "@/app/actions";
 import { cancelClientTask, updateClientTask } from "@/app/client-task-actions";
 import type { Offer, Task } from "@/lib/types";
+import styles from "./TaskCard.module.css";
 
 const statusLabels: Record<string, string> = {
   pending_review: "Kontrola",
@@ -45,20 +46,20 @@ export function TaskCard({ task, offers, canSelectOffer = false, showOfferForm =
   const canSendOffer = showOfferForm && ["open", "offers_received"].includes(task.status);
 
   return (
-    <article className="task-card">
-      <header>
-        <div><span className="pill">{task.category}</span><h3>{task.title}</h3></div>
-        <span className={`pill status-${task.status}`}>{statusLabels[task.status] ?? task.status}</span>
+    <article className={`task-card ${styles.card}`}>
+      <header className={styles.header}>
+        <div className={styles.titleBlock}><span className="pill">{task.category}</span><h3>{task.title}</h3></div>
+        <span className={`pill status-${task.status} ${styles.status}`}>{statusLabels[task.status] ?? task.status}</span>
       </header>
-      <p>{task.description}</p>
-      <div className="task-meta"><span>{task.city}</span><span>{task.desired_time}</span>{task.district ? <span>{task.district}</span> : null}</div>
-      <div className="price-row" aria-label="Cena a provize">
+      <p className={styles.description}>{task.description}</p>
+      <div className={`task-meta ${styles.meta}`}><span>{task.city}</span><span>{task.desired_time}</span>{task.district ? <span>{task.district}</span> : null}</div>
+      <div className={`price-row ${styles.price}`} aria-label="Cena a provize">
         <div><span>Rozpočet</span><strong>{money(task.budget_czk)} Kč</strong></div>
         <div><span>Provize</span><strong>{money(fee)} Kč</strong></div>
         <div><span>Tasker</span><strong>{money(payout)} Kč</strong></div>
         <div><span>Nabídky</span><strong>{offers.length}</strong></div>
       </div>
-      <a className="button secondary" href={`/ukol/${task.id}`}>Detail objednávky</a>
+      <a className={`button secondary ${styles.detailAction}`} href={`/ukol/${task.id}`}>Detail objednávky</a>
 
       {canEdit || canCancel ? (
         <details>
