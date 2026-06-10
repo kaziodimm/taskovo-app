@@ -1,7 +1,22 @@
+import type { Metadata } from "next";
 import { CategoryCard } from "@/components/CategoryCard";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import { marketplaceCategories } from "@/lib/marketplace-data";
+
+export const metadata: Metadata = {
+  title: "Pro zakazniky | Taskovo",
+  description:
+    "Zadejte uklid, stehovani, doruceni, montaz nebo jinou lokalni pomoc. Porovnejte nabidky taskeru a vyberte si sami.",
+  alternates: { canonical: "/pro-zakazniky" },
+  openGraph: {
+    title: "Taskovo pro zakazniky",
+    description: "Jedno misto pro zadani ukolu, porovnani nabidek a vyber lokalniho taskera.",
+    url: "https://taskovo-app.vercel.app/pro-zakazniky",
+    siteName: "Taskovo",
+    type: "website",
+  },
+};
 
 const benefits = [
   ["Rychlé zadání", "Popíšete úkol jedním formulářem a nemusíte obvolávat známé, firmy ani skupiny."],
