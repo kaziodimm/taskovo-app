@@ -1,0 +1,69 @@
+.compactList {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.compactItem {
+  display: grid;
+  grid-template-rows: auto minmax(48px, 1fr) auto;
+  gap: 10px;
+  min-width: 0;
+  min-height: 190px;
+  padding: 16px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: 0 14px 32px rgba(13, 27, 42, .06);
+}
+
+.itemTitle {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--navy);
+  font-size: 1rem;
+  line-height: 1.25;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.itemText {
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: .94rem;
+  line-height: 1.45;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+}
+
+.itemActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  align-self: end;
+}
+
+.itemActions :global(.button),
+.itemButton {
+  min-height: 38px;
+}
+
+.offerItem {
+  grid-template-rows: auto minmax(62px, 1fr) auto;
+}
+
+@media (max-width: 640px) {
+  .compactList {
+    grid-template-columns: 1fr;
+  }
+
+  .compactItem {
+    min-height: 0;
+  }
+}
