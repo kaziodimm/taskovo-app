@@ -1,6 +1,21 @@
+import type { Metadata } from "next";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import { faqs } from "@/lib/marketplace-data";
+
+export const metadata: Metadata = {
+  title: "FAQ | Taskovo",
+  description:
+    "Odpovedi na caste otazky ke klientum, taskerum, overeni, platbam, bezpecnosti a roli platformy Taskovo.",
+  alternates: { canonical: "/faq" },
+  openGraph: {
+    title: "FAQ | Taskovo",
+    description: "Caste otazky k ceskemu marketplace pro lokalni ukoly a sluzby.",
+    url: "https://taskovo-app.vercel.app/faq",
+    siteName: "Taskovo",
+    type: "website",
+  },
+};
 
 const extraFaqs = [
   {
@@ -31,11 +46,21 @@ const extraFaqs = [
 
 export default function FaqPage() {
   const allFaqs = [...faqs, ...extraFaqs];
+  const faqJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: allFaqs.map((item) => ({
+      "@type": "Question",
+      name: item.question,
+      acceptedAnswer: { "@type": "Answer", text: item.answer },
+    })),
+  };
 
   return (
     <>
       <Header />
       <main className="page-shell faq-section">
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
         <section className="section-title">
           <p className="kicker">FAQ</p>
           <h1 className="page-title">Časté otázky k Taskovo</h1>
