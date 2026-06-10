@@ -4,6 +4,7 @@ import { updateTaskerOwnProfile } from "@/app/profile-actions";
 import { withdrawTaskerOffer } from "@/app/tasker-offer-actions";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
+import { ProfilePhotoUploadForm } from "@/components/ProfilePhotoUploadForm";
 import { TaskCard } from "@/components/TaskCard";
 import { getAssignedTasksForTasker, getOffers, getOffersForTasker, getOpenTasksForTaskers, getTaskerProfileForUser } from "@/lib/data";
 import { getUnreadTaskMessageCounts } from "@/lib/message-data";
@@ -28,6 +29,13 @@ const nextStepCopy: Record<string, string> = {
   in_progress: "Po dokončení označte práci jako hotovou.",
   awaiting_confirmation: "Čeká se na potvrzení klienta.",
   completed: "Objednávka je dokončená.",
+};
+
+const photoStatusCopy: Record<string, string> = {
+  none: "Zatím bez fotky ke kontrole.",
+  pending: "Nová fotka čeká na schválení administrátorem.",
+  approved: "Fotka je schválená a může se zobrazovat v profilu taskera.",
+  rejected: "Fotka byla odmítnutá. Můžete poslat novou.",
 };
 
 function needsTaskerAction(task: Task) {
@@ -55,6 +63,7 @@ export default async function ProviderDashboardPage() {
   const actionTasks = assignedTasks.filter(needsTaskerAction);
   const waitingTasks = assignedTasks.filter((task) => task.status === "awaiting_confirmation");
   const unreadTotal = Object.values(unreadCounts).reduce((total, count) => total + count, 0);
+  const photoStatus = profile?.avatar_review_status || "none";
 
   return (
     <>
@@ -92,6 +101,30 @@ export default async function ProviderDashboardPage() {
             <label className="span-full">Bio<textarea name="bio" rows={4} defaultValue={profile?.bio || ""} placeholder="Krátce popište zkušenosti, dostupnost a typické služby." /></label>
             <button className="button primary span-full" type="submit">Uložit profil taskera</button>
           </form>
+
+          <section className="section-action">
+            <div className="section-title">
+              <p className="kicker">Foto profilu</p>
+              <h2>Profilová fotka</h2>
+              <p>Fotka se veřejně zobrazí na kartě taskera až po kontrole administrátorem.</p>
+            </div>
+            <div className="dashboard-grid">
+              <article className="dashboard-panel">
+                <h3>Schválená fotka</h3>
+                {profile?.avatar_url ? <img className="avatar brand-mark-large" src={profile.avatar_url} alt="Schválená profilová fotka" /> : <p>Schválená fotka zatím není nastavená.</p>}
+              </article>
+              <article className="dashboard-panel">
+                <h3>Čeká na kontrolu</h3>
+                {profile?.pending_avatar_url ? <img className="avatar brand-mark-large" src={profile.pending_avatar_url} alt="Fotka čekající na kontrolu" /> : <p>Žádná nová fotka nečeká na kontrolu.</p>}
+              </article>
+              <article className="dashboard-panel">
+                <h3>Stav</h3>
+                <p>{photoStatusCopy[photoStatus] || photoStatus}</p>
+                {profile?.avatar_review_note ? <p>{profile.avatar_review_note}</p> : null}
+              </article>
+            </div>
+            <ProfilePhotoUploadForm />
+          </section>
         </section>
 
         <section className="section">
