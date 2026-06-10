@@ -45,9 +45,9 @@ export default function Home() {
               <label>Co potřebujete?<input name="q" placeholder="Úklid, kurýr, montáž..." /></label>
               <label>Kde?<input name="city" placeholder="Praha, Brno, Olomouc..." /></label>
               <button className="button primary" type="submit">Najít pomoc</button>
-              <div className="quick-category-row" aria-label="Rychlé kategorie">
+              <div className="chip-row" aria-label="Rychlé kategorie">
                 {quickCategories.map((category) => (
-                  <a key={category.slug} href={`/kategorie/${category.slug}`}>{category.shortTitle}</a>
+                  <a key={category.slug} href={`/kategorie/${category.slug}`}><span>{category.shortTitle}</span></a>
                 ))}
               </div>
             </form>
@@ -103,22 +103,22 @@ export default function Home() {
           <div className="trust-grid">
             <article><span className="trust-icon">ID</span><h3>Ověřená totožnost</h3><p>Profily, kontakty a v další fázi doklady nebo IČO podle typu služby.</p></article>
             <article><span className="trust-icon">Kč</span><h3>Bezpečná platba</h3><p>Platby a výplaty budou napojené až po dokončení pilotní logiky.</p></article>
-            <article><span className="trust-icon">★</span><h3>Recenze po úkolu</h3><p>Hodnocení pomůže rozlišit spolehlivé taskery od nových profilů.</p></article>
+            <article><span className="trust-icon">OK</span><h3>Recenze po úkolu</h3><p>Hodnocení pomůže rozlišit spolehlivé taskery od nových profilů.</p></article>
           </div>
         </section>
 
-        <section className="section audience-cta" id="pro-zakazniky">
-          <article>
+        <section className="section split" id="pro-zakazniky">
+          <article className="request-card">
             <p className="kicker">Pro zákazníky</p>
             <h2>Zadejte práci a vyberte si nabídku</h2>
             <p>Vhodné pro lidi, kteří nemají čas, auto, nářadí nebo jednoduše nechtějí řešit drobné úkoly sami.</p>
-            <a className="button primary" href="/zadat-ukol">Zadat nový úkol</a>
+            <div className="section-action"><a className="button primary" href="/zadat-ukol">Zadat nový úkol</a></div>
           </article>
-          <article id="pro-taskery">
+          <article className="request-card" id="pro-taskery">
             <p className="kicker">Pro taskery</p>
             <h2>Získejte lokální zakázky bez chaosu ve skupinách</h2>
             <p>Taskovo má postupně nabídnout profil, poptávky, nabídky, historii práce, hodnocení a později i výplaty.</p>
-            <a className="button secondary" href="/registrace-poskytovatel">Registrovat se jako tasker</a>
+            <div className="section-action"><a className="button secondary" href="/registrace-poskytovatel">Registrovat se jako tasker</a></div>
           </article>
         </section>
 
