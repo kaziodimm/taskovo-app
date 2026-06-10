@@ -42,7 +42,8 @@ export function TaskCard({ task, offers, canSelectOffer = false, showOfferForm =
   const payout = task.budget_czk - fee;
   const canChoose = canSelectOffer && ["open", "offers_received"].includes(task.status);
   const canEdit = canManageTask && ["open", "offers_received"].includes(task.status);
-  const canCancel = canManageTask && !["completed", "cancelled"].includes(task.status);
+  const canCancel = canEdit;
+  const isLockedForClient = canManageTask && !["open", "offers_received", "completed", "cancelled"].includes(task.status);
   const canSendOffer = showOfferForm && ["open", "offers_received"].includes(task.status);
 
   return (
@@ -61,8 +62,8 @@ export function TaskCard({ task, offers, canSelectOffer = false, showOfferForm =
       </div>
       <a className={`button secondary ${styles.detailAction}`} href={`/ukol/${task.id}`}>Detail objednávky</a>
 
-      {canEdit || canCancel ? (
-        <details>
+      {canEdit || canCancel || isLockedForClient ? (
+        <details className={styles.manageBox}>
           <summary>Správa objednávky</summary>
           {canEdit ? (
             <form className="offer-form" action={updateClientTask}>
@@ -75,12 +76,16 @@ export function TaskCard({ task, offers, canSelectOffer = false, showOfferForm =
               <label>Rozpočet<span className="money-field"><input name="budget_czk" type="number" min="100" step="50" defaultValue={task.budget_czk} required /><span>Kč</span></span></label>
               <button className="button secondary span-full" type="submit">Uložit změny</button>
             </form>
-          ) : <p className="fine-print">Objednávku už nelze upravit, protože je přiřazená nebo dokončená.</p>}
+          ) : null}
           {canCancel ? (
-            <form action={cancelClientTask} className="inline-action-form">
+            <form action={cancelClientTask} className={`compact-form ${styles.cancelForm}`}>
               <input type="hidden" name="task_id" value={task.id} />
-              <button className="button secondary" type="submit">Zrušit objednávku</button>
+              <label className="span-full">Důvod zrušení<textarea name="reason" rows={3} placeholder="Například: úkol už není potřeba, změnil se termín..." /></label>
+              <button className="button secondary span-full" type="submit">Zrušit objednávku</button>
             </form>
+          ) : null}
+          {isLockedForClient ? (
+            <p className="fine-print">Objednávku už nelze upravit ani zrušit přímo, protože tasker byl vybrán. Pokud nastal problém, otevřete detail a použijte “Nahlásit problém”.</p>
           ) : null}
         </details>
       ) : null}
