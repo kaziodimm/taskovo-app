@@ -2,6 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import { updateAdminClientProfile } from "@/app/admin-actions";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
+import detailListStyles from "@/components/AdminDetailList.module.css";
 import { ProfilePhotoModeration } from "@/components/ProfilePhotoModeration";
 import { getAdminTasks, getClientById, getOffers } from "@/lib/data";
 import { isAdminAuthenticated } from "@/lib/admin-auth";
@@ -89,18 +90,17 @@ export default async function AdminClientDetailPage({ params }: { params: Promis
 
         <section className="section admin-panel">
           <div className="section-title"><p className="kicker">Objednávky</p><h2>Historie klienta</h2></div>
-          <div className="admin-list">
+          <div className={detailListStyles.list}>
             {clientTasks.length ? clientTasks.map((task) => (
-              <article className="admin-item" key={task.id}>
-                <strong>{task.title}</strong>
-                <p>{task.city} · {task.desired_time} · {money(task.budget_czk)} Kč · {statusLabels[task.status] ?? task.status}</p>
-                <p>{offers.filter((offer) => offer.task_id === task.id).length} nabídek</p>
-                <div className="hero-actions">
+              <article className={detailListStyles.item} key={task.id}>
+                <strong className={detailListStyles.title}>{task.title}</strong>
+                <p className={detailListStyles.text}>{task.city} · {task.desired_time} · {money(task.budget_czk)} Kč · {statusLabels[task.status] ?? task.status} · {offers.filter((offer) => offer.task_id === task.id).length} nabídek</p>
+                <div className={detailListStyles.actions}>
                   <a className="button primary" href={`/admin/tasks/${task.id}`}>Řídit objednávku</a>
                   <a className="button secondary" href={`/ukol/${task.id}`}>Veřejný detail</a>
                 </div>
               </article>
-            )) : <article className="admin-item"><strong>Bez objednávek</strong><p>Klient zatím nemá žádnou navázanou objednávku.</p></article>}
+            )) : <article className={`${detailListStyles.item} ${detailListStyles.empty}`}><strong className={detailListStyles.title}>Bez objednávek</strong><p className={detailListStyles.text}>Klient zatím nemá žádnou navázanou objednávku.</p></article>}
           </div>
         </section>
 
