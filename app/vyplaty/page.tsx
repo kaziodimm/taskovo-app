@@ -1,5 +1,20 @@
+import type { Metadata } from "next";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
+
+export const metadata: Metadata = {
+  title: "Vyplaty pro taskery | Taskovo",
+  description:
+    "Cilovy model vyplat pro taskery, OSVC a firmy: overeni uctu, Stripe Connect, historie vyplat, provize a stav profilu.",
+  alternates: { canonical: "/vyplaty" },
+  openGraph: {
+    title: "Vyplaty pro taskery | Taskovo",
+    description: "Jak Taskovo pripravi vyplaty nezavislym taskerum po dokonceni platebniho workflow.",
+    url: "https://taskovo-app.vercel.app/vyplaty",
+    siteName: "Taskovo",
+    type: "website",
+  },
+};
 
 const payoutBlocks = [
   ["Ověření účtu", "Tasker bude muset doplnit identitu, typ podnikání a později bankovní údaje přes Stripe Connect."],
