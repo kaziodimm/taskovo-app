@@ -1,5 +1,14 @@
 import { redirect } from "next/navigation";
-import { acceptAdminOffer, cancelAdminTask, declineAdminOffer, reopenAdminTask, toggleTaskerVerification, updateAdminTaskStatus } from "@/app/admin-actions";
+import {
+  acceptAdminOffer,
+  approveProfilePhoto,
+  cancelAdminTask,
+  declineAdminOffer,
+  rejectProfilePhoto,
+  reopenAdminTask,
+  toggleTaskerVerification,
+  updateAdminTaskStatus,
+} from "@/app/admin-actions";
 import { logoutAccount } from "@/app/actions";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
@@ -31,6 +40,16 @@ const adminStatusOptions = [
   "disputed",
 ];
 
+type ReviewProfile = {
+  id: string;
+  name: string;
+  email?: string | null;
+  city?: string | null;
+  categories?: string | null;
+  pending_avatar_url?: string | null;
+  avatar_review_status?: string | null;
+};
+
 function money(value: number) {
   return value.toLocaleString("cs-CZ");
 }
@@ -45,6 +64,37 @@ function taskCancelForm(taskId: string) {
         <button className="button secondary span-full" type="submit">Potvrdit zrušení</button>
       </form>
     </details>
+  );
+}
+
+function photoReviewItem(profile: ReviewProfile, role: "client" | "tasker") {
+  const detailPath = role === "tasker" ? `/admin/taskers/${profile.id}` : `/admin/clients/${profile.id}`;
+  const roleLabel = role === "tasker" ? "Tasker" : "Klient";
+
+  return (
+    <article className={styles.reviewItem} key={`${role}-${profile.id}`}>
+      <img className={styles.reviewImage} src={profile.pending_avatar_url || ""} alt={`Fotka ke kontrole: ${profile.name}`} />
+      <div className={styles.reviewBody}>
+        <span className="pill">{roleLabel}</span>
+        <strong>{profile.name}</strong>
+        <p>{profile.email || profile.categories || "Kontakt není uveden"} · {profile.city || "město neuvedeno"}</p>
+        <p>Stav: {profile.avatar_review_status === "pending" ? "čeká na kontrolu" : profile.avatar_review_status || "nová fotka"}</p>
+        <div className="hero-actions">
+          <a className="button secondary" href={detailPath}>Otevřít profil</a>
+          <form action={approveProfilePhoto}>
+            <input type="hidden" name="profile_id" value={profile.id} />
+            <input type="hidden" name="role" value={role} />
+            <button className="button primary" type="submit">Schválit</button>
+          </form>
+        </div>
+        <form className={`compact-form ${styles.reviewRejectForm}`} action={rejectProfilePhoto}>
+          <input type="hidden" name="profile_id" value={profile.id} />
+          <input type="hidden" name="role" value={role} />
+          <label>Důvod odmítnutí<input name="reason" type="text" placeholder="Nevhodná fotka, špatná kvalita..." /></label>
+          <button className="button secondary" type="submit">Odmítnout</button>
+        </form>
+      </div>
+    </article>
   );
 }
 
@@ -65,6 +115,9 @@ export default async function AdminPage() {
   const openTasks = visibleTasks.filter((task) => ["open", "offers_received"].includes(task.status));
   const completedTasks = visibleTasks.filter((task) => task.status === "completed");
   const disputedTasks = visibleTasks.filter((task) => task.status === "disputed");
+  const pendingClientPhotos = clients.filter((client) => client.pending_avatar_url);
+  const pendingTaskerPhotos = taskers.filter((tasker) => tasker.pending_avatar_url);
+  const pendingPhotoCount = pendingClientPhotos.length + pendingTaskerPhotos.length;
 
   return (
     <>
@@ -85,6 +138,7 @@ export default async function AdminPage() {
         </form>
 
         <nav className={styles.adminJumpNav} aria-label="Rychlá navigace administrace">
+          <a href="#review">Ke kontrole</a>
           <a href="#orders">Objednávky</a>
           <a href="#clients">Klienti</a>
           <a href="#taskers">Taskeři</a>
@@ -93,13 +147,30 @@ export default async function AdminPage() {
         </nav>
 
         <div className="dashboard-grid">
+          <article className="dashboard-panel"><h3>Ke kontrole</h3><p>{pendingPhotoCount} profilových fotek čeká na rozhodnutí.</p></article>
           <article className="dashboard-panel"><h3>Otevřené</h3><p>{openTasks.length} objednávek čeká na nabídky nebo výběr taskera.</p></article>
           <article className="dashboard-panel"><h3>Aktivní</h3><p>{activeTasks.length} objednávek je přiřazených, probíhá nebo čeká na potvrzení.</p></article>
           <article className="dashboard-panel"><h3>Spory</h3><p>{disputedTasks.length} objednávek čeká na zásah administrátora.</p></article>
           <article className="dashboard-panel"><h3>Čeká na klienta</h3><p>{waitingClientTasks.length} objednávek čeká na potvrzení dokončení.</p></article>
-          <article className="dashboard-panel"><h3>Dokončeno</h3><p>{completedTasks.length} objednávek je hotových.</p></article>
           <article className="dashboard-panel"><h3>Účty</h3><p>{taskers.length} registrovaných taskerů · {clients.length} klientů.</p></article>
         </div>
+
+        <section id="review" className={`section ${styles.sectionCard}`}>
+          <div className="section-heading-row">
+            <div className="section-title"><p className="kicker">Ke kontrole</p><h2>Moderace profilových fotek</h2><p>Nové fotky se nezobrazují veřejně, dokud je administrátor neschválí. Tady jsou všechny čekající žádosti na jednom místě.</p></div>
+          </div>
+          {pendingPhotoCount > 0 ? (
+            <div className={styles.reviewGrid}>
+              {pendingClientPhotos.map((client) => photoReviewItem(client, "client"))}
+              {pendingTaskerPhotos.map((tasker) => photoReviewItem(tasker, "tasker"))}
+            </div>
+          ) : (
+            <div className={styles.emptyState}>
+              <strong>Momentálně nic nečeká na kontrolu.</strong>
+              <p>Až klient nebo tasker nahraje novou fotku, objeví se tady.</p>
+            </div>
+          )}
+        </section>
 
         <section id="orders" className={`section ${styles.sectionCard}`}>
           <div className="section-heading-row">
@@ -147,6 +218,7 @@ export default async function AdminPage() {
                 <article className={`admin-item ${styles.adminItem}`} key={client.id}>
                   <strong>{client.name}</strong>
                   <p>{client.email} · {client.phone || "bez telefonu"} · {client.city || "město neuvedeno"}</p>
+                  {client.pending_avatar_url ? <span className="pill">fotka čeká na kontrolu</span> : null}
                   <a className="button secondary" href={`/admin/clients/${client.id}`}>Detail klienta</a>
                 </article>
               ))}
@@ -160,6 +232,7 @@ export default async function AdminPage() {
                   <strong>{tasker.name}</strong>
                   <p>{tasker.city} · {tasker.categories} · {tasker.verified ? "ověřen" : "čeká na ověření"}</p>
                   <p>{tasker.email || "email neuveden"} · {tasker.contact || "kontakt neuveden"}</p>
+                  {tasker.pending_avatar_url ? <span className="pill">fotka čeká na kontrolu</span> : null}
                   <div className="hero-actions">
                     <a className="button secondary" href={`/admin/taskers/${tasker.id}`}>Detail taskera</a>
                     <form action={toggleTaskerVerification} className="inline-action-form">
