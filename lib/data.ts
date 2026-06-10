@@ -8,6 +8,7 @@ const detailVisibleStatuses = ["open", "offers_received", "assigned", "in_progre
 const adminVisibleStatuses = ["pending_review", "open", "offers_received", "assigned", "in_progress", "awaiting_confirmation", "completed", "cancelled", "disputed"];
 const taskerVisibleStatuses = ["open", "offers_received"];
 const activeAssignedStatuses = ["assigned", "in_progress", "awaiting_confirmation", "completed", "disputed", "cancelled"];
+const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 export async function getTasks(): Promise<Task[]> {
   noStore();
@@ -239,7 +240,9 @@ export async function getTaskers(): Promise<TaskerProfile[]> {
 export async function getTaskerById(taskerId: string): Promise<TaskerProfile | null> {
   noStore();
 
-  if (!hasSupabaseEnv() || !process.env.SUPABASE_SERVICE_ROLE_KEY) return demoTaskers.find((tasker) => tasker.id === taskerId) || null;
+  const demoTasker = demoTaskers.find((tasker) => tasker.id === taskerId) || null;
+  if (demoTasker || !uuidPattern.test(taskerId)) return demoTasker;
+  if (!hasSupabaseEnv() || !process.env.SUPABASE_SERVICE_ROLE_KEY) return null;
 
   const supabase = createServiceSupabaseClient();
   const { data, error } = await supabase.from("tasker_profiles").select("*").eq("id", taskerId).maybeSingle();
