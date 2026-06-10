@@ -4,6 +4,10 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createServerSupabaseClient, createServiceSupabaseClient, hasSupabaseEnv } from "@/lib/supabase";
 
+const profilePhotoBucket = "profile-photos";
+const allowedPhotoTypes = new Set(["image/jpeg", "image/png", "image/webp"]);
+const maxProfilePhotoBytes = 5 * 1024 * 1024;
+
 function requiredString(formData: FormData, key: string) {
   const value = formData.get(key);
   if (typeof value !== "string" || !value.trim()) throw new Error(`Missing field: ${key}`);
@@ -36,6 +40,30 @@ function avatarReviewPayload(avatarUrl: string | null) {
     avatar_review_status: "pending",
     avatar_review_note: null,
   };
+}
+
+function profilePhotoExtension(file: File) {
+  if (file.type === "image/png") return "png";
+  if (file.type === "image/webp") return "webp";
+  return "jpg";
+}
+
+async function uploadProfilePhoto(service: ReturnType<typeof createServiceSupabaseClient>, file: File, userId: string, role: "client" | "tasker") {
+  if (!allowedPhotoTypes.has(file.type)) redirect("/profil/foto?error=bad_file");
+  if (file.size > maxProfilePhotoBytes) redirect("/profil/foto?error=file_too_large");
+
+  const extension = profilePhotoExtension(file);
+  const objectPath = `${role}/${userId}/${Date.now()}-${crypto.randomUUID()}.${extension}`;
+  const { error: uploadError } = await service.storage.from(profilePhotoBucket).upload(objectPath, file, {
+    cacheControl: "3600",
+    contentType: file.type,
+    upsert: false,
+  });
+
+  if (uploadError) throw new Error(uploadError.message);
+
+  const { data } = service.storage.from(profilePhotoBucket).getPublicUrl(objectPath);
+  return data.publicUrl;
 }
 
 export async function updateClientOwnProfile(formData: FormData) {
@@ -142,19 +170,21 @@ export async function submitProfilePhotoForReview(formData: FormData) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/prihlaseni?error=login_required");
 
-  const avatarUrl = optionalImageUrl(formData);
-  if (!avatarUrl) redirect("/profil/foto?error=bad_url");
+  const file = formData.get("avatar_file");
+  if (!(file instanceof File) || file.size === 0) redirect("/profil/foto?error=bad_file");
 
   const service = createServiceSupabaseClient();
-  const table = user.user_metadata?.role === "tasker" ? "tasker_profiles" : "client_profiles";
+  const role = user.user_metadata?.role === "tasker" ? "tasker" : "client";
+  const table = role === "tasker" ? "tasker_profiles" : "client_profiles";
   const { data: profile, error: profileError } = await service.from(table).select("id").eq("auth_user_id", user.id).order("created_at", { ascending: false }).limit(1).maybeSingle();
   if (profileError) throw new Error(profileError.message);
-  if (!profile) redirect(user.user_metadata?.role === "tasker" ? "/poskytovatel/dashboard?error=profile_missing" : "/dashboard?error=profile_missing");
+  if (!profile) redirect(role === "tasker" ? "/poskytovatel/dashboard?error=profile_missing" : "/dashboard?error=profile_missing");
 
+  const publicUrl = await uploadProfilePhoto(service, file, user.id, role);
   const { error } = await service
     .from(table)
     .update({
-      pending_avatar_url: avatarUrl,
+      pending_avatar_url: publicUrl,
       avatar_review_status: "pending",
       avatar_review_note: null,
     } as never)
