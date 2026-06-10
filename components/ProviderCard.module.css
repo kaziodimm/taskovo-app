@@ -1,0 +1,68 @@
+.card {
+  grid-template-rows: auto minmax(54px, auto) auto minmax(38px, auto) auto;
+  min-height: 360px;
+}
+
+.top {
+  align-items: flex-start;
+  min-height: 58px;
+}
+
+.identity {
+  min-width: 0;
+}
+
+.identity h3 {
+  display: -webkit-box;
+  min-height: 1.3em;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+}
+
+.identity p,
+.bio {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+}
+
+.identity p {
+  -webkit-line-clamp: 1;
+}
+
+.bio {
+  min-height: 54px;
+  -webkit-line-clamp: 3;
+}
+
+.avatarImage {
+  flex: 0 0 48px;
+  object-fit: cover;
+}
+
+.badge {
+  flex: 0 0 auto;
+}
+
+.metrics {
+  min-height: 62px;
+}
+
+.chips {
+  align-content: start;
+  min-height: 38px;
+  max-height: 72px;
+  overflow: hidden;
+}
+
+.action {
+  align-self: end;
+  margin-top: auto;
+}
+
+@media (max-width: 640px) {
+  .card {
+    min-height: auto;
+  }
+}
