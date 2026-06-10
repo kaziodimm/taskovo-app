@@ -1,5 +1,20 @@
+import type { Metadata } from "next";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
+
+export const metadata: Metadata = {
+  title: "Kontakt | Taskovo",
+  description:
+    "Kontakt na podporu Taskovo pro klienty, taskery, overeni profilu, bezpecnost, pilotni spolupraci a zpetnou vazbu.",
+  alternates: { canonical: "/kontakt" },
+  openGraph: {
+    title: "Kontakt | Taskovo",
+    description: "Podpora pro pilot ceskeho marketplace Taskovo.",
+    url: "https://taskovo-app.vercel.app/kontakt",
+    siteName: "Taskovo",
+    type: "website",
+  },
+};
 
 const contactReasons = [
   ["Podpora klienta", "Pomoc se zadáním úkolu, úpravou, zrušením nebo problémem po dokončení."],
@@ -9,10 +24,24 @@ const contactReasons = [
 ];
 
 export default function ContactPage() {
+  const contactJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "ContactPage",
+    name: "Kontakt Taskovo",
+    url: "https://taskovo-app.vercel.app/kontakt",
+    contactPoint: {
+      "@type": "ContactPoint",
+      contactType: "customer support",
+      email: "hello@taskovo.cz",
+      availableLanguage: ["cs", "ru", "uk"],
+    },
+  };
+
   return (
     <>
       <Header />
       <main className="page-shell">
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(contactJsonLd) }} />
         <section className="page-hero">
           <div>
             <p className="kicker">Kontakt</p>
