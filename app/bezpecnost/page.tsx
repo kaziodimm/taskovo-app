@@ -1,5 +1,20 @@
+import type { Metadata } from "next";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
+
+export const metadata: Metadata = {
+  title: "Bezpecnost a duvera | Taskovo",
+  description:
+    "Jak Taskovo pracuje s overenim identity, ICO, moderaci obsahu, recenzemi, bezpecnou platbou a pravidly platformy.",
+  alternates: { canonical: "/bezpecnost" },
+  openGraph: {
+    title: "Bezpecnost a duvera | Taskovo",
+    description: "Duvod, proc Taskovo oddeluje roli platformy, klienta a nezavisleho taskera.",
+    url: "https://taskovo-app.vercel.app/bezpecnost",
+    siteName: "Taskovo",
+    type: "website",
+  },
+};
 
 const trustBlocks = [
   ["Ověřená totožnost", "U pilotu začínáme ruční kontrolou profilu a kontaktů. Později přidáme silnější ověření identity podle rizika služby."],
@@ -18,10 +33,19 @@ const riskRules = [
 ];
 
 export default function SafetyPage() {
+  const webPageJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    name: "Bezpecnost a duvera Taskovo",
+    description: metadata.description,
+    url: "https://taskovo-app.vercel.app/bezpecnost",
+  };
+
   return (
     <>
       <Header />
       <main className="page-shell">
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(webPageJsonLd) }} />
         <section className="page-hero">
           <div>
             <p className="kicker">Bezpečnost</p>
