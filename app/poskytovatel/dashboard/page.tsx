@@ -4,6 +4,7 @@ import { updateTaskerOwnProfile } from "@/app/profile-actions";
 import { withdrawTaskerOffer } from "@/app/tasker-offer-actions";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
+import { ProfilePhotoStatus } from "@/components/ProfilePhotoStatus";
 import { ProfilePhotoUploadForm } from "@/components/ProfilePhotoUploadForm";
 import { TaskCard } from "@/components/TaskCard";
 import dashboardListStyles from "@/components/DashboardList.module.css";
@@ -37,13 +38,6 @@ const nextStepCopy: Record<string, string> = {
   disputed: "Objednávka je ve sporu. Sledujte zprávy a vyčkejte na další krok.",
 };
 
-const photoStatusCopy: Record<string, string> = {
-  none: "Zatím bez fotky ke kontrole.",
-  pending: "Nová fotka čeká na schválení administrátorem.",
-  approved: "Fotka je schválená a může se zobrazovat v profilu taskera.",
-  rejected: "Fotka byla odmítnuta. Můžete poslat novou.",
-};
-
 const updateMessages: Record<string, string> = {
   offer_sent: "Nabídka byla odeslána klientovi.",
   offer_withdrawn: "Nabídka byla stažena.",
@@ -53,8 +47,11 @@ const updateMessages: Record<string, string> = {
 
 const errorMessages: Record<string, string> = {
   profile_required: "Nejdřív doplňte tasker profil.",
+  profile_missing: "Nejdřív uložte profil taskera, potom nahrajte fotku.",
   config: "Chybí konfigurace služby. Zkontrolujeme nastavení Supabase.",
   forbidden: "K této akci nemáte oprávnění.",
+  bad_file: "Vyberte fotku ve formátu JPG, PNG nebo WebP.",
+  file_too_large: "Fotka je příliš velká. Maximální velikost je 5 MB.",
 };
 
 function needsTaskerAction(task: Task) {
@@ -95,7 +92,6 @@ export default async function ProviderDashboardPage({ searchParams }: { searchPa
   const acceptedOffers = myOffers.filter((offer) => offer.status === "accepted");
   const pendingOffers = myOffers.filter((offer) => offer.status === "pending");
   const unreadTotal = Object.values(unreadCounts).reduce((total, count) => total + count, 0);
-  const photoStatus = profile?.avatar_review_status || "none";
   const completion = profileCompletion(profile);
   const estimatedEarnings = acceptedOffers.reduce((total, offer) => total + offer.price_czk, 0);
   const possiblePipeline = availableTasks.reduce((total, task) => total + (task.budget_czk || 0), 0);
@@ -236,11 +232,13 @@ export default async function ProviderDashboardPage({ searchParams }: { searchPa
 
           <section className="section-action">
             <div className="section-title"><p className="kicker">Foto profilu</p><h2>Profilová fotka</h2><p>Fotka se veřejně zobrazí na kartě taskera až po kontrole administrátorem.</p></div>
-            <div className="dashboard-grid">
-              <article className="dashboard-panel"><h3>Schválená fotka</h3>{profile?.avatar_url ? <img className="avatar brand-mark-large" src={profile.avatar_url} alt="Schválená profilová fotka" /> : <p>Schválená fotka zatím není nastavená.</p>}</article>
-              <article className="dashboard-panel"><h3>Čeká na kontrolu</h3>{profile?.pending_avatar_url ? <img className="avatar brand-mark-large" src={profile.pending_avatar_url} alt="Fotka čekající na kontrolu" /> : <p>Žádná nová fotka nečeká na kontrolu.</p>}</article>
-              <article className="dashboard-panel"><h3>Stav</h3><p>{photoStatusCopy[photoStatus] || photoStatus}</p>{profile?.avatar_review_note ? <p>{profile.avatar_review_note}</p> : null}</article>
-            </div>
+            <ProfilePhotoStatus
+              avatarUrl={profile?.avatar_url}
+              pendingAvatarUrl={profile?.pending_avatar_url}
+              status={profile?.avatar_review_status}
+              note={profile?.avatar_review_note}
+              roleLabel="taskera"
+            />
             <ProfilePhotoUploadForm />
           </section>
         </section>
