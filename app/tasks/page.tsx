@@ -4,6 +4,7 @@ import { Header } from "@/components/Header";
 import { TaskCard } from "@/components/TaskCard";
 import { getOffers, getTasks } from "@/lib/data";
 import { marketplaceCategories } from "@/lib/marketplace-data";
+import { createServerSupabaseClient, hasSupabaseEnv } from "@/lib/supabase";
 import type { Task } from "@/lib/types";
 import styles from "./page.module.css";
 
@@ -38,6 +39,18 @@ const statusOptions = [
   { value: "open", label: "Otevřené" },
   { value: "offers_received", label: "S nabídkami" },
 ];
+
+async function getCurrentUser() {
+  if (!hasSupabaseEnv()) return null;
+
+  try {
+    const supabase = await createServerSupabaseClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    return user;
+  } catch {
+    return null;
+  }
+}
 
 function includesText(value: string | null | undefined, query: string | undefined) {
   if (!query) return true;
@@ -111,12 +124,24 @@ const searchActionSchema = {
 
 export default async function TasksPage({ searchParams }: { searchParams: Promise<TaskSearchParams> }) {
   const params = await searchParams;
-  const [tasks, offers] = await Promise.all([getTasks(), getOffers()]);
+  const [tasks, offers, user] = await Promise.all([getTasks(), getOffers(), getCurrentUser()]);
+  const isTasker = user?.user_metadata?.role === "tasker";
   const availableTasks = tasks.filter((task) => availableTaskStatuses.has(task.status));
   const filteredTasks = filterTasks(availableTasks, params);
   const cities = Array.from(new Set(availableTasks.map((task) => task.city).filter(Boolean))).sort((a, b) => a.localeCompare(b, "cs-CZ"));
   const totalBudget = filteredTasks.reduce((sum, task) => sum + task.budget_czk, 0);
   const offerCount = offers.filter((offer) => availableTasks.some((task) => task.id === offer.task_id)).length;
+  const offerUnavailable = user ? (
+    <>
+      <p>Nabídky mohou posílat jen účty registrované jako tasker.</p>
+      <a className="button secondary" href="/prihlaseni?mode=tasker">Vytvořit tasker účet</a>
+    </>
+  ) : (
+    <>
+      <p>Pro poslání nabídky se přihlaste nebo vytvořte tasker účet.</p>
+      <a className="button primary" href="/prihlaseni?mode=tasker">Registrovat taskera</a>
+    </>
+  );
 
   return (
     <>
@@ -211,7 +236,14 @@ export default async function TasksPage({ searchParams }: { searchParams: Promis
             {filteredTasks.length ? (
               <div className="task-grid">
                 {filteredTasks.map((task) => (
-                  <TaskCard key={task.id} task={task} offers={offers.filter((offer) => offer.task_id === task.id)} />
+                  <TaskCard
+                    key={task.id}
+                    task={task}
+                    offers={offers.filter((offer) => offer.task_id === task.id)}
+                    showOfferForm={isTasker}
+                    authenticatedTasker={isTasker}
+                    offerUnavailable={offerUnavailable}
+                  />
                 ))}
               </div>
             ) : (
