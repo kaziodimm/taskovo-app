@@ -71,6 +71,8 @@ export default async function ProvidersPage({ searchParams }: { searchParams: Pr
   const providers = [...liveProviders, ...featuredProviders.filter((provider) => !seen.has(provider.id))];
   const filteredProviders = filterProviders(providers, params);
   const providerCities = Array.from(new Set([...cities, ...providers.map((provider) => provider.city)])).sort((a, b) => a.localeCompare(b, "cs-CZ"));
+  const verifiedCount = providers.filter((provider) => provider.verified).length;
+  const completedTotal = providers.reduce((sum, provider) => sum + provider.completedTasks, 0);
 
   return (
     <>
@@ -82,9 +84,16 @@ export default async function ProvidersPage({ searchParams }: { searchParams: Pr
           <p>Filtrovaný katalog taskerů pro klienty. Vyberte město, kategorii, ověření, cenu a kvalitu profilu.</p>
         </section>
 
+        <section className={styles.marketIntro} aria-label="Souhrn taskerů">
+          <article><strong>{providers.length} profilů</strong><p>Katalog kombinuje živé profily a ukázkové ověřené karty pro pilot.</p></article>
+          <article><strong>{verifiedCount} ověřených</strong><p>Ověřený tasker je vizuálně zvýrazněn teplým badge.</p></article>
+          <article><strong>{completedTotal} úkolů</strong><p>Historie dokončených prací bude růst po spuštění platformy.</p></article>
+        </section>
+
         <section className={styles.marketLayout}>
           <form className={styles.filterPanel} action="/poskytovatele">
             <h2>Filtry</h2>
+            <p className={styles.filterHint}>Najděte člověka podle lokality, typu služby, ověření a síly profilu.</p>
             <details className={styles.filterGroup} open>
               <summary>Lokalita</summary>
               <div className={styles.filterFields}>
@@ -150,7 +159,7 @@ export default async function ProvidersPage({ searchParams }: { searchParams: Pr
           <div>
             <div className={styles.resultsHeader}>
               <h2>{filteredProviders.length} taskerů</h2>
-              <span className="pill">{providers.length} celkem</span>
+              <div className={styles.resultsMeta}><span className="pill">{providers.length} celkem</span><span className="pill status-completed">Ověření profilu</span></div>
             </div>
             {filteredProviders.length ? (
               <div className="provider-grid">{filteredProviders.map((provider) => <ProviderCard key={provider.id} provider={provider} />)}</div>
@@ -158,8 +167,10 @@ export default async function ProvidersPage({ searchParams }: { searchParams: Pr
               <div className={styles.emptyResults}>
                 <h3>Žádní taskeři podle filtrů</h3>
                 <p>Zkuste jiné město, kategorii nebo vypněte filtr ověření.</p>
+                <a className="button secondary" href="/poskytovatele">Zobrazit všechny taskery</a>
               </div>
             )}
+            <div className={styles.marketNote}><strong>Nezávislí poskytovatelé</strong>Taskeři nejsou zaměstnanci Taskovo. Klient si vybírá samostatně podle profilu, ceny, zprávy a domluvy.</div>
           </div>
         </section>
       </main>
