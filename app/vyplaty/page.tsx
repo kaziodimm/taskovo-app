@@ -2,17 +2,24 @@ import type { Metadata } from "next";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 
+const pageUrl = "https://taskovo.cz/vyplaty";
+
 export const metadata: Metadata = {
-  title: "Vyplaty pro taskery | Taskovo",
+  title: "Výplaty pro taskery | Taskovo",
   description:
-    "Cilovy model vyplat pro taskery, OSVC a firmy: overeni uctu, Stripe Connect, historie vyplat, provize a stav profilu.",
+    "Cílový model výplat pro taskery, OSVČ a firmy: ověření účtu, Stripe Connect, historie výplat, provize a stav profilu.",
   alternates: { canonical: "/vyplaty" },
   openGraph: {
-    title: "Vyplaty pro taskery | Taskovo",
-    description: "Jak Taskovo pripravi vyplaty nezavislym taskerum po dokonceni platebniho workflow.",
-    url: "https://taskovo-app.vercel.app/vyplaty",
+    title: "Výplaty pro taskery | Taskovo",
+    description: "Jak Taskovo připraví výplaty nezávislým taskerům po dokončení platebního workflow.",
+    url: pageUrl,
     siteName: "Taskovo",
     type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Výplaty pro taskery | Taskovo",
+    description: "Jak Taskovo připraví výplaty nezávislým taskerům po dokončení platebního workflow.",
   },
 };
 
@@ -26,10 +33,26 @@ const payoutBlocks = [
 ];
 
 export default function PayoutsPage() {
+  const payoutsJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    name: "Výplaty pro taskery Taskovo",
+    url: pageUrl,
+    description: metadata.description,
+    about: {
+      "@type": "Service",
+      name: "Taskovo tasker payouts",
+      provider: { "@type": "Organization", name: "Taskovo", url: "https://taskovo.cz" },
+      serviceType: "Marketplace payout workflow",
+      areaServed: "CZ",
+    },
+  };
+
   return (
     <>
       <Header />
       <main className="page-shell">
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(payoutsJsonLd) }} />
         <section className="page-hero">
           <div>
             <p className="kicker">Výplaty</p>
