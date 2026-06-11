@@ -56,5 +56,5 @@ export async function createTaskerOffer(formData: FormData) {
 
   await service.from("tasks").update({ status: "offers_received" }).eq("id", taskId);
   revalidateTaskViews(taskId);
-  redirect("/poskytovatel/dashboard");
+  redirect("/poskytovatel/dashboard?updated=offer_sent");
 }
