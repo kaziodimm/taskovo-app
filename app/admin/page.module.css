@@ -27,6 +27,88 @@
   border-color: rgba(255, 107, 53, .45);
 }
 
+.adminNoticeStack {
+  display: grid;
+  gap: 10px;
+  margin: 18px 0 22px;
+}
+
+.adminNotice {
+  padding: 14px 16px;
+  border-radius: 8px;
+  font-weight: 900;
+  box-shadow: 0 12px 26px rgba(13, 27, 42, .06);
+}
+
+.adminNoticeSuccess {
+  color: #1b5e38;
+  background: #edf9f2;
+  border: 1px solid #bfe8cf;
+}
+
+.adminNoticeError {
+  color: #8f2d12;
+  background: #fff3ef;
+  border: 1px solid #ffd0c4;
+}
+
+.queueSection {
+  scroll-margin-top: 96px;
+}
+
+.queueGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.queueCard {
+  display: grid;
+  align-content: start;
+  gap: 7px;
+  min-height: 154px;
+  padding: 16px;
+  color: var(--navy);
+  background: linear-gradient(180deg, #fff, #f7f9fb);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: 0 12px 26px rgba(13, 27, 42, .05);
+}
+
+.queueCard:hover {
+  transform: translateY(-1px);
+  border-color: rgba(65, 90, 119, .34);
+  box-shadow: 0 16px 30px rgba(13, 27, 42, .08);
+}
+
+.queueCard strong {
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.queueCard span {
+  font-size: .98rem;
+  font-weight: 950;
+}
+
+.queueCard p {
+  margin: 0;
+  color: var(--muted);
+  font-size: .92rem;
+  line-height: 1.45;
+}
+
+.queueCardDanger {
+  background: linear-gradient(180deg, #fff4ef, #fff);
+  border-color: rgba(255, 107, 53, .45);
+}
+
+.queueCardWarning {
+  background: linear-gradient(180deg, #fff8dd, #fff);
+  border-color: rgba(245, 197, 66, .7);
+}
+
 .sectionCard {
   padding: clamp(18px, 3vw, 28px);
   background: #fff;
@@ -65,6 +147,36 @@
 
 .adminItem {
   min-width: 0;
+}
+
+.taskItemHeader {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.taskItemHeader > div {
+  min-width: 0;
+}
+
+.taskItemHeader strong,
+.taskItemHeader p {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.alertPill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  padding: 0 10px;
+  color: #fff;
+  background: linear-gradient(135deg, #b42318, var(--orange));
+  border-radius: 999px;
+  font-size: .76rem;
+  font-weight: 950;
+  box-shadow: 0 8px 18px rgba(180, 35, 24, .18);
 }
 
 .directoryCard {
@@ -310,10 +422,24 @@
   color: var(--muted);
 }
 
+@media (max-width: 900px) {
+  .queueGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 @media (max-width: 640px) {
   .adminJumpNav a {
     flex: 1 1 100%;
     justify-content: center;
+  }
+
+  .queueGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .taskItemHeader {
+    display: grid;
   }
 
   .directoryList {
