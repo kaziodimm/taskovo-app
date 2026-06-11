@@ -11,6 +11,12 @@ function initials(name: string) {
   return name.split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase();
 }
 
+function trustLabel(provider: FeaturedProvider) {
+  if (provider.verified) return "Ověřený profil";
+  if (provider.completedTasks > 0) return "Historie úkolů";
+  return "Nový profil";
+}
+
 export function ProviderCard({ provider }: { provider: FeaturedProvider }) {
   return (
     <article className={`provider-card ${styles.card}`}>
@@ -20,7 +26,7 @@ export function ProviderCard({ provider }: { provider: FeaturedProvider }) {
         ) : (
           <div className={styles.mediaFallback} aria-hidden="true">{initials(provider.name)}</div>
         )}
-        {provider.verified ? <span className={`verified-badge ${styles.badge}`} style={verifiedBadgeStyle}>✓ Ověřeno</span> : null}
+        {provider.verified ? <span className={`verified-badge ${styles.badge}`} style={verifiedBadgeStyle}>Ověřeno</span> : <span className={`${styles.badge} ${styles.newBadge}`}>Nový profil</span>}
       </div>
       <div className={styles.body}>
         <div className={styles.identity}>
@@ -28,6 +34,10 @@ export function ProviderCard({ provider }: { provider: FeaturedProvider }) {
           <p>{provider.city} · {provider.responseTime}</p>
         </div>
         <p className={styles.bio}>{provider.bio}</p>
+        <div className={styles.trustRow}>
+          <span>{trustLabel(provider)}</span>
+          <span>{provider.reviews ? `${provider.reviews} recenzí` : "Recenze po pilotu"}</span>
+        </div>
         <div className={`provider-metrics ${styles.metrics}`}>
           <span><strong>{provider.rating.toFixed(1)}</strong> hodnocení</span>
           <span><strong>{provider.completedTasks}</strong> úkolů</span>
