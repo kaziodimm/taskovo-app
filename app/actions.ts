@@ -253,7 +253,7 @@ export async function createOffer(formData: FormData) {
 
   await service.from("tasks").update({ status: "offers_received" }).eq("id", taskId);
   revalidateTaskViews(taskId);
-  redirect(user?.user_metadata?.role === "tasker" ? "/poskytovatel/dashboard" : "/tasks");
+  redirect(user?.user_metadata?.role === "tasker" ? "/poskytovatel/dashboard?updated=offer_sent" : "/tasks");
 }
 
 export async function addTaskAttachment(formData: FormData) {
@@ -277,7 +277,7 @@ export async function addTaskAttachment(formData: FormData) {
 
   revalidatePath(`/ukol/${taskId}`);
   revalidatePath("/dashboard");
-  redirect(`/ukol/${taskId}`);
+  redirect(`/ukol/${taskId}?updated=attachment_added`);
 }
 
 export async function acceptOffer(formData: FormData) {
@@ -294,11 +294,11 @@ export async function acceptOffer(formData: FormData) {
   const service = createServiceSupabaseClient();
   const { data: task, error: taskError } = await service.from("tasks").select("id,client_auth_user_id,status").eq("id", taskId).maybeSingle();
   if (taskError) throw new Error(taskError.message);
-  if (!task || task.client_auth_user_id !== user.id) redirect("/dashboard?error=forbidden");
+  if (!task || task.client_auth_user_id !== user.id) redirect(`/ukol/${taskId}?error=forbidden`);
 
   const { data: offer, error: offerError } = await service.from("offers").select("id,task_id,tasker_auth_user_id,tasker_profile_id").eq("id", offerId).eq("task_id", taskId).maybeSingle();
   if (offerError) throw new Error(offerError.message);
-  if (!offer) redirect("/dashboard?error=offer_missing");
+  if (!offer) redirect(`/ukol/${taskId}?error=offer_missing`);
 
   const { error: acceptError } = await service.from("offers").update({ status: "accepted" }).eq("id", offerId);
   if (acceptError) throw new Error(acceptError.message);
@@ -315,7 +315,7 @@ export async function acceptOffer(formData: FormData) {
   if (taskUpdateError) throw new Error(taskUpdateError.message);
 
   revalidateTaskViews(taskId);
-  redirect("/dashboard");
+  redirect(`/ukol/${taskId}?updated=offer_accepted`);
 }
 
 export async function startTaskWork(formData: FormData) {
@@ -338,7 +338,7 @@ export async function startTaskWork(formData: FormData) {
   if (error) throw new Error(error.message);
 
   revalidateTaskViews(taskId);
-  redirect(`/ukol/${taskId}`);
+  redirect(`/ukol/${taskId}?updated=task_started`);
 }
 
 export async function requestTaskCompletion(formData: FormData) {
@@ -361,7 +361,7 @@ export async function requestTaskCompletion(formData: FormData) {
   if (error) throw new Error(error.message);
 
   revalidateTaskViews(taskId);
-  redirect(`/ukol/${taskId}`);
+  redirect(`/ukol/${taskId}?updated=completion_requested`);
 }
 
 export async function confirmTaskCompletion(formData: FormData) {
@@ -384,7 +384,7 @@ export async function confirmTaskCompletion(formData: FormData) {
   if (error) throw new Error(error.message);
 
   revalidateTaskViews(taskId);
-  redirect(`/ukol/${taskId}`);
+  redirect(`/ukol/${taskId}?updated=task_completed`);
 }
 
 export async function sendTaskMessage(formData: FormData) {
@@ -427,7 +427,7 @@ export async function sendTaskMessage(formData: FormData) {
   if (error) throw new Error(error.message);
 
   revalidateTaskViews(taskId);
-  redirect(`/ukol/${taskId}`);
+  redirect(`/ukol/${taskId}?updated=message_sent`);
 }
 
 export async function createTaskerProfile(formData: FormData) {
