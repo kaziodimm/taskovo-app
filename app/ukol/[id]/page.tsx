@@ -36,7 +36,79 @@ const workflowCopy: Record<string, string> = {
   disputed: "Objednávka je pozastavená kvůli problému. Administrátor Taskovo může zkontrolovat zprávy a rozhodnout další krok.",
 };
 
+const updateMessages: Record<string, { title: string; body: string }> = {
+  task_started: {
+    title: "Práce byla zahájena",
+    body: "Klient uvidí, že objednávka je ve stavu Probíhá. Další krok je dokončit práci a označit ji jako hotovou.",
+  },
+  completion_requested: {
+    title: "Dokončení čeká na potvrzení",
+    body: "Klient teď může zkontrolovat výsledek a potvrdit dokončení objednávky.",
+  },
+  task_completed: {
+    title: "Objednávka je dokončená",
+    body: "Stav zakázky byl změněn na Hotovo. Později sem napojíme recenze, platby a e-mailové upozornění.",
+  },
+  attachment_added: {
+    title: "Fotka byla nahrána",
+    body: "Nový podklad je viditelný jen na detailu této objednávky, aby seznam úkolů zůstal přehledný.",
+  },
+  message_sent: {
+    title: "Zpráva byla odeslána",
+    body: "Zpráva zůstává uložená u objednávky a vidí ji jen klient a vybraný tasker.",
+  },
+  dispute_reported: {
+    title: "Problém byl nahlášen",
+    body: "Objednávka je pozastavená a administrátor Taskovo uvidí důvod ve zprávách.",
+  },
+  offer_accepted: {
+    title: "Tasker byl vybrán",
+    body: "Zakázka je přiřazená vybranému taskerovi. Odteď se otevře soukromá domluva k objednávce.",
+  },
+};
+
+const errorMessages: Record<string, { title: string; body: string }> = {
+  config: {
+    title: "Chybí konfigurace služby",
+    body: "Akci teď nejde dokončit. Je potřeba zkontrolovat nastavení Supabase na serveru.",
+  },
+  forbidden: {
+    title: "K této akci nemáte oprávnění",
+    body: "Tuto objednávku může upravit jen klient, vybraný tasker nebo administrátor podle konkrétního kroku.",
+  },
+  status: {
+    title: "Akci nejde provést v aktuálním stavu",
+    body: "Objednávka se mezitím posunula do jiného stavu. Zkontrolujte další krok v pravém panelu.",
+  },
+  image_file: {
+    title: "Fotku se nepodařilo nahrát",
+    body: "Použijte JPG, PNG, WebP nebo GIF do velikosti 8 MB.",
+  },
+  message_too_long: {
+    title: "Zpráva je příliš dlouhá",
+    body: "Zkraťte zprávu na maximálně 1200 znaků a zkuste ji poslat znovu.",
+  },
+  messages_closed: {
+    title: "Zprávy ještě nejsou otevřené",
+    body: "Soukromá domluva se aktivuje až po výběru taskera klientem.",
+  },
+  own_task: {
+    title: "Na vlastní úkol nelze poslat nabídku",
+    body: "Tasker nemůže poslat nabídku na objednávku, kterou sám vytvořil jako klient.",
+  },
+  task_missing: {
+    title: "Objednávka nebyla nalezena",
+    body: "Úkol mohl být smazán, zrušen nebo není dostupný.",
+  },
+  dispute_too_long: {
+    title: "Popis problému je příliš dlouhý",
+    body: "Zkraťte důvod na maximálně 1200 znaků a odešlete ho znovu.",
+  },
+};
+
 const disputableStatuses = new Set(["assigned", "in_progress", "awaiting_confirmation"]);
+
+type TaskDetailSearchParams = Promise<{ updated?: string; error?: string }>;
 
 function money(value: number) {
   return value.toLocaleString("cs-CZ");
@@ -46,8 +118,11 @@ function dateTime(value: string) {
   return new Date(value).toLocaleString("cs-CZ", { dateStyle: "short", timeStyle: "short" });
 }
 
-export default async function TaskDetailPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function TaskDetailPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams?: TaskDetailSearchParams }) {
   const { id } = await params;
+  const query = searchParams ? await searchParams : {};
+  const updateMessage = query.updated ? updateMessages[query.updated] : null;
+  const errorMessage = query.error ? errorMessages[query.error] : null;
   const [task, offers, attachments, messages] = await Promise.all([getTaskById(id), getOffersForTask(id), getTaskAttachments(id), getTaskMessages(id)]);
   if (!task) notFound();
 
@@ -91,6 +166,23 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
             <p>Rozpočet klienta</p>
           </div>
         </section>
+
+        {(updateMessage || errorMessage) ? (
+          <section className={styles.noticeStack} aria-live="polite">
+            {updateMessage ? (
+              <div className={`${styles.notice} ${styles.noticeSuccess}`}>
+                <strong>{updateMessage.title}</strong>
+                <p>{updateMessage.body}</p>
+              </div>
+            ) : null}
+            {errorMessage ? (
+              <div className={`${styles.notice} ${styles.noticeError}`}>
+                <strong>{errorMessage.title}</strong>
+                <p>{errorMessage.body}</p>
+              </div>
+            ) : null}
+          </section>
+        ) : null}
 
         <section className={styles.orderGrid}>
           <div className={styles.orderMain}>
