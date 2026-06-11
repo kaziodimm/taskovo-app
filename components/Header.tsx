@@ -59,12 +59,18 @@ export async function Header() {
       <nav className="site-nav nav-menu" aria-label="Hlavní navigace">
         <details style={navDetailsStyle}>
           <summary style={navSummaryStyle}>Kategorie</summary>
-          <div style={navDropdownStyle}>
+          <div style={{ ...navDropdownStyle, minWidth: 260 }}>
             <a href="/kategorie/uklid">Úklid</a>
             <a href="/kategorie/stehovani">Stěhování</a>
             <a href="/kategorie/montaz-nabytku">Montáž nábytku</a>
             <a href="/kategorie/doruceni">Doručení</a>
             <a href="/kategorie">Všechny kategorie</a>
+            <span style={{ height: 1, background: "var(--line)", margin: "4px 0" }} />
+            <a href="/uklid-praha">Úklid Praha</a>
+            <a href="/stehovani-praha">Stěhování Praha</a>
+            <a href="/montaz-nabytku-praha">Montáž nábytku Praha</a>
+            <a href="/doruceni-zasilek-praha">Doručení zásilek Praha</a>
+            <a href="/pomoc-na-zahrade-praha">Pomoc na zahradě Praha</a>
           </div>
         </details>
         <details style={navDetailsStyle}>
