@@ -85,6 +85,25 @@
   padding-top: 12px;
 }
 
+.offerCta {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  background: #fff8e3;
+  border: 1px solid #f4dc94;
+  border-radius: 8px;
+  color: #5f4a16;
+  font-weight: 800;
+}
+
+.offerCta p {
+  margin: 0;
+}
+
+.offerCta a {
+  width: 100%;
+}
+
 @media (max-width: 640px) {
   .card {
     min-height: auto;
