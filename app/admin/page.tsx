@@ -40,6 +40,19 @@ const adminStatusOptions = [
   "disputed",
 ];
 
+const updateMessages: Record<string, string> = {
+  tasker_verification: "Ověření taskera bylo uloženo.",
+  profile_photo_approved: "Profilová fotka byla schválena.",
+  profile_photo_rejected: "Profilová fotka byla odmítnuta.",
+};
+
+const errorMessages: Record<string, string> = {
+  config: "Chybí konfigurace pro administraci.",
+  bad_status: "Vybraný stav objednávky není platný.",
+};
+
+type AdminSearchParams = Promise<{ updated?: string; error?: string }>;
+
 type ReviewProfile = {
   id: string;
   name: string;
@@ -122,10 +135,14 @@ function photoReviewItem(profile: ReviewProfile, role: "client" | "tasker") {
   );
 }
 
-export default async function AdminPage() {
+export default async function AdminPage({ searchParams }: { searchParams?: AdminSearchParams }) {
   if (!(await isAdminAuthenticated())) {
     redirect("/prihlaseni?mode=login&error=login_required");
   }
+
+  const query = searchParams ? await searchParams : {};
+  const updateMessage = query.updated ? updateMessages[query.updated] : null;
+  const errorMessage = query.error ? errorMessages[query.error] : null;
 
   const [tasks, offers, taskers, clients] = await Promise.all([getAdminTasks(), getOffers(), getTaskers(), getClients()]);
   const messageCounts = await getTaskMessageCounts(tasks.map((task) => task.id));
@@ -142,6 +159,44 @@ export default async function AdminPage() {
   const pendingTaskerPhotos = taskers.filter((tasker) => tasker.pending_avatar_url);
   const pendingPhotoCount = pendingClientPhotos.length + pendingTaskerPhotos.length;
   const verifiedTaskers = taskers.filter((tasker) => tasker.verified).length;
+
+  const renderTaskItem = (task: (typeof tasks)[number], options: { archived?: boolean; compact?: boolean } = {}) => {
+    const taskOffers = offersByTask.get(task.id) || [];
+    const acceptedOffer = taskOffers.find((offer) => offer.id === task.accepted_offer_id || offer.status === "accepted");
+
+    return (
+      <article className={`admin-item ${styles.adminItem}`} key={task.id}>
+        <div className={styles.taskItemHeader}>
+          <div>
+            <strong>{task.title}</strong>
+            <p>{task.city} · {task.desired_time} · {money(task.budget_czk)} Kč · {statusLabels[task.status] ?? task.status}</p>
+          </div>
+          {task.status === "disputed" ? <span className={styles.alertPill}>Spor</span> : null}
+          {task.status === "awaiting_confirmation" ? <span className={styles.warningPill}>čeká na klienta</span> : null}
+        </div>
+        <p>Klient: {task.client_name} · {task.client_contact || "kontakt není uveden"}</p>
+        <p>Tasker: {acceptedOffer?.tasker_name || "zatím nevybrán"} · {taskOffers.length} nabídek · {messageCounts[task.id] || 0} zpráv</p>
+        <div className="hero-actions">
+          <a className="button primary" href={`/admin/tasks/${task.id}`}>Řídit objednávku</a>
+          <a className="button secondary" href={`/ukol/${task.id}`}>Veřejný detail</a>
+          {!options.archived ? (
+            <form className="compact-form" action={updateAdminTaskStatus}>
+              <input type="hidden" name="task_id" value={task.id} />
+              <label>Stav<select name="status" defaultValue={task.status}>{adminStatusOptions.map((status) => <option key={status} value={status}>{statusLabels[status] ?? status}</option>)}</select></label>
+              <button className="button secondary" type="submit">Uložit stav</button>
+            </form>
+          ) : null}
+          {!options.archived && acceptedOffer ? (
+            <form action={reopenAdminTask}>
+              <input type="hidden" name="task_id" value={task.id} />
+              <button className="button secondary" type="submit">Vrátit do hledání</button>
+            </form>
+          ) : null}
+        </div>
+        {!options.archived && !options.compact ? taskCancelForm(task.id) : null}
+      </article>
+    );
+  };
 
   return (
     <>
@@ -161,9 +216,21 @@ export default async function AdminPage() {
           <button className="button secondary" type="submit">Odhlásit se</button>
         </form>
 
+        {(updateMessage || errorMessage) ? (
+          <div className={styles.adminNoticeStack}>
+            {updateMessage ? <div className={`${styles.adminNotice} ${styles.adminNoticeSuccess}`}>{updateMessage}</div> : null}
+            {errorMessage ? <div className={`${styles.adminNotice} ${styles.adminNoticeError}`}>{errorMessage}</div> : null}
+          </div>
+        ) : null}
+
         <nav className={styles.adminJumpNav} aria-label="Rychlá navigace administrace">
+          <a href="#fronty">Fronty</a>
+          <a href="#spory">Spory</a>
+          <a href="#aktivni">Aktivní</a>
+          <a href="#otevrene">Otevřené</a>
           <a href="#review">Ke kontrole</a>
-          <a href="#orders">Objednávky</a>
+          <a href="#orders">Všechny</a>
+          <a href="#zrusene">Archiv</a>
           <a href="#clients">Klienti</a>
           <a href="#taskers">Taskeři</a>
           <a href="#offers">Nabídky</a>
@@ -179,7 +246,40 @@ export default async function AdminPage() {
           <article className="dashboard-panel"><h3>Účty</h3><p>{verifiedTaskers}/{taskers.length} ověřených taskerů · {clients.length} klientů.</p></article>
         </div>
 
-        <section id="review" className={`section ${styles.sectionCard}`}>
+        <section id="fronty" className={`section ${styles.sectionCard} ${styles.queueSection}`}>
+          <div className="section-heading-row">
+            <div className="section-title"><p className="kicker">Fronty</p><h2>Rychlé řízení marketplace</h2><p>Nejdůležitější provozní pohledy jsou oddělené, aby se u většího počtu objednávek dalo rychle najít, co hoří.</p></div>
+          </div>
+          <div className={styles.queueGrid}>
+            <a className={`${styles.queueCard} ${disputedTasks.length ? styles.queueCardDanger : ""}`} href="#spory"><strong>{disputedTasks.length}</strong><span>Spory</span><p>Objednávky, kde je potřeba ruční zásah.</p></a>
+            <a className={styles.queueCard} href="#aktivni"><strong>{activeTasks.length}</strong><span>Aktivní práce</span><p>Přiřazeno, probíhá nebo čeká na potvrzení.</p></a>
+            <a className={`${styles.queueCard} ${openTasks.length ? styles.queueCardWarning : ""}`} href="#otevrene"><strong>{openTasks.length}</strong><span>Otevřené</span><p>Úkoly, které ještě hledají taskera.</p></a>
+            <a className={styles.queueCard} href="#zrusene"><strong>{cancelledTasks.length}</strong><span>Archiv</span><p>Zrušené objednávky jen pro historii.</p></a>
+          </div>
+        </section>
+
+        <section id="spory" className={`section ${styles.sectionCard} ${styles.queueSection}`}>
+          <div className="section-title"><p className="kicker">Priorita</p><h2>Spory a ruční zásahy</h2><p>Sem patří objednávky, které by měl admin řešit jako první.</p></div>
+          <div className={styles.adminList}>
+            {disputedTasks.length ? disputedTasks.map((task) => renderTaskItem(task)) : <div className={styles.emptyState}><strong>Žádné aktivní spory.</strong><p>Když objednávka přejde do stavu spor, objeví se tady.</p></div>}
+          </div>
+        </section>
+
+        <section id="aktivni" className={`section ${styles.sectionCard} ${styles.queueSection}`}>
+          <div className="section-title"><p className="kicker">Práce</p><h2>Aktivní objednávky</h2><p>Přiřazené zakázky, probíhající práce a dokončení čekající na klienta.</p></div>
+          <div className={styles.adminList}>
+            {activeTasks.length ? activeTasks.map((task) => renderTaskItem(task, { compact: true })) : <div className={styles.emptyState}><strong>Žádné aktivní objednávky.</strong><p>Jakmile klient vybere taskera, objednávka se přesune sem.</p></div>}
+          </div>
+        </section>
+
+        <section id="otevrene" className={`section ${styles.sectionCard} ${styles.queueSection}`}>
+          <div className="section-title"><p className="kicker">Marketplace</p><h2>Otevřené objednávky</h2><p>Úkoly, které čekají na nabídky nebo na výběr taskera.</p></div>
+          <div className={styles.adminList}>
+            {openTasks.length ? openTasks.map((task) => renderTaskItem(task, { compact: true })) : <div className={styles.emptyState}><strong>Žádné otevřené objednávky.</strong><p>Nové schválené úkoly se objeví v této frontě.</p></div>}
+          </div>
+        </section>
+
+        <section id="review" className={`section ${styles.sectionCard} ${styles.queueSection}`}>
           <div className="section-heading-row">
             <div className="section-title"><p className="kicker">Ke kontrole</p><h2>Moderace profilových fotek</h2><p>Nové fotky se nezobrazují veřejně, dokud je administrátor neschválí. Tady jsou všechny čekající žádosti na jednom místě.</p></div>
           </div>
@@ -196,41 +296,20 @@ export default async function AdminPage() {
           )}
         </section>
 
-        <section id="orders" className={`section ${styles.sectionCard}`}>
+        <section id="orders" className={`section ${styles.sectionCard} ${styles.queueSection}`}>
           <div className="section-heading-row">
-            <div className="section-title"><p className="kicker">Objednávky</p><h2>Kontrola zakázek</h2><p>Hlavní operativní seznam bez zrušených objednávek. Zrušené objednávky zůstávají jen v archivu kvůli historii.</p></div>
+            <div className="section-title"><p className="kicker">Objednávky</p><h2>Všechny aktivní zakázky</h2><p>Hlavní operativní seznam bez zrušených objednávek. Zrušené objednávky zůstávají jen v archivu kvůli historii.</p></div>
             <a className="button secondary" href="/tasks">Veřejný marketplace</a>
           </div>
           <div className={styles.adminList}>
-            {visibleTasks.map((task) => {
-              const taskOffers = offersByTask.get(task.id) || [];
-              const acceptedOffer = taskOffers.find((offer) => offer.id === task.accepted_offer_id || offer.status === "accepted");
+            {visibleTasks.length ? visibleTasks.map((task) => renderTaskItem(task)) : <div className={styles.emptyState}><strong>Zatím nejsou žádné aktivní objednávky.</strong><p>Jakmile klient zadá úkol, uvidíš ho v této administraci.</p></div>}
+          </div>
+        </section>
 
-              return (
-                <article className={`admin-item ${styles.adminItem}`} key={task.id}>
-                  <strong>{task.title}</strong>
-                  <p>{task.city} · {task.desired_time} · {money(task.budget_czk)} Kč · {statusLabels[task.status] ?? task.status}</p>
-                  <p>Klient: {task.client_name} · {task.client_contact || "kontakt není uveden"}</p>
-                  <p>Tasker: {acceptedOffer?.tasker_name || "zatím nevybrán"} · {taskOffers.length} nabídek · {messageCounts[task.id] || 0} zpráv</p>
-                  <div className="hero-actions">
-                    <a className="button primary" href={`/admin/tasks/${task.id}`}>Řídit objednávku</a>
-                    <a className="button secondary" href={`/ukol/${task.id}`}>Veřejný detail</a>
-                    <form className="compact-form" action={updateAdminTaskStatus}>
-                      <input type="hidden" name="task_id" value={task.id} />
-                      <label>Stav<select name="status" defaultValue={task.status}>{adminStatusOptions.map((status) => <option key={status} value={status}>{statusLabels[status] ?? status}</option>)}</select></label>
-                      <button className="button secondary" type="submit">Uložit stav</button>
-                    </form>
-                    {acceptedOffer ? (
-                      <form action={reopenAdminTask}>
-                        <input type="hidden" name="task_id" value={task.id} />
-                        <button className="button secondary" type="submit">Vrátit do hledání</button>
-                      </form>
-                    ) : null}
-                  </div>
-                  {taskCancelForm(task.id)}
-                </article>
-              );
-            })}
+        <section id="zrusene" className={`section ${styles.sectionCard} ${styles.queueSection}`}>
+          <div className="section-title"><p className="kicker">Archiv</p><h2>Zrušené objednávky</h2><p>Archiv zůstává oddělený, aby nerušil každodenní provoz marketplace.</p></div>
+          <div className={styles.adminList}>
+            {cancelledTasks.length ? cancelledTasks.map((task) => renderTaskItem(task, { archived: true })) : <div className={styles.emptyState}><strong>Archiv je prázdný.</strong><p>Zrušené objednávky se budou ukládat sem.</p></div>}
           </div>
         </section>
 
