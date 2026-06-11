@@ -76,7 +76,7 @@ export async function updateAdminClientProfile(formData: FormData) {
 
   revalidateAdminViews();
   revalidatePath(`/admin/clients/${clientId}`);
-  redirect(`/admin/clients/${clientId}`);
+  redirect(`/admin/clients/${clientId}?updated=profile_saved`);
 }
 
 export async function updateAdminTaskerProfile(formData: FormData) {
@@ -100,7 +100,7 @@ export async function updateAdminTaskerProfile(formData: FormData) {
 
   revalidateAdminViews();
   revalidatePath(`/admin/taskers/${taskerId}`);
-  redirect(`/admin/taskers/${taskerId}`);
+  redirect(`/admin/taskers/${taskerId}?updated=profile_saved`);
 }
 
 export async function approveProfilePhoto(formData: FormData) {
@@ -162,7 +162,7 @@ export async function updateAdminTaskStatus(formData: FormData) {
   if (error) throw new Error(error.message);
 
   revalidateAdminViews(taskId);
-  redirect("/admin");
+  redirect(`/admin/tasks/${taskId}?updated=status_saved`);
 }
 
 export async function cancelAdminTask(formData: FormData) {
@@ -182,7 +182,7 @@ export async function cancelAdminTask(formData: FormData) {
   if (error) throw new Error(error.message);
 
   revalidateAdminViews(taskId);
-  redirect("/admin?updated=task_cancelled");
+  redirect(`/admin/tasks/${taskId}?updated=task_cancelled`);
 }
 
 export async function reopenAdminTask(formData: FormData) {
@@ -204,7 +204,7 @@ export async function reopenAdminTask(formData: FormData) {
   if (error) throw new Error(error.message);
 
   revalidateAdminViews(taskId);
-  redirect("/admin");
+  redirect(`/admin/tasks/${taskId}?updated=task_reopened`);
 }
 
 export async function acceptAdminOffer(formData: FormData) {
@@ -219,7 +219,7 @@ export async function acceptAdminOffer(formData: FormData) {
     .eq("task_id", taskId)
     .maybeSingle();
   if (offerError) throw new Error(offerError.message);
-  if (!offer) redirect("/admin?error=offer_missing");
+  if (!offer) redirect(`/admin/tasks/${taskId}?error=offer_missing`);
 
   const { error: acceptError } = await service.from("offers").update({ status: "accepted" }).eq("id", offerId);
   if (acceptError) throw new Error(acceptError.message);
@@ -239,7 +239,7 @@ export async function acceptAdminOffer(formData: FormData) {
   if (error) throw new Error(error.message);
 
   revalidateAdminViews(taskId);
-  redirect("/admin");
+  redirect(`/admin/tasks/${taskId}?updated=offer_accepted`);
 }
 
 export async function declineAdminOffer(formData: FormData) {
@@ -250,7 +250,7 @@ export async function declineAdminOffer(formData: FormData) {
   if (error) throw new Error(error.message);
 
   revalidateAdminViews(taskId);
-  redirect("/admin");
+  redirect(`/admin/tasks/${taskId}?updated=offer_declined`);
 }
 
 export async function toggleTaskerVerification(formData: FormData) {
@@ -261,5 +261,5 @@ export async function toggleTaskerVerification(formData: FormData) {
   if (error) throw new Error(error.message);
 
   revalidateAdminViews();
-  redirect("/admin");
+  redirect("/admin?updated=tasker_verification");
 }
