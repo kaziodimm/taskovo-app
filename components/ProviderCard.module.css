@@ -1,8 +1,8 @@
 .card {
   display: grid;
-  grid-template-rows: 92px minmax(0, 1fr);
+  grid-template-rows: 104px minmax(0, 1fr);
   gap: 14px;
-  min-height: 384px;
+  min-height: 404px;
   height: 100%;
   overflow: hidden;
 }
@@ -12,7 +12,7 @@
   display: grid;
   place-items: center;
   width: 100%;
-  height: 92px;
+  height: 104px;
   overflow: hidden;
   background: linear-gradient(135deg, #edf4fb, #f7f9fb);
   border: 1px solid var(--line);
@@ -34,7 +34,7 @@
   display: grid;
   place-items: center;
   color: #fff;
-  background: linear-gradient(135deg, var(--steel), var(--navy));
+  background: radial-gradient(circle at 75% 20%, rgba(245,197,66,.9), transparent 28%), linear-gradient(135deg, var(--steel), var(--navy));
   font-size: 2rem;
   font-weight: 950;
 }
@@ -52,7 +52,7 @@
 
 .body {
   display: grid;
-  grid-template-rows: 46px 64px 62px 44px auto;
+  grid-template-rows: 48px 66px 62px 44px auto;
   gap: 12px;
   min-width: 0;
   min-height: 0;
@@ -76,6 +76,7 @@
 .identity h3 {
   min-height: 1.3em;
   margin: 0;
+  color: var(--navy);
   font-size: 1.08rem;
   line-height: 1.25;
   -webkit-line-clamp: 1;
@@ -90,7 +91,7 @@
 }
 
 .bio {
-  min-height: 64px;
+  min-height: 66px;
   margin: 0;
   color: var(--muted);
   line-height: 1.42;
@@ -129,12 +130,12 @@
 
 @media (max-width: 640px) {
   .card {
-    grid-template-rows: 86px minmax(0, 1fr);
-    min-height: 366px;
+    grid-template-rows: 94px minmax(0, 1fr);
+    min-height: 382px;
   }
 
   .mediaFrame {
-    height: 86px;
+    height: 94px;
   }
 
   .body {
