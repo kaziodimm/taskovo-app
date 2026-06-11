@@ -40,6 +40,13 @@ const statusOptions = [
   { value: "offers_received", label: "S nabídkami" },
 ];
 
+const presetLinks = [
+  { label: "Praha dnes", href: "/tasks?city=Praha&time=Dnes&sort=newest" },
+  { label: "Montáž nábytku", href: "/tasks?category=Montáž&sort=price_desc" },
+  { label: "Stěhování", href: "/tasks?category=Stěhování&sort=price_desc" },
+  { label: "Rozpočet 1 000+ Kč", href: "/tasks?min=1000&sort=price_desc" },
+];
+
 async function getCurrentUser() {
   if (!hasSupabaseEnv()) return null;
 
@@ -81,6 +88,19 @@ function filterTasks(tasks: Task[], params: TaskSearchParams) {
 
 function formatCzk(value: number) {
   return `${value.toLocaleString("cs-CZ")} Kč`;
+}
+
+function activeFilters(params: TaskSearchParams) {
+  const filters = [
+    params.city ? `Město: ${params.city}` : null,
+    params.category ? `Kategorie: ${params.category}` : null,
+    params.status ? `Stav: ${statusOptions.find((status) => status.value === params.status)?.label || params.status}` : null,
+    params.time ? `Termín: ${params.time}` : null,
+    params.min ? `Od ${formatCzk(Number(params.min))}` : null,
+    params.max ? `Do ${formatCzk(Number(params.max))}` : null,
+  ].filter(Boolean) as string[];
+
+  return filters;
 }
 
 function buildTasksSchema(tasks: Task[]) {
@@ -131,6 +151,8 @@ export default async function TasksPage({ searchParams }: { searchParams: Promis
   const cities = Array.from(new Set(availableTasks.map((task) => task.city).filter(Boolean))).sort((a, b) => a.localeCompare(b, "cs-CZ"));
   const totalBudget = filteredTasks.reduce((sum, task) => sum + task.budget_czk, 0);
   const offerCount = offers.filter((offer) => availableTasks.some((task) => task.id === offer.task_id)).length;
+  const filters = activeFilters(params);
+  const averageBudget = filteredTasks.length ? Math.round(totalBudget / filteredTasks.length) : 0;
   const offerUnavailable = user ? (
     <>
       <p>Nabídky mohou posílat jen účty registrované jako tasker.</p>
@@ -150,15 +172,26 @@ export default async function TasksPage({ searchParams }: { searchParams: Promis
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(buildTasksSchema(filteredTasks)) }} />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(searchActionSchema) }} />
         <section className="section-title">
-          <p className="kicker">Marketplace</p>
+          <p className="kicker">Marketplace pro taskery</p>
           <h1 className="page-title">Dostupné úkoly</h1>
           <p>Filtrovaný přehled zakázek pro taskery. Vyberte město, kategorii, rozpočet, stav a termín. Nabídku posílá nezávislý tasker, klient si vybírá sám.</p>
         </section>
 
         <section className={styles.marketIntro} aria-label="Souhrn marketplace">
-          <article><strong>{availableTasks.length} otevřených úkolů</strong><p>Aktuální poptávky, na které lze poslat nabídku.</p></article>
-          <article><strong>{formatCzk(totalBudget)}</strong><p>Součet rozpočtů v právě zobrazeném výběru.</p></article>
-          <article><strong>{offerCount} nabídek</strong><p>Signál aktivity taskerů v pilotním marketplace.</p></article>
+          <article><span>Aktivní poptávky</span><strong>{availableTasks.length} úkolů</strong><p>Zakázky, na které lze poslat nabídku.</p></article>
+          <article><span>Rozpočet výběru</span><strong>{formatCzk(totalBudget)}</strong><p>Součet rozpočtů ve zobrazených výsledcích.</p></article>
+          <article><span>Průměr</span><strong>{averageBudget ? formatCzk(averageBudget) : "-"}</strong><p>Orientační hodnota jedné zakázky ve filtru.</p></article>
+          <article><span>Aktivita</span><strong>{offerCount} nabídek</strong><p>Signál pilotní marketplace aktivity.</p></article>
+        </section>
+
+        <section className={styles.quickSearch} aria-label="Rychlé filtry">
+          <div>
+            <strong>Rychlý výběr</strong>
+            <p>Nejčastější scénáře pro taskery v pilotní verzi.</p>
+          </div>
+          <nav aria-label="Rychlé filtry úkolů">
+            {presetLinks.map((preset) => <a key={preset.href} href={preset.href}>{preset.label}</a>)}
+          </nav>
         </section>
 
         <section className={styles.marketLayout}>
@@ -230,9 +263,27 @@ export default async function TasksPage({ searchParams }: { searchParams: Promis
 
           <div>
             <div className={styles.resultsHeader}>
-              <h2>{filteredTasks.length} dostupných úkolů</h2>
+              <div>
+                <h2>{filteredTasks.length} dostupných úkolů</h2>
+                <p>{isTasker ? "Můžete poslat nabídku přímo z karty úkolu." : "Pro posílání nabídek je potřeba tasker účet."}</p>
+              </div>
               <div className={styles.resultsMeta}><span className="pill">{availableTasks.length} dostupných celkem</span><span className="pill status-offers_received">Klient vybírá</span></div>
             </div>
+
+            {filters.length ? (
+              <div className={styles.activeFilters} aria-label="Aktivní filtry">
+                <strong>Aktivní filtry</strong>
+                {filters.map((filter) => <span key={filter}>{filter}</span>)}
+                <a href="/tasks">Vymazat vše</a>
+              </div>
+            ) : null}
+
+            <div className={styles.trustStrip} aria-label="Bezpečnost a role platformy">
+              <span>Tasker je nezávislý OSVČ nebo firma</span>
+              <span>Klient vybírá nabídku samostatně</span>
+              <span>Kontakt se ukáže po potvrzení výběru</span>
+            </div>
+
             {filteredTasks.length ? (
               <div className="task-grid">
                 {filteredTasks.map((task) => (
@@ -250,7 +301,10 @@ export default async function TasksPage({ searchParams }: { searchParams: Promis
               <div className={styles.emptyResults}>
                 <h3>Žádné dostupné úkoly podle filtrů</h3>
                 <p>Zkuste rozšířit město, cenu nebo termín. U pilotní verze bude počet dostupných zakázek růst postupně.</p>
-                <a className="button secondary" href="/tasks">Zobrazit vše</a>
+                <div className={styles.emptyActions}>
+                  <a className="button secondary" href="/tasks">Zobrazit vše</a>
+                  <a className="button primary" href="/poskytovatel/dashboard">Zpět do dashboardu</a>
+                </div>
               </div>
             )}
             <div className={styles.marketNote}><strong>Role Taskovo</strong>Taskovo pouze propojuje klienta a taskera. Tasker není zaměstnanec Taskovo a službu poskytuje samostatně jako OSVČ nebo firma.</div>
