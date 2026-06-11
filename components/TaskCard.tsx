@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
-import { acceptOffer, createOffer } from "@/app/actions";
+import { acceptOffer } from "@/app/actions";
+import { createTaskerOffer } from "@/app/offer-actions";
 import { cancelClientTask, updateClientTask } from "@/app/client-task-actions";
 import type { Offer, Task } from "@/lib/types";
 import styles from "./TaskCard.module.css";
@@ -129,7 +130,7 @@ export function TaskCard({
         <p className="contact-note">Kontakt klienta se ukáže až po potvrzení vybraného taskera.</p>
       </details>
       {canSendOffer ? (
-        <form className="offer-form" action={createOffer}>
+        <form className="offer-form" action={createTaskerOffer}>
           <input type="hidden" name="task_id" value={task.id} />
           {!authenticatedTasker ? (
             <>
