@@ -13,41 +13,56 @@ import { createServerSupabaseClient } from "@/lib/supabase";
 import type { Task, TaskerProfile } from "@/lib/types";
 
 const statusLabels: Record<string, string> = {
-  assigned: "Tasker vybran",
-  in_progress: "Probiha",
-  awaiting_confirmation: "Ceka na klienta",
+  assigned: "Tasker vybrán",
+  in_progress: "Probíhá",
+  awaiting_confirmation: "Čeká na klienta",
   completed: "Hotovo",
-  cancelled: "Zruseno",
+  cancelled: "Zrušeno",
   disputed: "Spor",
 };
 
 const offerStatusLabels: Record<string, string> = {
-  pending: "Ceka na klienta",
-  accepted: "Vybrano klientem",
-  declined: "Odmitnuto",
+  pending: "Čeká na klienta",
+  accepted: "Vybráno klientem",
+  declined: "Odmítnuto",
+  withdrawn: "Staženo",
 };
 
 const nextStepCopy: Record<string, string> = {
-  assigned: "Zacnete praci, az mate s klientem domluvene detaily.",
-  in_progress: "Po dokonceni oznacte praci jako hotovou.",
-  awaiting_confirmation: "Ceka se na potvrzeni klienta.",
-  completed: "Objednavka je dokoncena.",
-  cancelled: "Objednavka je zrusena.",
+  assigned: "Začněte práci, až máte s klientem domluvené detaily.",
+  in_progress: "Po dokončení označte práci jako hotovou.",
+  awaiting_confirmation: "Čeká se na potvrzení klienta.",
+  completed: "Objednávka je dokončena.",
+  cancelled: "Objednávka je zrušena.",
+  disputed: "Objednávka je ve sporu. Sledujte zprávy a vyčkejte na další krok.",
 };
 
 const photoStatusCopy: Record<string, string> = {
-  none: "Zatim bez fotky ke kontrole.",
-  pending: "Nova fotka ceka na schvaleni administratorem.",
-  approved: "Fotka je schvalena a muze se zobrazovat v profilu taskera.",
-  rejected: "Fotka byla odmitnuta. Muzete poslat novou.",
+  none: "Zatím bez fotky ke kontrole.",
+  pending: "Nová fotka čeká na schválení administrátorem.",
+  approved: "Fotka je schválená a může se zobrazovat v profilu taskera.",
+  rejected: "Fotka byla odmítnuta. Můžete poslat novou.",
+};
+
+const updateMessages: Record<string, string> = {
+  offer_sent: "Nabídka byla odeslána klientovi.",
+  offer_withdrawn: "Nabídka byla stažena.",
+  profile: "Profil taskera byl uložen.",
+  photo_uploaded: "Fotka byla odeslána ke kontrole administrátorem.",
+};
+
+const errorMessages: Record<string, string> = {
+  profile_required: "Nejdřív doplňte tasker profil.",
+  config: "Chybí konfigurace služby. Zkontrolujeme nastavení Supabase.",
+  forbidden: "K této akci nemáte oprávnění.",
 };
 
 function needsTaskerAction(task: Task) {
-  return task.status === "assigned" || task.status === "in_progress";
+  return task.status === "assigned" || task.status === "in_progress" || task.status === "disputed";
 }
 
 function formatCzk(amount: number) {
-  return `${amount.toLocaleString("cs-CZ")} Kc`;
+  return `${amount.toLocaleString("cs-CZ")} Kč`;
 }
 
 function profileCompletion(profile: TaskerProfile | null) {
@@ -55,7 +70,8 @@ function profileCompletion(profile: TaskerProfile | null) {
   return Math.round((checks.filter(Boolean).length / checks.length) * 100);
 }
 
-export default async function ProviderDashboardPage() {
+export default async function ProviderDashboardPage({ searchParams }: { searchParams: Promise<{ updated?: string; error?: string }> }) {
+  const params = await searchParams;
   const supabase = await createServerSupabaseClient();
   const { data: { user } } = await supabase.auth.getUser();
 
@@ -83,6 +99,8 @@ export default async function ProviderDashboardPage() {
   const completion = profileCompletion(profile);
   const estimatedEarnings = acceptedOffers.reduce((total, offer) => total + offer.price_czk, 0);
   const possiblePipeline = availableTasks.reduce((total, task) => total + (task.budget_czk || 0), 0);
+  const notice = params.updated ? updateMessages[params.updated] : null;
+  const error = params.error ? errorMessages[params.error] || "Akci se nepodařilo dokončit." : null;
 
   return (
     <>
@@ -92,40 +110,43 @@ export default async function ProviderDashboardPage() {
           <div>
             <p className="kicker">Dashboard taskera</p>
             <h1 className="page-title">{profile?.name || user.user_metadata?.name || "Tasker"}</h1>
-            <p className="hero-lead">Sledujte dostupne ukoly, aktivni zakazky, nabidky, vyplaty a stav overeni profilu.</p>
+            <p className="hero-lead">Sledujte dostupné úkoly, aktivní zakázky, nabídky, výplaty a stav ověření profilu.</p>
           </div>
           <div className="dashboard-hero-actions">
-            <a className="button primary" href="#dostupne-ukoly">Najit ukol</a>
-            <a className="button secondary" href="/pro-taskery">Jak vydelavat</a>
+            <a className="button primary" href="#dostupne-ukoly">Najít úkol</a>
+            <a className="button secondary" href="/pro-taskery">Jak vydělávat</a>
           </div>
         </section>
 
-        <form action={logoutAccount} className="admin-toolbar"><span>{user.email}</span><button className="button secondary" type="submit">Odhlasit se</button></form>
+        {notice ? <p className="success-box">{notice}</p> : null}
+        {error ? <p className="alert-box">{error}</p> : null}
 
-        <section className="dashboard-overview" aria-label="Prehled taskera">
-          <article className="metric-card metric-card-primary"><span>Dostupne ukoly</span><strong>{availableTasks.length}</strong><p>Odhad rozpoctu v okoli: {formatCzk(possiblePipeline)}.</p></article>
-          <article className="metric-card"><span>Aktivni prace</span><strong>{assignedTasks.length}</strong><p>{actionTasks.length ? `${actionTasks.length} zakazka potrebuje dalsi krok.` : "Zadne urgentni kroky."}</p></article>
-          <article className="metric-card"><span>Odeslane nabidky</span><strong>{pendingOffers.length}</strong><p>{pendingOffers.length ? "Cekaji na rozhodnuti klienta." : "Zatim nic neceka."}</p></article>
-          <article className="metric-card"><span>Odhad vydelku</span><strong>{formatCzk(estimatedEarnings)}</strong><p>Souhrn vybranych nabidek pred finalnim Stripe tokem.</p></article>
+        <form action={logoutAccount} className="admin-toolbar"><span>{user.email}</span><button className="button secondary" type="submit">Odhlásit se</button></form>
+
+        <section className="dashboard-overview" aria-label="Přehled taskera">
+          <article className="metric-card metric-card-primary"><span>Dostupné úkoly</span><strong>{availableTasks.length}</strong><p>Odhad rozpočtu v okolí: {formatCzk(possiblePipeline)}.</p></article>
+          <article className="metric-card"><span>Aktivní práce</span><strong>{assignedTasks.length}</strong><p>{actionTasks.length ? `${actionTasks.length} zakázka potřebuje další krok.` : "Žádné urgentní kroky."}</p></article>
+          <article className="metric-card"><span>Odeslané nabídky</span><strong>{pendingOffers.length}</strong><p>{pendingOffers.length ? "Čekají na rozhodnutí klienta." : "Zatím nic nečeká."}</p></article>
+          <article className="metric-card"><span>Odhad výdělku</span><strong>{formatCzk(estimatedEarnings)}</strong><p>Souhrn vybraných nabídek před finálním Stripe tokem.</p></article>
         </section>
 
-        <section className="dashboard-tabs" aria-label="Rychle sekce">
-          <a href="#aktivni-prace">Aktivni prace</a>
-          <a href="#dostupne-ukoly">Dostupne ukoly</a>
-          <a href="#nabidky">Nabidky</a>
-          <a href="#vyplaty">Vyplaty</a>
+        <section className="dashboard-tabs" aria-label="Rychlé sekce">
+          <a href="#aktivni-prace">Aktivní práce</a>
+          <a href="#dostupne-ukoly">Dostupné úkoly</a>
+          <a href="#nabidky">Nabídky</a>
+          <a href="#vyplaty">Výplaty</a>
           <a href="#profil">Profil</a>
         </section>
 
         <section className="section dashboard-section" id="aktivni-prace">
           <div className="section-heading-row">
-            <div className="section-title"><p className="kicker">Moje zakazky</p><h2>Aktivni prace</h2><p>Jakmile vas klient vybere, zakazka se objevi tady. Dalsi kroky se resi na detailu objednavky.</p></div>
+            <div className="section-title"><p className="kicker">Moje zakázky</p><h2>Aktivní práce</h2><p>Jakmile vás klient vybere, zakázka se objeví tady. Další kroky se řeší na detailu objednávky.</p></div>
           </div>
 
           <div className="dashboard-grid">
-            <article className="dashboard-panel"><h3>Stav overeni</h3><p>{profile?.verified ? "Overeny tasker. Profil muze byt zvyraznen v marketplace." : "Profil ceka na overeni. Doplneny profil zvysi duveru klientu."}</p></article>
-            <article className="dashboard-panel"><h3>Dokonceni profilu</h3><p>{completion}% hotovo. Doplne bio, foto, kontakt a kategorie sluzeb.</p></article>
-            <article className="dashboard-panel"><h3>Zpravy</h3><p>{unreadTotal ? `${unreadTotal} novych zprav v aktivnich zakazkach.` : "Zadne nove zpravy."}</p></article>
+            <article className="dashboard-panel"><h3>Stav ověření</h3><p>{profile?.verified ? "Ověřený tasker. Profil může být zvýrazněn v marketplace." : "Profil čeká na ověření. Doplněný profil zvýší důvěru klientů."}</p></article>
+            <article className="dashboard-panel"><h3>Dokončení profilu</h3><p>{completion}% hotovo. Doplňte bio, foto, kontakt a kategorie služeb.</p></article>
+            <article className="dashboard-panel"><h3>Zprávy</h3><p>{unreadTotal ? `${unreadTotal} nových zpráv v aktivních zakázkách.` : "Žádné nové zprávy."}</p></article>
           </div>
 
           {assignedTasks.length > 0 ? (
@@ -134,23 +155,23 @@ export default async function ProviderDashboardPage() {
                 <article className={dashboardListStyles.compactItem} key={task.id}>
                   <strong className={dashboardListStyles.itemTitle}>{task.title}</strong>
                   <p className={dashboardListStyles.itemText}>{task.city} · {task.desired_time} · stav: {statusLabels[task.status] ?? task.status}</p>
-                  <p className={dashboardListStyles.itemText}>{nextStepCopy[task.status] ?? "Otevrete detail objednavky."} · {unreadCounts[task.id] || 0} novych zprav</p>
-                  <div className={dashboardListStyles.itemActions}><a className="button secondary" href={`/ukol/${task.id}`}>Otevrit objednavku</a></div>
+                  <p className={dashboardListStyles.itemText}>{nextStepCopy[task.status] ?? "Otevřete detail objednávky."} · {unreadCounts[task.id] || 0} nových zpráv</p>
+                  <div className={dashboardListStyles.itemActions}><a className="button secondary" href={`/ukol/${task.id}`}>Otevřít objednávku</a></div>
                 </article>
               ))}
             </div>
-          ) : <div className="empty-state"><h3>Zatim zadna aktivni zakazka</h3><p>Poslete nabidku na vhodny ukol. Pokud si vas klient vybere, zakazka se presune sem.</p><a className="button primary" href="#dostupne-ukoly">Projit ukoly</a></div>}
+          ) : <div className="empty-state"><h3>Zatím žádná aktivní zakázka</h3><p>Pošlete nabídku na vhodný úkol. Pokud si vás klient vybere, zakázka se přesune sem.</p><a className="button primary" href="#dostupne-ukoly">Projít úkoly</a></div>}
         </section>
 
         {waitingTasks.length ? (
           <section className="section dashboard-section">
-            <div className="section-title"><p className="kicker">Potvrzeni</p><h2>Ceka se na klienta</h2></div>
+            <div className="section-title"><p className="kicker">Potvrzení</p><h2>Čeká se na klienta</h2></div>
             <div className={dashboardListStyles.compactList}>
               {waitingTasks.map((task) => (
                 <article className={dashboardListStyles.compactItem} key={task.id}>
                   <strong className={dashboardListStyles.itemTitle}>{task.title}</strong>
-                  <p className={dashboardListStyles.itemText}>Prace je oznacena jako hotova. Klient ted potvrzuje dokonceni.</p>
-                  <div className={dashboardListStyles.itemActions}><a className="button secondary" href={`/ukol/${task.id}`}>Otevrit objednavku</a></div>
+                  <p className={dashboardListStyles.itemText}>Práce je označená jako hotová. Klient teď potvrzuje dokončení.</p>
+                  <div className={dashboardListStyles.itemActions}><a className="button secondary" href={`/ukol/${task.id}`}>Otevřít objednávku</a></div>
                 </article>
               ))}
             </div>
@@ -159,14 +180,14 @@ export default async function ProviderDashboardPage() {
 
         <section className="section dashboard-section" id="dostupne-ukoly">
           <div className="section-heading-row">
-            <div className="section-title"><p className="kicker">Dostupne ukoly</p><h2>Poslete nabidku klientovi</h2><p>Ukoly, na ktere jste uz odpovedeli, se schovaji a objevi se v sekci vasich nabidek.</p></div>
-            <a className="button secondary" href="/tasks">Verejny marketplace</a>
+            <div className="section-title"><p className="kicker">Dostupné úkoly</p><h2>Pošlete nabídku klientovi</h2><p>Úkoly, na které jste už odpověděli, se schovají a objeví se v sekci vašich nabídek.</p></div>
+            <a className="button secondary" href="/tasks">Veřejný marketplace</a>
           </div>
-          {availableTasks.length > 0 ? <div className="task-grid">{availableTasks.map((task) => <TaskCard key={task.id} task={task} offers={allOffers.filter((offer) => offer.task_id === task.id)} />)}</div> : <div className="empty-state"><h3>Zadne nove ukoly</h3><p>Bud nejsou zadne otevrene poptavky, nebo jste uz na vsechny dostupne ukoly poslali nabidku.</p></div>}
+          {availableTasks.length > 0 ? <div className="task-grid">{availableTasks.map((task) => <TaskCard key={task.id} task={task} offers={allOffers.filter((offer) => offer.task_id === task.id)} showOfferForm authenticatedTasker />)}</div> : <div className="empty-state"><h3>Žádné nové úkoly</h3><p>Buď nejsou žádné otevřené poptávky, nebo jste už na všechny dostupné úkoly poslali nabídku.</p></div>}
         </section>
 
         <section className="section dashboard-section" id="nabidky">
-          <div className="section-title"><p className="kicker">Moje nabidky</p><h2>Odeslane nabidky</h2><p>Klient si taskera vybira samostatne podle ceny, zpravy, profilu a domluvy.</p></div>
+          <div className="section-title"><p className="kicker">Moje nabídky</p><h2>Odeslané nabídky</h2><p>Klient si taskera vybírá samostatně podle ceny, zprávy, profilu a domluvy.</p></div>
           {myOffers.length > 0 ? (
             <div className={dashboardListStyles.compactList}>
               {myOffers.map((offer) => (
@@ -174,50 +195,50 @@ export default async function ProviderDashboardPage() {
                   <strong className={dashboardListStyles.itemTitle}>{formatCzk(offer.price_czk)}</strong>
                   <p className={dashboardListStyles.itemText}>{offer.message} · stav: {offerStatusLabels[offer.status] ?? offer.status}</p>
                   <div className={dashboardListStyles.itemActions}>
-                    <a className="button secondary" href={`/ukol/${offer.task_id}`}>Detail objednavky</a>
+                    <a className="button secondary" href={`/ukol/${offer.task_id}`}>Detail objednávky</a>
                     {offer.status === "pending" ? (
                       <form action={withdrawTaskerOffer}>
                         <input type="hidden" name="offer_id" value={offer.id} />
-                        <button className="button secondary" type="submit">Stahnout nabidku</button>
+                        <button className="button secondary" type="submit">Stáhnout nabídku</button>
                       </form>
                     ) : null}
                   </div>
                 </article>
               ))}
             </div>
-          ) : <div className="empty-state"><h3>Zatim bez nabidek</h3><p>Vyberte ukol vyse a poslete prvni nabidku.</p></div>}
+          ) : <div className="empty-state"><h3>Zatím bez nabídek</h3><p>Vyberte úkol výše a pošlete první nabídku.</p></div>}
         </section>
 
         <section className="section dashboard-section" id="vyplaty">
           <div className="dashboard-grid">
-            <article className="dashboard-panel"><h3>Vyplaty</h3><p>{completedTasks.length ? `Dokoncene zakazky: ${completedTasks.length}. Vyplatni tok pripojime po Stripe.` : "Vyplaty budou dostupne po prvni dokoncene a potvrzene zakazce."}</p></article>
-            <article className="dashboard-panel"><h3>Provize</h3><p>Pilotni uroven: standardni provize Taskovo. Presne sazby doplnime pred spustenim plateb.</p></article>
-            <article className="dashboard-panel"><h3>Pravni role</h3><p>Tasker je nezavisly OSVC nebo firma. Taskovo praci nezamestnava ani primo neposkytuje.</p></article>
+            <article className="dashboard-panel"><h3>Výplaty</h3><p>{completedTasks.length ? `Dokončené zakázky: ${completedTasks.length}. Výplatní tok připojíme po Stripe.` : "Výplaty budou dostupné po první dokončené a potvrzené zakázce."}</p></article>
+            <article className="dashboard-panel"><h3>Provize</h3><p>Pilotní úroveň: standardní provize Taskovo. Přesné sazby doplníme před spuštěním plateb.</p></article>
+            <article className="dashboard-panel"><h3>Právní role</h3><p>Tasker je nezávislý OSVČ nebo firma. Taskovo práci nezaměstnává ani přímo neposkytuje.</p></article>
           </div>
         </section>
 
         <section className="section admin-panel" id="profil">
           <div className="section-title">
             <p className="kicker">Profil taskera</p>
-            <h2>Pracovni udaje</h2>
-            <p>Tyto informace vidi klienti v marketplace a v nabidkach. Overeni profilu nastavuje pouze administrator.</p>
+            <h2>Pracovní údaje</h2>
+            <p>Tyto informace vidí klienti v marketplace a v nabídkách. Ověření profilu nastavuje pouze administrátor.</p>
           </div>
           <form className="compact-form" action={updateTaskerOwnProfile}>
-            <label>Jmeno<input name="name" type="text" defaultValue={profile?.name || user.user_metadata?.name || ""} required /></label>
-            <label>Prihlasovaci email<input type="email" defaultValue={user.email || ""} disabled /></label>
-            <label>Mesto<input name="city" type="text" defaultValue={profile?.city || ""} required /></label>
-            <label>Kategorie<input name="categories" type="text" defaultValue={profile?.categories || ""} placeholder="Uklid, stehovani, montaz..." required /></label>
+            <label>Jméno<input name="name" type="text" defaultValue={profile?.name || user.user_metadata?.name || ""} required /></label>
+            <label>Přihlašovací email<input type="email" defaultValue={user.email || ""} disabled /></label>
+            <label>Město<input name="city" type="text" defaultValue={profile?.city || ""} required /></label>
+            <label>Kategorie<input name="categories" type="text" defaultValue={profile?.categories || ""} placeholder="Úklid, stěhování, montáž..." required /></label>
             <label>Kontakt pro klienty<input name="contact" type="text" defaultValue={profile?.contact || user.email || ""} /></label>
-            <label>Stav overeni<input type="text" defaultValue={profile?.verified ? "Overeny tasker" : "Ceka na overeni"} disabled /></label>
-            <label className="span-full">Bio<textarea name="bio" rows={4} defaultValue={profile?.bio || ""} placeholder="Kratce popiste zkusenosti, dostupnost a typicke sluzby." /></label>
-            <button className="button primary span-full" type="submit">Ulozit profil taskera</button>
+            <label>Stav ověření<input type="text" defaultValue={profile?.verified ? "Ověřený tasker" : "Čeká na ověření"} disabled /></label>
+            <label className="span-full">Bio<textarea name="bio" rows={4} defaultValue={profile?.bio || ""} placeholder="Krátce popište zkušenosti, dostupnost a typické služby." /></label>
+            <button className="button primary span-full" type="submit">Uložit profil taskera</button>
           </form>
 
           <section className="section-action">
-            <div className="section-title"><p className="kicker">Foto profilu</p><h2>Profilova fotka</h2><p>Fotka se verejne zobrazi na karte taskera az po kontrole administratorem.</p></div>
+            <div className="section-title"><p className="kicker">Foto profilu</p><h2>Profilová fotka</h2><p>Fotka se veřejně zobrazí na kartě taskera až po kontrole administrátorem.</p></div>
             <div className="dashboard-grid">
-              <article className="dashboard-panel"><h3>Schvalena fotka</h3>{profile?.avatar_url ? <img className="avatar brand-mark-large" src={profile.avatar_url} alt="Schvalena profilova fotka" /> : <p>Schvalena fotka zatim neni nastavena.</p>}</article>
-              <article className="dashboard-panel"><h3>Ceka na kontrolu</h3>{profile?.pending_avatar_url ? <img className="avatar brand-mark-large" src={profile.pending_avatar_url} alt="Fotka cekajici na kontrolu" /> : <p>Zadna nova fotka neceka na kontrolu.</p>}</article>
+              <article className="dashboard-panel"><h3>Schválená fotka</h3>{profile?.avatar_url ? <img className="avatar brand-mark-large" src={profile.avatar_url} alt="Schválená profilová fotka" /> : <p>Schválená fotka zatím není nastavená.</p>}</article>
+              <article className="dashboard-panel"><h3>Čeká na kontrolu</h3>{profile?.pending_avatar_url ? <img className="avatar brand-mark-large" src={profile.pending_avatar_url} alt="Fotka čekající na kontrolu" /> : <p>Žádná nová fotka nečeká na kontrolu.</p>}</article>
               <article className="dashboard-panel"><h3>Stav</h3><p>{photoStatusCopy[photoStatus] || photoStatus}</p>{profile?.avatar_review_note ? <p>{profile.avatar_review_note}</p> : null}</article>
             </div>
             <ProfilePhotoUploadForm />
