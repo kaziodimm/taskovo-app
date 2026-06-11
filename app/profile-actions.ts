@@ -48,9 +48,14 @@ function profilePhotoExtension(file: File) {
   return "jpg";
 }
 
+function dashboardHref(role: "client" | "tasker", query?: string) {
+  const base = role === "tasker" ? "/poskytovatel/dashboard" : "/dashboard";
+  return query ? `${base}?${query}` : base;
+}
+
 async function uploadProfilePhoto(service: ReturnType<typeof createServiceSupabaseClient>, file: File, userId: string, role: "client" | "tasker") {
-  if (!allowedPhotoTypes.has(file.type)) redirect("/profil/foto?error=bad_file");
-  if (file.size > maxProfilePhotoBytes) redirect("/profil/foto?error=file_too_large");
+  if (!allowedPhotoTypes.has(file.type)) redirect(dashboardHref(role, "error=bad_file#profil"));
+  if (file.size > maxProfilePhotoBytes) redirect(dashboardHref(role, "error=file_too_large#profil"));
 
   const extension = profilePhotoExtension(file);
   const objectPath = `${role}/${userId}/${Date.now()}-${crypto.randomUUID()}.${extension}`;
@@ -164,21 +169,21 @@ export async function updateTaskerOwnProfile(formData: FormData) {
 }
 
 export async function submitProfilePhotoForReview(formData: FormData) {
-  if (!hasSupabaseEnv() || !process.env.SUPABASE_SERVICE_ROLE_KEY) redirect("/profil/foto?error=config");
-
   const supabase = await createServerSupabaseClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/prihlaseni?error=login_required");
 
+  const role = user.user_metadata?.role === "tasker" ? "tasker" : "client";
+  if (!hasSupabaseEnv() || !process.env.SUPABASE_SERVICE_ROLE_KEY) redirect(dashboardHref(role, "error=config#profil"));
+
   const file = formData.get("avatar_file");
-  if (!(file instanceof File) || file.size === 0) redirect("/profil/foto?error=bad_file");
+  if (!(file instanceof File) || file.size === 0) redirect(dashboardHref(role, "error=bad_file#profil"));
 
   const service = createServiceSupabaseClient();
-  const role = user.user_metadata?.role === "tasker" ? "tasker" : "client";
   const table = role === "tasker" ? "tasker_profiles" : "client_profiles";
   const { data: profile, error: profileError } = await service.from(table).select("id").eq("auth_user_id", user.id).order("created_at", { ascending: false }).limit(1).maybeSingle();
   if (profileError) throw new Error(profileError.message);
-  if (!profile) redirect(role === "tasker" ? "/poskytovatel/dashboard?error=profile_missing" : "/dashboard?error=profile_missing");
+  if (!profile) redirect(dashboardHref(role, "error=profile_missing#profil"));
 
   const publicUrl = await uploadProfilePhoto(service, file, user.id, role);
   const { error } = await service
@@ -191,7 +196,9 @@ export async function submitProfilePhotoForReview(formData: FormData) {
     .eq("id", profile.id);
   if (error) throw new Error(error.message);
 
+  revalidatePath("/dashboard");
+  revalidatePath("/poskytovatel/dashboard");
   revalidatePath("/profil/foto");
   revalidatePath("/admin");
-  redirect("/profil/foto?updated=photo_pending");
+  redirect(dashboardHref(role, "updated=photo_uploaded#profil"));
 }
