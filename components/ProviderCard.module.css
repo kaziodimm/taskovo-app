@@ -1,8 +1,8 @@
 .card {
   display: grid;
-  grid-template-rows: 104px minmax(0, 1fr);
+  grid-template-rows: 108px minmax(0, 1fr);
   gap: 14px;
-  min-height: 404px;
+  min-height: 438px;
   height: 100%;
   overflow: hidden;
 }
@@ -12,7 +12,7 @@
   display: grid;
   place-items: center;
   width: 100%;
-  height: 104px;
+  height: 108px;
   overflow: hidden;
   background: linear-gradient(135deg, #edf4fb, #f7f9fb);
   border: 1px solid var(--line);
@@ -44,16 +44,30 @@
   right: 8px;
   bottom: 8px;
   z-index: 1;
+  display: inline-flex;
+  align-items: center;
   max-width: calc(100% - 16px);
+  min-height: 28px;
+  padding: 0 10px;
   overflow: hidden;
+  border-radius: 999px;
+  font-size: .76rem;
+  font-weight: 950;
+  line-height: 1;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
+.newBadge {
+  color: var(--navy);
+  background: rgba(255, 255, 255, .9);
+  border: 1px solid rgba(216, 224, 232, .9);
+}
+
 .body {
   display: grid;
-  grid-template-rows: 48px 66px 62px 44px auto;
-  gap: 12px;
+  grid-template-rows: 48px 66px 34px 62px 44px auto;
+  gap: 11px;
   min-width: 0;
   min-height: 0;
 }
@@ -98,6 +112,33 @@
   -webkit-line-clamp: 3;
 }
 
+.trustRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-content: start;
+  min-height: 34px;
+  max-height: 34px;
+  overflow: hidden;
+}
+
+.trustRow span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  max-width: 100%;
+  padding: 0 9px;
+  overflow: hidden;
+  color: var(--steel);
+  background: #f7f9fb;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-size: .76rem;
+  font-weight: 950;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .metrics {
   min-height: 62px;
 }
@@ -130,15 +171,15 @@
 
 @media (max-width: 640px) {
   .card {
-    grid-template-rows: 94px minmax(0, 1fr);
-    min-height: 382px;
+    grid-template-rows: 98px minmax(0, 1fr);
+    min-height: 424px;
   }
 
   .mediaFrame {
-    height: 94px;
+    height: 98px;
   }
 
   .body {
-    grid-template-rows: 44px 60px 62px 44px auto;
+    grid-template-rows: 44px 60px 34px 62px 44px auto;
   }
 }
