@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { addTaskAttachment, confirmTaskCompletion, requestTaskCompletion, sendTaskMessage, startTaskWork } from "@/app/actions";
 import { requestTaskDispute } from "@/app/dispute-actions";
@@ -7,6 +8,7 @@ import { MarkMessagesRead } from "@/components/MarkMessagesRead";
 import { TaskCard } from "@/components/TaskCard";
 import { getOffersForTask, getTaskAttachments, getTaskById, getTaskMessages } from "@/lib/data";
 import { createServerSupabaseClient } from "@/lib/supabase";
+import type { Task } from "@/lib/types";
 import styles from "./page.module.css";
 
 const statusLabels: Record<string, string> = {
@@ -35,6 +37,14 @@ const workflowCopy: Record<string, string> = {
   completed: "Objednávka je dokončená.",
   disputed: "Objednávka je pozastavená kvůli problému. Administrátor Taskovo může zkontrolovat zprávy a rozhodnout další krok.",
 };
+
+const timelineSteps = [
+  { key: "open", label: "Zadání", statuses: ["open", "offers_received", "assigned", "in_progress", "awaiting_confirmation", "completed", "disputed"] },
+  { key: "offers_received", label: "Nabídky", statuses: ["offers_received", "assigned", "in_progress", "awaiting_confirmation", "completed", "disputed"] },
+  { key: "assigned", label: "Výběr taskera", statuses: ["assigned", "in_progress", "awaiting_confirmation", "completed", "disputed"] },
+  { key: "in_progress", label: "Práce", statuses: ["in_progress", "awaiting_confirmation", "completed", "disputed"] },
+  { key: "completed", label: "Dokončení", statuses: ["completed"] },
+];
 
 const updateMessages: Record<string, { title: string; body: string }> = {
   task_started: {
@@ -118,6 +128,69 @@ function dateTime(value: string) {
   return new Date(value).toLocaleString("cs-CZ", { dateStyle: "short", timeStyle: "short" });
 }
 
+function taskDescription(task: Task) {
+  return `${task.title} v lokalitě ${task.city}. Kategorie ${task.category}, rozpočet ${money(task.budget_czk)} Kč. Taskovo je zprostředkovatelská platforma.`;
+}
+
+function taskSchema(task: Task, offerCount: number, attachmentCount: number) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "Service",
+    name: task.title,
+    description: task.description,
+    serviceType: task.category,
+    areaServed: task.city,
+    url: `https://taskovo.cz/ukol/${task.id}`,
+    offers: {
+      "@type": "Offer",
+      price: task.budget_czk,
+      priceCurrency: "CZK",
+      availability: ["open", "offers_received"].includes(task.status) ? "https://schema.org/InStock" : "https://schema.org/LimitedAvailability",
+    },
+    additionalProperty: [
+      { "@type": "PropertyValue", name: "Stav", value: statusLabels[task.status] ?? task.status },
+      { "@type": "PropertyValue", name: "Počet nabídek", value: offerCount },
+      { "@type": "PropertyValue", name: "Počet fotek", value: attachmentCount },
+    ],
+    provider: {
+      "@type": "Organization",
+      name: "Taskovo",
+      url: "https://taskovo.cz",
+    },
+  };
+}
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const { id } = await params;
+  const task = await getTaskById(id);
+
+  if (!task) {
+    return {
+      title: "Úkol nenalezen | Taskovo",
+      description: "Objednávka na Taskovo nebyla nalezena.",
+      robots: { index: false, follow: false },
+    };
+  }
+
+  const title = `${task.title} | ${task.city} | Taskovo`;
+  const description = taskDescription(task);
+
+  return {
+    title,
+    description,
+    alternates: { canonical: `/ukol/${task.id}` },
+    openGraph: {
+      title,
+      description,
+      url: `/ukol/${task.id}`,
+      siteName: "Taskovo",
+      type: "article",
+      images: [{ url: "/taskovo-logo.svg", width: 512, height: 512, alt: "Taskovo logo" }],
+    },
+    robots: { index: true, follow: true },
+  };
+}
+
 export default async function TaskDetailPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams?: TaskDetailSearchParams }) {
   const { id } = await params;
   const query = searchParams ? await searchParams : {};
@@ -153,6 +226,7 @@ export default async function TaskDetailPage({ params, searchParams }: { params:
       <MarkMessagesRead taskId={task.id} enabled={canMessage} />
       <Header />
       <main className={`page-shell ${styles.detailShell}`}>
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(taskSchema(task, offers.length, attachments.length)) }} />
         <section className={`page-hero ${styles.detailHero}`}>
           <div>
             <p className="kicker">Detail objednávky</p>
@@ -165,6 +239,13 @@ export default async function TaskDetailPage({ params, searchParams }: { params:
             <strong>{money(task.budget_czk)} Kč</strong>
             <p>Rozpočet klienta</p>
           </div>
+        </section>
+
+        <section className={styles.trustRail} aria-label="Důvěra a role platformy">
+          <span>Taskovo zprostředkovává kontakt</span>
+          <span>Klient vybírá taskera samostatně</span>
+          <span>Tasker není zaměstnanec Taskovo</span>
+          <span>Fotky jsou jen v detailu objednávky</span>
         </section>
 
         {(updateMessage || errorMessage) ? (
@@ -186,6 +267,24 @@ export default async function TaskDetailPage({ params, searchParams }: { params:
 
         <section className={styles.orderGrid}>
           <div className={styles.orderMain}>
+            <section className={`${styles.orderPanel} ${styles.timelinePanel}`}>
+              <div className={`section-heading-row ${styles.compactHeading}`}>
+                <div>
+                  <p className="kicker">Průběh objednávky</p>
+                  <h2>Stav a další krok</h2>
+                </div>
+                <span className={`pill status-${task.status}`}>{statusLabels[task.status] ?? task.status}</span>
+              </div>
+              <div className={styles.timelineList}>
+                {timelineSteps.map((step) => {
+                  const isDone = step.statuses.includes(task.status);
+                  const isCurrent = step.key === task.status || (task.status === "offers_received" && step.key === "offers_received") || (task.status === "awaiting_confirmation" && step.key === "in_progress");
+                  return <span key={step.key} className={isCurrent ? styles.timelineCurrent : isDone ? styles.timelineDone : undefined}>{step.label}</span>;
+                })}
+              </div>
+              <p>{workflowCopy[task.status] ?? "Objednávka čeká na další akci."}</p>
+            </section>
+
             <section className={styles.orderPanel}>
               <div className={`section-heading-row ${styles.compactHeading}`}>
                 <div>
@@ -336,6 +435,10 @@ export default async function TaskDetailPage({ params, searchParams }: { params:
               ) : (
                 <p className="fine-print">Jakmile klient vybere nabídku, objednávka se přesune do stavu “Tasker vybrán”.</p>
               )}
+              <div className={styles.safetyBox}>
+                <strong>Bezpečná domluva</strong>
+                <p>Kontakt a zprávy držíme u objednávky. Platby a recenze napojíme v další fázi pilotu.</p>
+              </div>
               {canReportProblem ? (
                 <form className={styles.disputeForm} action={requestTaskDispute}>
                   <input type="hidden" name="task_id" value={task.id} />
