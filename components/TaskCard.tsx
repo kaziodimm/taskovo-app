@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { acceptOffer, createOffer } from "@/app/actions";
 import { cancelClientTask, updateClientTask } from "@/app/client-task-actions";
 import type { Offer, Task } from "@/lib/types";
@@ -35,16 +36,27 @@ type TaskCardProps = {
   canSelectOffer?: boolean;
   showOfferForm?: boolean;
   canManageTask?: boolean;
+  authenticatedTasker?: boolean;
+  offerUnavailable?: ReactNode;
 };
 
-export function TaskCard({ task, offers, canSelectOffer = false, showOfferForm = true, canManageTask = false }: TaskCardProps) {
+export function TaskCard({
+  task,
+  offers,
+  canSelectOffer = false,
+  showOfferForm = true,
+  canManageTask = false,
+  authenticatedTasker = false,
+  offerUnavailable,
+}: TaskCardProps) {
   const fee = platformFee(task.budget_czk);
   const payout = task.budget_czk - fee;
   const canChoose = canSelectOffer && ["open", "offers_received"].includes(task.status);
   const canEdit = canManageTask && ["open", "offers_received"].includes(task.status);
   const canCancel = canEdit;
   const isLockedForClient = canManageTask && !["open", "offers_received", "completed", "cancelled"].includes(task.status);
-  const canSendOffer = showOfferForm && ["open", "offers_received"].includes(task.status);
+  const isAvailableForOffer = ["open", "offers_received"].includes(task.status);
+  const canSendOffer = showOfferForm && isAvailableForOffer;
 
   return (
     <article className={`task-card ${styles.card}`}>
@@ -119,13 +131,19 @@ export function TaskCard({ task, offers, canSelectOffer = false, showOfferForm =
       {canSendOffer ? (
         <form className="offer-form" action={createOffer}>
           <input type="hidden" name="task_id" value={task.id} />
-          <label>Jméno<input name="tasker_name" type="text" placeholder="Jen bez účtu" /></label>
-          <label>Kontakt<input name="tasker_contact" type="text" placeholder="+420 ... / email" /></label>
+          {!authenticatedTasker ? (
+            <>
+              <label>Jméno<input name="tasker_name" type="text" placeholder="Jen bez účtu" /></label>
+              <label>Kontakt<input name="tasker_contact" type="text" placeholder="+420 ... / email" /></label>
+            </>
+          ) : null}
           <label>Cena<span className="money-field"><input name="price_czk" type="number" min="50" step="50" required /><span>Kč</span></span></label>
           <label>Zpráva<input name="message" type="text" placeholder="Můžu dnes po 18:00, mám auto." required /></label>
           <button className="button secondary span-full" type="submit">Poslat nabídku</button>
-          <p className="fine-print span-full">Přihlášenému taskerovi se jméno a kontakt doplní z profilu.</p>
+          <p className="fine-print span-full">{authenticatedTasker ? "Jméno a kontakt se doplní z vašeho tasker profilu." : "Nabídku může poslat jen přihlášený tasker."}</p>
         </form>
+      ) : isAvailableForOffer && offerUnavailable ? (
+        <div className={styles.offerCta}>{offerUnavailable}</div>
       ) : null}
     </article>
   );
