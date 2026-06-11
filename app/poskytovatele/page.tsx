@@ -204,6 +204,11 @@ export default async function ProvidersPage({ searchParams }: { searchParams: Pr
               <h2>{filteredProviders.length} taskerů</h2>
               <div className={styles.resultsMeta}><span className="pill">{providers.length} celkem</span><span className="pill status-completed">Ověření profilu</span></div>
             </div>
+            <div className={styles.trustStrip} aria-label="Pravidla výběru taskera">
+              <span>Klient vybírá taskera samostatně</span>
+              <span>Tasker je nezávislý OSVČ nebo firma</span>
+              <span>Taskovo službu zprostředkovává</span>
+            </div>
             {filteredProviders.length ? (
               <div className="provider-grid">{filteredProviders.map((provider) => <ProviderCard key={provider.id} provider={provider} />)}</div>
             ) : (
