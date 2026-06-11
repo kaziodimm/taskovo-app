@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import { ProviderCard } from "@/components/ProviderCard";
@@ -5,6 +6,21 @@ import { getTaskers } from "@/lib/data";
 import { cities, featuredProviders, marketplaceCategories, type FeaturedProvider } from "@/lib/marketplace-data";
 import type { TaskerProfile } from "@/lib/types";
 import styles from "../tasks/page.module.css";
+
+export const metadata: Metadata = {
+  title: "Taskeři v okolí | Taskovo",
+  description: "Katalog nezávislých taskerů na Taskovo pro úklid, stěhování, montáž, doručení a lokální pomoc v Česku.",
+  alternates: { canonical: "/poskytovatele" },
+  openGraph: {
+    title: "Taskeři v okolí | Taskovo",
+    description: "Najděte ověřené i nové taskery podle města, kategorie, ceny a profilu.",
+    url: "/poskytovatele",
+    siteName: "Taskovo",
+    type: "website",
+    images: [{ url: "/taskovo-logo.svg", width: 512, height: 512, alt: "Taskovo logo" }],
+  },
+  robots: { index: true, follow: true },
+};
 
 type ProviderSearchParams = {
   city?: string;
@@ -63,6 +79,32 @@ function filterProviders(providers: FeaturedProvider[], params: ProviderSearchPa
   });
 }
 
+function buildProvidersSchema(providers: FeaturedProvider[]) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    name: "Taskeři na Taskovo",
+    description: "Katalog nezávislých taskerů pro lokální služby v Česku.",
+    itemListElement: providers.slice(0, 20).map((provider, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      url: `https://taskovo.cz/poskytovatel/${provider.id}`,
+      item: {
+        "@type": "LocalBusiness",
+        name: provider.name,
+        address: { "@type": "PostalAddress", addressLocality: provider.city, addressCountry: "CZ" },
+        areaServed: provider.city,
+        description: provider.bio,
+        aggregateRating: {
+          "@type": "AggregateRating",
+          ratingValue: provider.rating,
+          reviewCount: Math.max(provider.reviews, 1),
+        },
+      },
+    })),
+  };
+}
+
 export default async function ProvidersPage({ searchParams }: { searchParams: Promise<ProviderSearchParams> }) {
   const params = await searchParams;
   const taskerProfiles = await getTaskers();
@@ -78,6 +120,7 @@ export default async function ProvidersPage({ searchParams }: { searchParams: Pr
     <>
       <Header />
       <main className="page-shell">
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(buildProvidersSchema(filteredProviders)) }} />
         <section className="section-title">
           <p className="kicker">Taskeři</p>
           <h1 className="page-title">Najděte šikovné lidi ve svém okolí</h1>
