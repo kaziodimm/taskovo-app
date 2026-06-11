@@ -3,12 +3,13 @@
   grid-template-columns: minmax(0, .95fr) minmax(300px, 420px);
   gap: clamp(22px, 4vw, 42px);
   align-items: stretch;
-  margin-bottom: 34px;
+  margin-bottom: 28px;
 }
 
 .profileCopy {
   display: grid;
   align-content: center;
+  gap: 18px;
   min-width: 0;
 }
 
@@ -163,17 +164,24 @@
   white-space: nowrap;
 }
 
-.categoryRail {
+.categoryRail,
+.profileTrustStrip,
+.heroActions,
+.serviceList {
   display: flex;
   flex-wrap: wrap;
   align-content: start;
   gap: 8px;
+}
+
+.categoryRail {
   min-height: 44px;
   max-height: 72px;
   overflow: hidden;
 }
 
-.categoryRail span {
+.categoryRail span,
+.serviceList span {
   display: inline-flex;
   align-items: center;
   max-width: 100%;
@@ -190,10 +198,102 @@
   white-space: nowrap;
 }
 
+.profileTrustStrip {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.profileTrustStrip span {
+  display: grid;
+  align-items: center;
+  min-height: 54px;
+  padding: 11px 12px;
+  color: var(--navy);
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: 0 10px 24px rgba(13, 27, 42, .05);
+  font-size: .86rem;
+  font-weight: 900;
+  line-height: 1.25;
+}
+
+.heroActions {
+  align-items: center;
+}
+
+.profileOverview {
+  display: grid;
+  grid-template-columns: minmax(0, .95fr) minmax(300px, .65fr);
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.servicePanel,
+.platformPanel {
+  min-width: 0;
+  min-height: 188px;
+}
+
+.servicePanel h2,
+.platformPanel h2 {
+  margin: 0 0 12px;
+  color: var(--navy);
+  font-size: clamp(1.2rem, 2vw, 1.55rem);
+  line-height: 1.18;
+}
+
+.platformPanel p:last-child {
+  margin-bottom: 0;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.workflowGrid,
 .detailGrid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 16px;
+}
+
+.workflowGrid {
+  margin-bottom: 16px;
+}
+
+.workflowGrid article {
+  min-width: 0;
+  min-height: 168px;
+  padding: 18px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: 0 10px 24px rgba(13, 27, 42, .05);
+}
+
+.workflowGrid span {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  margin-bottom: 14px;
+  color: var(--navy);
+  background: linear-gradient(135deg, var(--yellow), var(--orange));
+  border-radius: 999px;
+  font-weight: 950;
+}
+
+.workflowGrid h3,
+.detailPanel h3 {
+  margin: 0 0 8px;
+  color: var(--navy);
+  font-size: 1rem;
+}
+
+.workflowGrid p,
+.detailPanel p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.5;
 }
 
 .detailPanel {
@@ -210,12 +310,18 @@
 
 @media (max-width: 920px) {
   .profileHero,
+  .profileOverview,
+  .workflowGrid,
   .detailGrid {
     grid-template-columns: 1fr;
   }
 
   .profileSummaryCard {
     min-height: 410px;
+  }
+
+  .profileTrustStrip {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -230,5 +336,9 @@
 
   .summaryBody {
     grid-template-rows: 44px 74px auto;
+  }
+
+  .heroActions a {
+    width: 100%;
   }
 }
