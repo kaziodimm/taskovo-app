@@ -128,7 +128,7 @@ export default function Home() {
               <p className="kicker">FAQ</p>
               <h2>Krátké odpovědi před prvním úkolem</h2>
             </div>
-            <a className="button secondary" href="#faq">Všechny otázky</a>
+            <a className="button secondary" href="/faq">Všechny otázky</a>
           </div>
           <div className="faq-list">
             {previewFaqs.map((faq) => (
