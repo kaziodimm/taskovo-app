@@ -2,17 +2,25 @@ import type { Metadata } from "next";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 
+const pageUrl = "https://taskovo.cz/kontakt";
+const supportEmail = "hello@taskovo.cz";
+
 export const metadata: Metadata = {
   title: "Kontakt | Taskovo",
   description:
-    "Kontakt na podporu Taskovo pro klienty, taskery, overeni profilu, bezpecnost, pilotni spolupraci a zpetnou vazbu.",
+    "Kontakt na podporu Taskovo pro klienty, taskery, ověření profilu, bezpečnost, pilotní spolupráci a zpětnou vazbu.",
   alternates: { canonical: "/kontakt" },
   openGraph: {
     title: "Kontakt | Taskovo",
-    description: "Podpora pro pilot ceskeho marketplace Taskovo.",
-    url: "https://taskovo-app.vercel.app/kontakt",
+    description: "Podpora pro pilot českého marketplace Taskovo.",
+    url: pageUrl,
     siteName: "Taskovo",
     type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Kontakt | Taskovo",
+    description: "Podpora pro pilot českého marketplace Taskovo.",
   },
 };
 
@@ -28,11 +36,11 @@ export default function ContactPage() {
     "@context": "https://schema.org",
     "@type": "ContactPage",
     name: "Kontakt Taskovo",
-    url: "https://taskovo-app.vercel.app/kontakt",
+    url: pageUrl,
     contactPoint: {
       "@type": "ContactPoint",
       contactType: "customer support",
-      email: "hello@taskovo.cz",
+      email: supportEmail,
       availableLanguage: ["cs", "ru", "uk"],
     },
   };
@@ -49,7 +57,7 @@ export default function ContactPage() {
             <p className="hero-lead">V první fázi bude kontakt sloužit pro ruční schvalování taskerů, podporu klientů, bezpečnostní hlášení a sběr zpětné vazby.</p>
           </div>
           <div className="page-hero-card">
-            <strong>hello@taskovo.cz</strong>
+            <strong>{supportEmail}</strong>
             <p>Po koupi domény připojíme ostrý email a později i Resend pro systémové zprávy.</p>
           </div>
         </section>
@@ -59,12 +67,12 @@ export default function ContactPage() {
             {contactReasons.map(([title, text]) => <div key={title}><strong>{title}</strong><span>{text}</span></div>)}
           </div>
           <form className="search-panel">
-            <div className="card-heading"><h2>Napište nám</h2><p className="fine-print">Formulář je zatím prezentační. Po napojení emailů bude odesílat zprávy do podpory.</p></div>
+            <div className="card-heading"><h2>Napište nám</h2><p className="fine-print">Formulář je zatím připravený pro podporu. Do napojení emailů použijte přímý kontakt níže.</p></div>
             <label>Jméno<input placeholder="Jan Novák" /></label>
             <label>Email<input placeholder="jan@email.cz" /></label>
             <label>Důvod<select defaultValue=""><option value="" disabled>Vyberte téma</option><option>Podpora klienta</option><option>Ověření taskera</option><option>Bezpečnost</option><option>Spolupráce</option></select></label>
             <label>Zpráva<textarea rows={5} placeholder="Popište situaci..." /></label>
-            <button className="button primary" type="button">Odeslat zprávu</button>
+            <a className="button primary" href={`mailto:${supportEmail}?subject=Taskovo podpora`}>Odeslat přes email</a>
           </form>
         </section>
       </main>
