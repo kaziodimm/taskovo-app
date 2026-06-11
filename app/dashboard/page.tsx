@@ -3,6 +3,7 @@ import { logoutAccount } from "@/app/actions";
 import { updateClientOwnProfile } from "@/app/profile-actions";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
+import { ProfilePhotoStatus } from "@/components/ProfilePhotoStatus";
 import { ProfilePhotoUploadForm } from "@/components/ProfilePhotoUploadForm";
 import { TaskCard } from "@/components/TaskCard";
 import { TaskForm } from "@/components/TaskForm";
@@ -34,13 +35,6 @@ const statusLabels: Record<string, string> = {
   completed: "Dokončeno",
   cancelled: "Zrušeno",
   disputed: "Spor",
-};
-
-const photoStatusCopy: Record<string, string> = {
-  none: "Zatím bez fotky ke kontrole.",
-  pending: "Nová fotka čeká na schválení administrátorem.",
-  approved: "Fotka je schválená a může se zobrazovat v profilu.",
-  rejected: "Fotka byla odmítnuta. Můžete poslat novou.",
 };
 
 const updateMessages: Record<string, string> = {
@@ -99,7 +93,6 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
   const pendingOffers = clientOffers.filter((offer) => offer.status === "pending");
   const acceptedOffers = clientOffers.filter((offer) => offer.status === "accepted");
   const unreadTotal = Object.values(unreadCounts).reduce((total, count) => total + count, 0);
-  const photoStatus = profile?.avatar_review_status || "none";
   const estimatedBudget = currentTasks.reduce((total, task) => total + (task.budget_czk || 0), 0);
   const paidEstimate = acceptedOffers.reduce((total, offer) => total + (offer.price_czk || 0), 0);
   const notice = params.updated ? updateMessages[params.updated] : null;
@@ -243,11 +236,13 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
 
           <section className="section-action">
             <div className="section-title"><p className="kicker">Foto profilu</p><h2>Profilová fotka</h2><p>Fotka se veřejně zobrazí až po kontrole administrátorem.</p></div>
-            <div className="dashboard-grid">
-              <article className="dashboard-panel"><h3>Schválená fotka</h3>{profile?.avatar_url ? <img className="avatar brand-mark-large" src={profile.avatar_url} alt="Schválená profilová fotka" /> : <p>Schválená fotka zatím není nastavená.</p>}</article>
-              <article className="dashboard-panel"><h3>Čeká na kontrolu</h3>{profile?.pending_avatar_url ? <img className="avatar brand-mark-large" src={profile.pending_avatar_url} alt="Fotka čekající na kontrolu" /> : <p>Žádná nová fotka nečeká na kontrolu.</p>}</article>
-              <article className="dashboard-panel"><h3>Stav</h3><p>{photoStatusCopy[photoStatus] || photoStatus}</p>{profile?.avatar_review_note ? <p>{profile.avatar_review_note}</p> : null}</article>
-            </div>
+            <ProfilePhotoStatus
+              avatarUrl={profile?.avatar_url}
+              pendingAvatarUrl={profile?.pending_avatar_url}
+              status={profile?.avatar_review_status}
+              note={profile?.avatar_review_note}
+              roleLabel="klienta"
+            />
             <ProfilePhotoUploadForm />
           </section>
         </section>
