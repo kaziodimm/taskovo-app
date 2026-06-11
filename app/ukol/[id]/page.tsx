@@ -53,11 +53,25 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
 
   const supabase = await createServerSupabaseClient();
   const { data: { user } } = await supabase.auth.getUser();
+  const role = user?.user_metadata?.role;
+  const isTasker = role === "tasker";
   const isClientOwner = Boolean(user?.id && task.client_auth_user_id === user.id);
   const isAssignedTasker = Boolean(user?.id && task.assigned_tasker_auth_user_id === user.id);
   const canMessage = Boolean(task.assigned_tasker_auth_user_id && (isClientOwner || isAssignedTasker));
   const canReportProblem = Boolean((isClientOwner || isAssignedTasker) && disputableStatuses.has(task.status));
   const acceptedOffer = offers.find((offer) => offer.id === task.accepted_offer_id || offer.status === "accepted");
+  const canOffer = isTasker && !isAssignedTasker && !isClientOwner;
+  const offerUnavailable = user ? (
+    <>
+      <p>Nabídku může poslat jen účet registrovaný jako tasker.</p>
+      <a className="button secondary" href="/prihlaseni?mode=tasker">Vytvořit tasker účet</a>
+    </>
+  ) : (
+    <>
+      <p>Pro poslání nabídky se přihlaste nebo vytvořte tasker účet.</p>
+      <a className="button primary" href="/prihlaseni?mode=tasker">Registrovat taskera</a>
+    </>
+  );
 
   return (
     <>
@@ -124,7 +138,15 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
                 </div>
                 <span className="pill">{offers.length} nabídek</span>
               </div>
-              <TaskCard task={task} offers={offers} canSelectOffer={isClientOwner} canManageTask={isClientOwner} showOfferForm={!isClientOwner && task.status !== "assigned" && task.status !== "in_progress" && task.status !== "awaiting_confirmation" && task.status !== "completed"} />
+              <TaskCard
+                task={task}
+                offers={offers}
+                canSelectOffer={isClientOwner}
+                canManageTask={isClientOwner}
+                showOfferForm={canOffer}
+                authenticatedTasker={isTasker}
+                offerUnavailable={isClientOwner ? null : offerUnavailable}
+              />
             </section>
 
             <section className={styles.orderPanel}>
