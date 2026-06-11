@@ -43,5 +43,5 @@ export async function sendAdminTaskMessage(formData: FormData) {
   if (error) throw new Error(error.message);
 
   revalidateTaskViews(taskId);
-  redirect(`/admin/tasks/${taskId}`);
+  redirect(`/admin/tasks/${taskId}?updated=admin_message_sent`);
 }
