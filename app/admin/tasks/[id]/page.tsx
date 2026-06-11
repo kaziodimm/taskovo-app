@@ -24,6 +24,48 @@ const roleLabels: Record<string, string> = {
   admin: "Taskovo",
 };
 
+const updateMessages: Record<string, { title: string; body: string }> = {
+  status_saved: {
+    title: "Stav objednávky byl uložen",
+    body: "Změna se promítla do detailu objednávky, dashboardů i administrace.",
+  },
+  task_cancelled: {
+    title: "Objednávka byla zrušena",
+    body: "Důvod zrušení byl uložen jako oficiální zpráva Taskovo u této objednávky.",
+  },
+  task_reopened: {
+    title: "Objednávka je znovu otevřená",
+    body: "Zakázka byla vrácena do hledání taskera a předchozí přiřazení bylo odstraněno.",
+  },
+  offer_accepted: {
+    title: "Tasker byl vybrán administrátorem",
+    body: "Ostatní nabídky byly odmítnuty a objednávka je přiřazená vybranému taskerovi.",
+  },
+  offer_declined: {
+    title: "Nabídka byla odmítnuta",
+    body: "Nabídka zůstává v historii, ale klient ji už neuvidí jako aktivní volbu.",
+  },
+  admin_message_sent: {
+    title: "Zpráva Taskovo byla odeslána",
+    body: "Oficiální zpráva je uložená u objednávky a bude později napojená na e-mailové upozornění.",
+  },
+};
+
+const errorMessages: Record<string, { title: string; body: string }> = {
+  config: {
+    title: "Chybí konfigurace služby",
+    body: "Zkontrolujte Supabase proměnné ve Vercelu.",
+  },
+  bad_status: {
+    title: "Neplatný stav objednávky",
+    body: "Vybraný stav není povolený pro admin akci.",
+  },
+  offer_missing: {
+    title: "Nabídka nebyla nalezena",
+    body: "Nabídka mohla být mezitím stažena nebo nepatří k této objednávce.",
+  },
+};
+
 const adminStatusOptions = [
   "pending_review",
   "open",
@@ -36,6 +78,8 @@ const adminStatusOptions = [
   "disputed",
 ];
 
+type AdminTaskSearchParams = Promise<{ updated?: string; error?: string }>;
+
 function money(value: number) {
   return value.toLocaleString("cs-CZ");
 }
@@ -44,10 +88,13 @@ function dateTime(value: string) {
   return new Date(value).toLocaleString("cs-CZ", { dateStyle: "short", timeStyle: "short" });
 }
 
-export default async function AdminTaskDetailPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function AdminTaskDetailPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams?: AdminTaskSearchParams }) {
   if (!(await isAdminAuthenticated())) redirect("/prihlaseni?mode=login&error=login_required");
 
   const { id } = await params;
+  const query = searchParams ? await searchParams : {};
+  const updateMessage = query.updated ? updateMessages[query.updated] : null;
+  const errorMessage = query.error ? errorMessages[query.error] : null;
   const [task, offers, attachments, messages] = await Promise.all([
     getAdminTaskById(id),
     getOffersForTask(id),
@@ -58,6 +105,9 @@ export default async function AdminTaskDetailPage({ params }: { params: Promise<
   if (!task) notFound();
 
   const acceptedOffer = offers.find((offer) => offer.id === task.accepted_offer_id || offer.status === "accepted");
+  const cancellationMessage = task.status === "cancelled"
+    ? messages.find((message) => message.sender_role === "admin" && message.body.includes("Objednávka byla zrušena"))
+    : null;
 
   return (
     <>
@@ -71,6 +121,21 @@ export default async function AdminTaskDetailPage({ params }: { params: Promise<
           </div>
           <div className="page-hero-card"><strong>{money(task.budget_czk)} Kč</strong><p>{statusLabels[task.status] ?? task.status}</p></div>
         </section>
+
+        {(updateMessage || errorMessage) ? (
+          <section className="admin-alert-stack" aria-live="polite">
+            {updateMessage ? <div className="admin-alert success"><strong>{updateMessage.title}</strong><p>{updateMessage.body}</p></div> : null}
+            {errorMessage ? <div className="admin-alert danger"><strong>{errorMessage.title}</strong><p>{errorMessage.body}</p></div> : null}
+          </section>
+        ) : null}
+
+        {cancellationMessage ? (
+          <section className="admin-panel admin-cancel-reason">
+            <p className="kicker">Důvod zrušení</p>
+            <h2>Oficiální poznámka pro klienta a taskera</h2>
+            <p>{cancellationMessage.body}</p>
+          </section>
+        ) : null}
 
         <section className="admin-panel">
           <div className="section-heading-row">
