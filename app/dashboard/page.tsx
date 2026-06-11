@@ -15,35 +15,48 @@ import { createServerSupabaseClient } from "@/lib/supabase";
 import type { Offer, Task } from "@/lib/types";
 
 const nextStepCopy: Record<string, string> = {
-  open: "Ceka na nabidky od taskeru.",
-  offers_received: "Vyberte taskera z dorucenych nabidek.",
-  assigned: "Tasker je vybrany. Domluvte detaily v objednavce.",
-  in_progress: "Tasker pracuje. Sledujte zpravy a detail objednavky.",
-  awaiting_confirmation: "Tasker oznacil praci jako hotovou. Potvrdte dokonceni.",
-  completed: "Objednavka je dokoncena.",
-  cancelled: "Objednavka je zrusena.",
+  open: "Čeká na nabídky od taskerů.",
+  offers_received: "Vyberte taskera z doručených nabídek.",
+  assigned: "Tasker je vybraný. Domluvte detaily v objednávce.",
+  in_progress: "Tasker pracuje. Sledujte zprávy a detail objednávky.",
+  awaiting_confirmation: "Tasker označil práci jako hotovou. Potvrďte dokončení.",
+  completed: "Objednávka je dokončena.",
+  cancelled: "Objednávka je zrušena.",
+  disputed: "Objednávka je ve sporu. Otevřete detail a sledujte zprávy od Taskovo.",
 };
 
 const statusLabels: Record<string, string> = {
-  open: "Otevreno",
-  offers_received: "Nabidky doruceny",
-  assigned: "Tasker vybran",
-  in_progress: "Probiha",
-  awaiting_confirmation: "Ceka na potvrzeni",
-  completed: "Dokonceno",
-  cancelled: "Zruseno",
+  open: "Otevřeno",
+  offers_received: "Nabídky doručeny",
+  assigned: "Tasker vybrán",
+  in_progress: "Probíhá",
+  awaiting_confirmation: "Čeká na potvrzení",
+  completed: "Dokončeno",
+  cancelled: "Zrušeno",
   disputed: "Spor",
 };
 
 const photoStatusCopy: Record<string, string> = {
-  none: "Zatim bez fotky ke kontrole.",
-  pending: "Nova fotka ceka na schvaleni administratorem.",
-  approved: "Fotka je schvalena a muze se zobrazovat v profilu.",
-  rejected: "Fotka byla odmitnuta. Muzete poslat novou.",
+  none: "Zatím bez fotky ke kontrole.",
+  pending: "Nová fotka čeká na schválení administrátorem.",
+  approved: "Fotka je schválená a může se zobrazovat v profilu.",
+  rejected: "Fotka byla odmítnuta. Můžete poslat novou.",
+};
+
+const updateMessages: Record<string, string> = {
+  task_cancelled: "Objednávka byla zrušena a přesunuta do archivu.",
+  profile: "Profil byl uložen.",
+  photo_uploaded: "Fotka byla odeslána ke kontrole administrátorem.",
+};
+
+const errorMessages: Record<string, string> = {
+  forbidden: "K této objednávce nemáte oprávnění.",
+  config: "Chybí konfigurace služby. Zkontrolujeme nastavení Supabase.",
+  locked: "Objednávku už nelze upravit v tomto stavu.",
 };
 
 function needsClientAction(task: Task, offerCount: number) {
-  return (task.status === "offers_received" && offerCount > 0) || task.status === "awaiting_confirmation";
+  return (task.status === "offers_received" && offerCount > 0) || task.status === "awaiting_confirmation" || task.status === "disputed";
 }
 
 function isArchivedTask(task: Task) {
@@ -51,7 +64,7 @@ function isArchivedTask(task: Task) {
 }
 
 function formatCzk(amount: number) {
-  return `${amount.toLocaleString("cs-CZ")} Kc`;
+  return `${amount.toLocaleString("cs-CZ")} Kč`;
 }
 
 function groupOffersByTask(offers: Offer[]) {
@@ -60,7 +73,8 @@ function groupOffersByTask(offers: Offer[]) {
   return grouped;
 }
 
-export default async function DashboardPage() {
+export default async function DashboardPage({ searchParams }: { searchParams: Promise<{ updated?: string; error?: string }> }) {
+  const params = await searchParams;
   const supabase = await createServerSupabaseClient();
   const { data: { user } } = await supabase.auth.getUser();
 
@@ -78,7 +92,6 @@ export default async function DashboardPage() {
   const archivedTasks = tasks.filter(isArchivedTask);
   const completedTasks = tasks.filter((task) => task.status === "completed");
   const actionTasks = currentTasks.filter((task) => needsClientAction(task, offersByTask.get(task.id)?.length || 0));
-  const activeTasks = currentTasks.filter((task) => ["assigned", "in_progress", "awaiting_confirmation"].includes(task.status));
   const openTasks = currentTasks.filter((task) => ["open", "offers_received"].includes(task.status));
   const pendingOffers = clientOffers.filter((offer) => offer.status === "pending");
   const acceptedOffers = clientOffers.filter((offer) => offer.status === "accepted");
@@ -86,6 +99,8 @@ export default async function DashboardPage() {
   const photoStatus = profile?.avatar_review_status || "none";
   const estimatedBudget = currentTasks.reduce((total, task) => total + (task.budget_czk || 0), 0);
   const paidEstimate = acceptedOffers.reduce((total, offer) => total + (offer.price_czk || 0), 0);
+  const notice = params.updated ? updateMessages[params.updated] : null;
+  const error = params.error ? errorMessages[params.error] || "Akci se nepodařilo dokončit." : null;
 
   return (
     <>
@@ -93,29 +108,32 @@ export default async function DashboardPage() {
       <main className="page-shell dashboard-shell">
         <section className="dashboard-hero">
           <div>
-            <p className="kicker">Klientsky dashboard</p>
-            <h1 className="page-title">Vitejte, {displayName}</h1>
-            <p className="hero-lead">Spravujte poptavky, nabidky od taskeru, zpravy a platby z jednoho mista.</p>
+            <p className="kicker">Klientský dashboard</p>
+            <h1 className="page-title">Vítejte, {displayName}</h1>
+            <p className="hero-lead">Spravujte poptávky, nabídky od taskerů, zprávy a platby z jednoho místa.</p>
           </div>
           <div className="dashboard-hero-actions">
-            <a className="button primary" href="#novy-ukol">Zadat novy ukol</a>
-            <a className="button secondary" href="/taskeri">Najit taskera</a>
+            <a className="button primary" href="#novy-ukol">Zadat nový úkol</a>
+            <a className="button secondary" href="/poskytovatele">Najít taskera</a>
           </div>
         </section>
 
-        <form action={logoutAccount} className="admin-toolbar"><span>{user.email}</span><button className="button secondary" type="submit">Odhlasit se</button></form>
+        {notice ? <p className="success-box">{notice}</p> : null}
+        {error ? <p className="alert-box">{error}</p> : null}
 
-        <section className="dashboard-overview" aria-label="Prehled uctu">
-          <article className="metric-card metric-card-primary"><span>Aktivni ukoly</span><strong>{currentTasks.length}</strong><p>{actionTasks.length ? `${actionTasks.length} ceka na vase rozhodnuti.` : "Vse je bez okamzite akce."}</p></article>
-          <article className="metric-card"><span>Dorucene nabidky</span><strong>{pendingOffers.length}</strong><p>{pendingOffers.length ? "Porovnejte cenu, zpravu a profil taskera." : "Zatim zadne nove nabidky."}</p></article>
-          <article className="metric-card"><span>Zpravy</span><strong>{unreadTotal}</strong><p>{unreadTotal ? "Mate nove zpravy v objednavkach." : "Zadne neprectene zpravy."}</p></article>
-          <article className="metric-card"><span>Odhad rozpoctu</span><strong>{formatCzk(estimatedBudget)}</strong><p>Souhrn aktualnich otevrenych ukolu.</p></article>
+        <form action={logoutAccount} className="admin-toolbar"><span>{user.email}</span><button className="button secondary" type="submit">Odhlásit se</button></form>
+
+        <section className="dashboard-overview" aria-label="Přehled účtu">
+          <article className="metric-card metric-card-primary"><span>Aktivní úkoly</span><strong>{currentTasks.length}</strong><p>{actionTasks.length ? `${actionTasks.length} čeká na vaše rozhodnutí.` : "Vše je bez okamžité akce."}</p></article>
+          <article className="metric-card"><span>Doručené nabídky</span><strong>{pendingOffers.length}</strong><p>{pendingOffers.length ? "Porovnejte cenu, zprávu a profil taskera." : "Zatím žádné nové nabídky."}</p></article>
+          <article className="metric-card"><span>Zprávy</span><strong>{unreadTotal}</strong><p>{unreadTotal ? "Máte nové zprávy v objednávkách." : "Žádné nepřečtené zprávy."}</p></article>
+          <article className="metric-card"><span>Odhad rozpočtu</span><strong>{formatCzk(estimatedBudget)}</strong><p>Souhrn aktuálních otevřených úkolů.</p></article>
         </section>
 
-        <section className="dashboard-tabs" aria-label="Rychle sekce">
-          <a href="#aktivni">Aktivni ukoly</a>
-          <a href="#nabidky">Nabidky</a>
-          <a href="#zpravy">Zpravy</a>
+        <section className="dashboard-tabs" aria-label="Rychlé sekce">
+          <a href="#aktivni">Aktivní úkoly</a>
+          <a href="#nabidky">Nabídky</a>
+          <a href="#zpravy">Zprávy</a>
           <a href="#platby">Platby</a>
           <a href="#profil">Profil</a>
         </section>
@@ -123,22 +141,22 @@ export default async function DashboardPage() {
         <section className="section dashboard-section" id="aktivni">
           <div className="section-heading-row">
             <div className="section-title">
-              <p className="kicker">Prehled prace</p>
-              <h2>Aktivni ukoly</h2>
-              <p>Otevrene poptavky, vybrani taskeri a zakazky, ktere cekaji na potvrzeni.</p>
+              <p className="kicker">Přehled práce</p>
+              <h2>Aktivní úkoly</h2>
+              <p>Otevřené poptávky, vybraní taskeři a zakázky, které čekají na potvrzení.</p>
             </div>
-            <a className="button secondary" href="/tasks">Verejny marketplace</a>
+            <a className="button secondary" href="/tasks">Veřejný marketplace</a>
           </div>
 
           {actionTasks.length ? (
             <div className="priority-panel">
-              <div><p className="kicker">Priorita</p><h3>Ceka na vas krok</h3></div>
+              <div><p className="kicker">Priorita</p><h3>Čeká na váš krok</h3></div>
               <div className={dashboardListStyles.compactList}>
                 {actionTasks.map((task) => (
                   <article className={dashboardListStyles.compactItem} key={task.id}>
                     <strong className={dashboardListStyles.itemTitle}>{task.title}</strong>
-                    <p className={dashboardListStyles.itemText}>{nextStepCopy[task.status] ?? "Otevrete detail objednavky."} · {offersByTask.get(task.id)?.length || 0} nabidek · {unreadCounts[task.id] || 0} novych zprav</p>
-                    <div className={dashboardListStyles.itemActions}><a className="button secondary" href={`/ukol/${task.id}`}>Otevrit objednavku</a></div>
+                    <p className={dashboardListStyles.itemText}>{nextStepCopy[task.status] ?? "Otevřete detail objednávky."} · {offersByTask.get(task.id)?.length || 0} nabídek · {unreadCounts[task.id] || 0} nových zpráv</p>
+                    <div className={dashboardListStyles.itemActions}><a className="button secondary" href={`/ukol/${task.id}`}>Otevřít objednávku</a></div>
                   </article>
                 ))}
               </div>
@@ -150,12 +168,12 @@ export default async function DashboardPage() {
               {currentTasks.map((task) => <TaskCard key={task.id} task={task} offers={offersByTask.get(task.id) || []} canSelectOffer showOfferForm={false} canManageTask />)}
             </div>
           ) : (
-            <div className="empty-state"><h3>Zatim nemate zadny ukol</h3><p>Zadejte prvni poptavku a Taskovo ji ukaze vhodnym taskerum v okoli.</p><a className="button primary" href="#novy-ukol">Zadat novy ukol</a></div>
+            <div className="empty-state"><h3>Zatím nemáte žádný úkol</h3><p>Zadejte první poptávku a Taskovo ji ukáže vhodným taskerům v okolí.</p><a className="button primary" href="#novy-ukol">Zadat nový úkol</a></div>
           )}
         </section>
 
         <section className="section dashboard-section" id="nabidky">
-          <div className="section-title"><p className="kicker">Nabidky</p><h2>Porovnani nabidek</h2><p>Klient si taskera vybira samostatne. Taskovo je zprostredkovatel, ne zamestnavatel ani primy poskytovatel sluzby.</p></div>
+          <div className="section-title"><p className="kicker">Nabídky</p><h2>Porovnání nabídek</h2><p>Klient si taskera vybírá samostatně. Taskovo je zprostředkovatel, ne zaměstnavatel ani přímý poskytovatel služby.</p></div>
           {openTasks.length ? (
             <div className={dashboardListStyles.compactList}>
               {openTasks.map((task) => {
@@ -163,68 +181,68 @@ export default async function DashboardPage() {
                 return (
                   <article className={dashboardListStyles.compactItem} key={task.id}>
                     <strong className={dashboardListStyles.itemTitle}>{task.title}</strong>
-                    <p className={dashboardListStyles.itemText}>Stav: {statusLabels[task.status] ?? task.status} · {taskOffers.length} nabidek · rozpocet {formatCzk(task.budget_czk)}</p>
-                    <div className={dashboardListStyles.itemActions}><a className="button secondary" href={`/ukol/${task.id}`}>{taskOffers.length ? "Vybrat taskera" : "Otevrit detail"}</a></div>
+                    <p className={dashboardListStyles.itemText}>Stav: {statusLabels[task.status] ?? task.status} · {taskOffers.length} nabídek · rozpočet {formatCzk(task.budget_czk)}</p>
+                    <div className={dashboardListStyles.itemActions}><a className="button secondary" href={`/ukol/${task.id}`}>{taskOffers.length ? "Vybrat taskera" : "Otevřít detail"}</a></div>
                   </article>
                 );
               })}
             </div>
-          ) : <div className="empty-state"><h3>Zadne nabidky k vyberu</h3><p>Jakmile taskeri odpovi na vase ukoly, uvidite je tady.</p></div>}
+          ) : <div className="empty-state"><h3>Žádné nabídky k výběru</h3><p>Jakmile taskeři odpoví na vaše úkoly, uvidíte je tady.</p></div>}
         </section>
 
         <section className="section dashboard-section" id="zpravy">
-          <div className="section-title"><p className="kicker">Komunikace</p><h2>Zpravy</h2><p>Zpravy jsou vazane na konkretni objednavku, aby domluva nezmizela mimo kontext.</p></div>
+          <div className="section-title"><p className="kicker">Komunikace</p><h2>Zprávy</h2><p>Zprávy jsou vázané na konkrétní objednávku, aby domluva nezmizela mimo kontext.</p></div>
           {unreadTotal ? (
             <div className={dashboardListStyles.compactList}>
               {currentTasks.filter((task) => unreadCounts[task.id]).map((task) => (
                 <article className={dashboardListStyles.compactItem} key={task.id}>
                   <strong className={dashboardListStyles.itemTitle}>{task.title}</strong>
-                  <p className={dashboardListStyles.itemText}>{unreadCounts[task.id]} novych zprav · {task.city}</p>
-                  <div className={dashboardListStyles.itemActions}><a className="button secondary" href={`/ukol/${task.id}`}>Otevrit zpravy</a></div>
+                  <p className={dashboardListStyles.itemText}>{unreadCounts[task.id]} nových zpráv · {task.city}</p>
+                  <div className={dashboardListStyles.itemActions}><a className="button secondary" href={`/ukol/${task.id}`}>Otevřít zprávy</a></div>
                 </article>
               ))}
             </div>
-          ) : <div className="empty-state"><h3>Zadne nove zpravy</h3><p>Až se tasker ozve nebo upresni detail, zprava se objevi v objednavce.</p></div>}
+          ) : <div className="empty-state"><h3>Žádné nové zprávy</h3><p>Až se tasker ozve nebo upřesní detail, zpráva se objeví v objednávce.</p></div>}
         </section>
 
         <section className="section dashboard-section" id="platby">
           <div className="dashboard-grid">
-            <article className="dashboard-panel"><h3>Platby</h3><p>{acceptedOffers.length ? `Evidujeme ${acceptedOffers.length} vybranych nabidek v odhadovane hodnote ${formatCzk(paidEstimate)}.` : "Platebni tok pripojime po dokonceni Stripe. Ted je sekce pripravena pro pilot."}</p></article>
-            <article className="dashboard-panel"><h3>Recenze</h3><p>{completedTasks.length ? `Po ${completedTasks.length} dokoncenych ukolech bude mozne pridat recenzi taskerovi.` : "Po dokonceni prvni objednavky zde bude vyzva k recenzi."}</p></article>
-            <article className="dashboard-panel"><h3>Bezpecnost</h3><p>Platby a spory budou vedeny pres Taskovo proces. Tasker zustava nezavisly OSVC nebo firma.</p></article>
+            <article className="dashboard-panel"><h3>Platby</h3><p>{acceptedOffers.length ? `Evidujeme ${acceptedOffers.length} vybraných nabídek v odhadované hodnotě ${formatCzk(paidEstimate)}.` : "Platební tok připojíme po dokončení Stripe. Teď je sekce připravená pro pilot."}</p></article>
+            <article className="dashboard-panel"><h3>Recenze</h3><p>{completedTasks.length ? `Po ${completedTasks.length} dokončených úkolech bude možné přidat recenzi taskerovi.` : "Po dokončení první objednávky zde bude výzva k recenzi."}</p></article>
+            <article className="dashboard-panel"><h3>Bezpečnost</h3><p>Platby a spory budou vedeny přes Taskovo proces. Tasker zůstává nezávislý OSVČ nebo firma.</p></article>
           </div>
         </section>
 
         <section className="section split dashboard-create-section" id="novy-ukol">
           <div className="section-title">
-            <p className="kicker">Rychle zadani</p>
-            <h2>Vytvorte novy ukol</h2>
-            <p>Po odeslani se ukol ulozi k vasemu uctu a taskerum ho zobrazime v marketplace.</p>
+            <p className="kicker">Rychlé zadání</p>
+            <h2>Vytvořte nový úkol</h2>
+            <p>Po odeslání se úkol uloží k vašemu účtu a taskerům ho zobrazíme v marketplace.</p>
           </div>
           <TaskForm />
         </section>
 
         <section className="section admin-panel" id="profil">
           <div className="section-title">
-            <p className="kicker">Muj profil</p>
-            <h2>Kontaktni udaje klienta</h2>
-            <p>Tyto udaje pouzivame pro objednavky a podporu. Prihlasovaci email zatim zustava stejny.</p>
+            <p className="kicker">Můj profil</p>
+            <h2>Kontaktní údaje klienta</h2>
+            <p>Tyto údaje používáme pro objednávky a podporu. Přihlašovací email zatím zůstává stejný.</p>
           </div>
           <form className="compact-form" action={updateClientOwnProfile}>
-            <label>Jmeno<input name="name" type="text" defaultValue={profile?.name || user.user_metadata?.name || ""} required /></label>
-            <label>Prihlasovaci email<input type="email" defaultValue={user.email || ""} disabled /></label>
+            <label>Jméno<input name="name" type="text" defaultValue={profile?.name || user.user_metadata?.name || ""} required /></label>
+            <label>Přihlašovací email<input type="email" defaultValue={user.email || ""} disabled /></label>
             <label>Telefon<input name="phone" type="text" defaultValue={profile?.phone || ""} placeholder="+420..." /></label>
-            <label>Mesto<input name="city" type="text" defaultValue={profile?.city || ""} placeholder="Praha, Plzen, Tabor..." /></label>
-            <label>Jazyk<select name="preferred_language" defaultValue={profile?.preferred_language || "cs"}><option value="cs">Cestina</option><option value="en">English</option><option value="uk">Ukrainstina</option><option value="ru">Rustina</option></select></label>
+            <label>Město<input name="city" type="text" defaultValue={profile?.city || ""} placeholder="Praha, Plzeň, Tábor..." /></label>
+            <label>Jazyk<select name="preferred_language" defaultValue={profile?.preferred_language || "cs"}><option value="cs">Čeština</option><option value="en">English</option><option value="uk">Ukrajinština</option><option value="ru">Ruština</option></select></label>
             <label className="checkbox-row"><input name="marketing_consent" type="checkbox" defaultChecked={Boolean(profile?.marketing_consent)} /> Novinky a tipy od Taskovo</label>
-            <button className="button primary span-full" type="submit">Ulozit profil</button>
+            <button className="button primary span-full" type="submit">Uložit profil</button>
           </form>
 
           <section className="section-action">
-            <div className="section-title"><p className="kicker">Foto profilu</p><h2>Profilova fotka</h2><p>Fotka se verejne zobrazi az po kontrole administratorem.</p></div>
+            <div className="section-title"><p className="kicker">Foto profilu</p><h2>Profilová fotka</h2><p>Fotka se veřejně zobrazí až po kontrole administrátorem.</p></div>
             <div className="dashboard-grid">
-              <article className="dashboard-panel"><h3>Schvalena fotka</h3>{profile?.avatar_url ? <img className="avatar brand-mark-large" src={profile.avatar_url} alt="Schvalena profilova fotka" /> : <p>Schvalena fotka zatim neni nastavena.</p>}</article>
-              <article className="dashboard-panel"><h3>Ceka na kontrolu</h3>{profile?.pending_avatar_url ? <img className="avatar brand-mark-large" src={profile.pending_avatar_url} alt="Fotka cekajici na kontrolu" /> : <p>Zadna nova fotka neceka na kontrolu.</p>}</article>
+              <article className="dashboard-panel"><h3>Schválená fotka</h3>{profile?.avatar_url ? <img className="avatar brand-mark-large" src={profile.avatar_url} alt="Schválená profilová fotka" /> : <p>Schválená fotka zatím není nastavená.</p>}</article>
+              <article className="dashboard-panel"><h3>Čeká na kontrolu</h3>{profile?.pending_avatar_url ? <img className="avatar brand-mark-large" src={profile.pending_avatar_url} alt="Fotka čekající na kontrolu" /> : <p>Žádná nová fotka nečeká na kontrolu.</p>}</article>
               <article className="dashboard-panel"><h3>Stav</h3><p>{photoStatusCopy[photoStatus] || photoStatus}</p>{profile?.avatar_review_note ? <p>{profile.avatar_review_note}</p> : null}</article>
             </div>
             <ProfilePhotoUploadForm />
@@ -233,7 +251,7 @@ export default async function DashboardPage() {
 
         {archivedTasks.length ? (
           <section className="section dashboard-section">
-            <div className="section-title"><p className="kicker">Archiv</p><h2>Dokoncene a zrusene objednavky</h2><p>Historie zustava oddelena od aktualnich ukolu.</p></div>
+            <div className="section-title"><p className="kicker">Archiv</p><h2>Dokončené a zrušené objednávky</h2><p>Historie zůstává oddělená od aktuálních úkolů.</p></div>
             <div className="task-grid">{archivedTasks.map((task) => <TaskCard key={task.id} task={task} offers={offersByTask.get(task.id) || []} showOfferForm={false} />)}</div>
           </section>
         ) : null}
