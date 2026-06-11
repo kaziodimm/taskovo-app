@@ -53,6 +53,9 @@ const errorMessages: Record<string, string> = {
   forbidden: "K této objednávce nemáte oprávnění.",
   config: "Chybí konfigurace služby. Zkontrolujeme nastavení Supabase.",
   locked: "Objednávku už nelze upravit v tomto stavu.",
+  bad_file: "Vyberte fotku ve formátu JPG, PNG nebo WebP.",
+  file_too_large: "Fotka je příliš velká. Maximální velikost je 5 MB.",
+  profile_missing: "Nejdřív uložte profil, potom nahrajte fotku.",
 };
 
 function needsClientAction(task: Task, offerCount: number) {
