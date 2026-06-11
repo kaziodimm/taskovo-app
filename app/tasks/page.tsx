@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import { TaskCard } from "@/components/TaskCard";
@@ -5,6 +6,21 @@ import { getOffers, getTasks } from "@/lib/data";
 import { marketplaceCategories } from "@/lib/marketplace-data";
 import type { Task } from "@/lib/types";
 import styles from "./page.module.css";
+
+export const metadata: Metadata = {
+  title: "Dostupné úkoly | Taskovo marketplace",
+  description: "Aktuální úkoly na Taskovo pro nezávislé taskery: doručení, montáž, úklid, stěhování a lokální pomoc v Česku.",
+  alternates: { canonical: "/tasks" },
+  openGraph: {
+    title: "Dostupné úkoly | Taskovo",
+    description: "Filtrovaný přehled zakázek, na které mohou nezávislí taskeři poslat nabídku.",
+    url: "/tasks",
+    siteName: "Taskovo",
+    type: "website",
+    images: [{ url: "/taskovo-logo.svg", width: 512, height: 512, alt: "Taskovo logo" }],
+  },
+  robots: { index: true, follow: true },
+};
 
 type TaskSearchParams = {
   city?: string;
@@ -54,6 +70,45 @@ function formatCzk(value: number) {
   return `${value.toLocaleString("cs-CZ")} Kč`;
 }
 
+function buildTasksSchema(tasks: Task[]) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    name: "Dostupné úkoly na Taskovo",
+    description: "Aktuální lokální úkoly, na které mohou nezávislí taskeři poslat nabídku.",
+    itemListElement: tasks.slice(0, 20).map((task, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      url: `https://taskovo.cz/ukol/${task.id}`,
+      item: {
+        "@type": "Service",
+        name: task.title,
+        serviceType: task.category,
+        areaServed: task.city,
+        description: task.description,
+        offers: {
+          "@type": "Offer",
+          price: task.budget_czk,
+          priceCurrency: "CZK",
+          availability: "https://schema.org/InStock",
+        },
+      },
+    })),
+  };
+}
+
+const searchActionSchema = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  name: "Taskovo",
+  url: "https://taskovo.cz",
+  potentialAction: {
+    "@type": "SearchAction",
+    target: "https://taskovo.cz/tasks?category={search_term_string}",
+    "query-input": "required name=search_term_string",
+  },
+};
+
 export default async function TasksPage({ searchParams }: { searchParams: Promise<TaskSearchParams> }) {
   const params = await searchParams;
   const [tasks, offers] = await Promise.all([getTasks(), getOffers()]);
@@ -67,6 +122,8 @@ export default async function TasksPage({ searchParams }: { searchParams: Promis
     <>
       <Header />
       <main className="page-shell">
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(buildTasksSchema(filteredTasks)) }} />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(searchActionSchema) }} />
         <section className="section-title">
           <p className="kicker">Marketplace</p>
           <h1 className="page-title">Dostupné úkoly</h1>
