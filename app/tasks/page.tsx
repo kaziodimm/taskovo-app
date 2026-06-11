@@ -50,12 +50,18 @@ function filterTasks(tasks: Task[], params: TaskSearchParams) {
   });
 }
 
+function formatCzk(value: number) {
+  return `${value.toLocaleString("cs-CZ")} Kč`;
+}
+
 export default async function TasksPage({ searchParams }: { searchParams: Promise<TaskSearchParams> }) {
   const params = await searchParams;
   const [tasks, offers] = await Promise.all([getTasks(), getOffers()]);
   const availableTasks = tasks.filter((task) => availableTaskStatuses.has(task.status));
   const filteredTasks = filterTasks(availableTasks, params);
   const cities = Array.from(new Set(availableTasks.map((task) => task.city).filter(Boolean))).sort((a, b) => a.localeCompare(b, "cs-CZ"));
+  const totalBudget = filteredTasks.reduce((sum, task) => sum + task.budget_czk, 0);
+  const offerCount = offers.filter((offer) => availableTasks.some((task) => task.id === offer.task_id)).length;
 
   return (
     <>
@@ -64,12 +70,19 @@ export default async function TasksPage({ searchParams }: { searchParams: Promis
         <section className="section-title">
           <p className="kicker">Marketplace</p>
           <h1 className="page-title">Dostupné úkoly</h1>
-          <p>Filtrovaný přehled zakázek, na které může tasker poslat nabídku. Vyberte město, kategorii, rozpočet, stav a termín.</p>
+          <p>Filtrovaný přehled zakázek pro taskery. Vyberte město, kategorii, rozpočet, stav a termín. Nabídku posílá nezávislý tasker, klient si vybírá sám.</p>
+        </section>
+
+        <section className={styles.marketIntro} aria-label="Souhrn marketplace">
+          <article><strong>{availableTasks.length} otevřených úkolů</strong><p>Aktuální poptávky, na které lze poslat nabídku.</p></article>
+          <article><strong>{formatCzk(totalBudget)}</strong><p>Součet rozpočtů v právě zobrazeném výběru.</p></article>
+          <article><strong>{offerCount} nabídek</strong><p>Signál aktivity taskerů v pilotním marketplace.</p></article>
         </section>
 
         <section className={styles.marketLayout}>
           <form className={styles.filterPanel} action="/tasks">
             <h2>Filtry</h2>
+            <p className={styles.filterHint}>Zúžení funguje jako v obchodě: lokalita, typ práce, cena a řazení.</p>
             <details className={styles.filterGroup} open>
               <summary>Lokalita</summary>
               <div className={styles.filterFields}>
@@ -136,7 +149,7 @@ export default async function TasksPage({ searchParams }: { searchParams: Promis
           <div>
             <div className={styles.resultsHeader}>
               <h2>{filteredTasks.length} dostupných úkolů</h2>
-              <span className="pill">{availableTasks.length} dostupných celkem</span>
+              <div className={styles.resultsMeta}><span className="pill">{availableTasks.length} dostupných celkem</span><span className="pill status-offers_received">Klient vybírá</span></div>
             </div>
             {filteredTasks.length ? (
               <div className="task-grid">
@@ -148,8 +161,10 @@ export default async function TasksPage({ searchParams }: { searchParams: Promis
               <div className={styles.emptyResults}>
                 <h3>Žádné dostupné úkoly podle filtrů</h3>
                 <p>Zkuste rozšířit město, cenu nebo termín. U pilotní verze bude počet dostupných zakázek růst postupně.</p>
+                <a className="button secondary" href="/tasks">Zobrazit vše</a>
               </div>
             )}
+            <div className={styles.marketNote}><strong>Role Taskovo</strong>Taskovo pouze propojuje klienta a taskera. Tasker není zaměstnanec Taskovo a službu poskytuje samostatně jako OSVČ nebo firma.</div>
           </div>
         </section>
       </main>
