@@ -6,6 +6,10 @@ const footerGroups = [
     links: [["Zadat úkol", "/zadat-ukol"], ["Kategorie", "/kategorie"], ["Taskeři", "/poskytovatele"], ["Aktuální úkoly", "/tasks"]],
   },
   {
+    title: "Služby v Praze",
+    links: [["Úklid Praha", "/uklid-praha"], ["Stěhování Praha", "/stehovani-praha"], ["Montáž nábytku Praha", "/montaz-nabytku-praha"], ["Doručení zásilek Praha", "/doruceni-zasilek-praha"], ["Pomoc na zahradě Praha", "/pomoc-na-zahrade-praha"]],
+  },
+  {
     title: "Jak to funguje",
     links: [["Pro zákazníky", "/pro-zakazniky"], ["Pro taskery", "/pro-taskery"], ["Postup platformy", "/jak-to-funguje"], ["FAQ", "/faq"]],
   },
