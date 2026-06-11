@@ -1,10 +1,22 @@
 .card {
-  grid-template-rows: auto minmax(48px, auto) auto auto auto;
-  min-height: 360px;
+  grid-template-rows: auto minmax(58px, auto) auto auto auto;
+  min-height: 392px;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+}
+
+.card::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 4px;
+  background: linear-gradient(90deg, var(--yellow), var(--orange));
 }
 
 .header {
-  min-height: 62px;
+  min-height: 68px;
+  padding-top: 4px;
 }
 
 .titleBlock {
@@ -13,8 +25,10 @@
 
 .titleBlock h3 {
   display: -webkit-box;
-  min-height: 2.6em;
+  min-height: 2.7em;
+  margin-top: 9px;
   overflow: hidden;
+  color: var(--navy);
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
 }
@@ -25,10 +39,11 @@
 
 .description {
   display: -webkit-box;
-  min-height: 48px;
+  min-height: 58px;
   overflow: hidden;
+  color: var(--muted);
   -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 3;
 }
 
 .meta {
@@ -41,8 +56,14 @@
   min-height: 92px;
 }
 
+.price div {
+  display: grid;
+  align-content: center;
+}
+
 .detailAction {
   align-self: end;
+  width: 100%;
 }
 
 .manageBox {
