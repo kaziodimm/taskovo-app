@@ -3,17 +3,24 @@ import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import { faqs } from "@/lib/marketplace-data";
 
+const pageUrl = "https://taskovo.cz/faq";
+
 export const metadata: Metadata = {
   title: "FAQ | Taskovo",
   description:
-    "Odpovedi na caste otazky ke klientum, taskerum, overeni, platbam, bezpecnosti a roli platformy Taskovo.",
+    "Odpovědi na časté otázky ke klientům, taskerům, ověření, platbám, bezpečnosti a roli platformy Taskovo.",
   alternates: { canonical: "/faq" },
   openGraph: {
     title: "FAQ | Taskovo",
-    description: "Caste otazky k ceskemu marketplace pro lokalni ukoly a sluzby.",
-    url: "https://taskovo-app.vercel.app/faq",
+    description: "Časté otázky k českému marketplace pro lokální úkoly a služby.",
+    url: pageUrl,
     siteName: "Taskovo",
     type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "FAQ | Taskovo",
+    description: "Časté otázky k českému marketplace pro lokální úkoly a služby.",
   },
 };
 
