@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { getAccountContext } from "@/lib/account";
 import { createServerSupabaseClient, createServiceSupabaseClient, hasSupabaseEnv } from "@/lib/supabase";
 
 const profilePhotoBucket = "profile-photos";
@@ -78,7 +79,11 @@ export async function updateClientOwnProfile(formData: FormData) {
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) redirect("/prihlaseni?error=login_required");
-  if (user.user_metadata?.role === "tasker") redirect("/poskytovatel/dashboard");
+
+  const account = await getAccountContext(user);
+  if (account.role === "admin") redirect("/admin");
+  if (account.role === "tasker") redirect("/poskytovatel/dashboard");
+  if (account.role !== "client") redirect("/prihlaseni?mode=login&error=account_profile");
 
   const name = requiredString(formData, "name");
   const phone = optionalString(formData, "phone");
@@ -125,7 +130,11 @@ export async function updateTaskerOwnProfile(formData: FormData) {
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) redirect("/prihlaseni?error=login_required");
-  if (user.user_metadata?.role !== "tasker") redirect("/dashboard");
+
+  const account = await getAccountContext(user);
+  if (account.role === "admin") redirect("/admin");
+  if (account.role === "client") redirect("/dashboard");
+  if (account.role !== "tasker") redirect("/prihlaseni?mode=login&error=account_profile");
 
   const name = requiredString(formData, "name");
   const city = requiredString(formData, "city");
@@ -173,7 +182,11 @@ export async function submitProfilePhotoForReview(formData: FormData) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/prihlaseni?error=login_required");
 
-  const role = user.user_metadata?.role === "tasker" ? "tasker" : "client";
+  const account = await getAccountContext(user);
+  if (account.role === "admin") redirect("/admin");
+  if (account.role !== "client" && account.role !== "tasker") redirect("/prihlaseni?mode=login&error=account_profile");
+
+  const role = account.role;
   if (!hasSupabaseEnv() || !process.env.SUPABASE_SERVICE_ROLE_KEY) redirect(dashboardHref(role, "error=config#profil"));
 
   const file = formData.get("avatar_file");
