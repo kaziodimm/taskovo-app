@@ -11,7 +11,7 @@ export const metadata: Metadata = {
   alternates: { canonical: "/pro-taskery" },
   openGraph: {
     title: "Taskovo pro taskery",
-    description: "Lokální zakázky, vlastní nabídky, profil, recenze a budoucí výplaty pro nezávislé taskery.",
+    description: "Lokální zakázky, vlastní nabídky, profil, recenze a výplatní přehled pro nezávislé taskery.",
     url: pageUrl,
     siteName: "Taskovo",
     type: "website",
@@ -19,7 +19,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "Taskovo pro taskery",
-    description: "Lokální zakázky, vlastní nabídky, profil, recenze a budoucí výplaty pro nezávislé taskery.",
+    description: "Lokální zakázky, vlastní nabídky, profil, recenze a výplatní přehled pro nezávislé taskery.",
   },
 };
 
@@ -27,7 +27,7 @@ const benefits = [
   ["Úkoly podle lokality", "Tasker může hledat práci ve městě nebo okolí, kde se skutečně pohybuje."],
   ["Vlastní nabídka", "Cena, termín a rozsah práce jsou na taskerovi. Klient si nabídku může porovnat s ostatními."],
   ["Reputace v profilu", "Recenze, ověření, dokončené úkoly a kvalitní profil pomáhají získat další zakázky."],
-  ["Postupné ověřování", "Ruční schválení profilu, fotografie, později IČO, identita a bankovní účet pro výplaty."],
+  ["Ověření profilu", "Schválení profilu, fotografie, IČO, identita a výplatní údaje podporují důvěru klientů."],
 ];
 
 const checklist = [
@@ -80,7 +80,7 @@ export default function TaskersPage() {
         </section>
 
         <section className="section">
-          <div className="section-heading-row"><div><p className="kicker">Výhody</p><h2>Co má tasker v platformě získat</h2></div></div>
+          <div className="section-heading-row"><div><p className="kicker">Výhody</p><h2>Co tasker v platformě získá</h2></div></div>
           <div className="trust-grid">
             {benefits.map(([title, text]) => <article key={title}><span className="trust-icon">TV</span><h3>{title}</h3><p>{text}</p></article>)}
           </div>
@@ -90,7 +90,7 @@ export default function TaskersPage() {
           <div className="section-title">
             <p className="kicker">Profil</p>
             <h2>Co potřebuje kvalitní tasker profil</h2>
-            <p>Silný profil snižuje nedůvěru klienta. U pilotu bude část věcí kontrolovaná ručně administrátorem, včetně fotografie.</p>
+            <p>Silný profil snižuje nedůvěru klienta. Profilová fotografie a veřejné údaje procházejí kontrolou, aby marketplace působil bezpečně a profesionálně.</p>
           </div>
           <div className="feature-list">
             {checklist.map((item) => <div key={item}><strong>{item}</strong><span>Pomáhá to klientovi rychle rozhodnout, jestli je tasker vhodný pro daný úkol.</span></div>)}
@@ -100,7 +100,7 @@ export default function TaskersPage() {
         <section className="section">
           <div className="section-heading-row"><div><p className="kicker">Pravidla</p><h2>Transparentní vztah k platformě</h2></div><a className="button secondary" href="/podminky-pro-poskytovatele">Podmínky pro taskery</a></div>
           <div className="legal-grid">
-            {rules.map((rule) => <article className="legal-card" key={rule}><h3>{rule}</h3><p>Tyto formulace chrání klienta, taskera i platformu při pilotním provozu a pozdějším napojení plateb.</p></article>)}
+            {rules.map((rule) => <article className="legal-card" key={rule}><h3>{rule}</h3><p>Tyto formulace chrání klienta, taskera i platformu při provozu marketplace a při zpracování plateb.</p></article>)}
           </div>
         </section>
       </main>
