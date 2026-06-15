@@ -81,6 +81,7 @@ export default async function LoginPage({
           {params.resetSent ? <p className="success-box">Pokud účet s tímto emailem existuje, poslali jsme odkaz pro obnovu hesla.</p> : null}
           {params.passwordUpdated ? <p className="success-box">Heslo bylo změněno. Přihlaste se prosím novým heslem.</p> : null}
           {error === "duplicate" ? <p className="alert-box">Tento email už je v Taskovo registrovaný. Přihlaste se nebo použijte obnovu hesla.</p> : null}
+          {error === "email_confirm" ? <p className="alert-box">Potvrzení emailu se nepodařilo. Otevřete prosím nejnovější email z Taskovo nebo si účet zaregistrujte znovu.</p> : null}
           {error === "email_not_confirmed" ? <p className="alert-box">Email ještě není potvrzený. Zkontrolujte prosím potvrzovací zprávu ve své schránce.</p> : null}
           {error === "login" ? <p className="alert-box">Přihlášení se nepodařilo. Zkontrolujte email a heslo.</p> : null}
           {error === "login_required" ? <p className="alert-box">Pro pokračování se prosím přihlaste.</p> : null}
