@@ -3,6 +3,8 @@ import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import { faqs, marketplaceCategories, trustBadges } from "@/lib/marketplace-data";
 
+const baseUrl = "https://taskovo.cz";
+
 const workflow = [
   ["01", "Zadáte úkol", "Popíšete, co potřebujete, kde, kdy a jaký máte rozpočet."],
   ["02", "Dostanete nabídky", "Taskeři pošlou cenu, zprávu a dostupnost. Vy si je v klidu porovnáte."],
@@ -14,11 +16,35 @@ const quickCategories = marketplaceCategories.slice(0, 5);
 const popularCategories = marketplaceCategories.slice(0, 6);
 const previewFaqs = faqs.slice(0, 3);
 
+const organizationJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  name: "Taskovo",
+  url: baseUrl,
+  logo: `${baseUrl}/taskovo-logo.svg`,
+  description: "Taskovo je zprostředkovatelská platforma pro lokální služby v Česku.",
+  sameAs: [],
+};
+
+const websiteJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  name: "Taskovo",
+  url: baseUrl,
+  potentialAction: {
+    "@type": "SearchAction",
+    target: `${baseUrl}/kategorie?q={search_term_string}`,
+    "query-input": "required name=search_term_string",
+  },
+};
+
 export default function Home() {
   return (
     <>
       <Header />
       <main>
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }} />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }} />
         <section className="hero marketplace-hero">
           <div className="hero-image" aria-hidden="true">
             <img src="https://images.pexels.com/photos/3184465/pexels-photo-3184465.jpeg?auto=compress&cs=tinysrgb&w=1800" alt="" />
@@ -101,8 +127,8 @@ export default function Home() {
             <a className="button secondary" href="/bezpecnost">Více o bezpečnosti</a>
           </div>
           <div className="trust-grid">
-            <article><span className="trust-icon">ID</span><h3>Ověřená totožnost</h3><p>Profily, kontakty a v další fázi doklady nebo IČO podle typu služby.</p></article>
-            <article><span className="trust-icon">Kč</span><h3>Bezpečná platba</h3><p>Platby a výplaty budou napojené až po dokončení pilotní logiky.</p></article>
+            <article><span className="trust-icon">ID</span><h3>Ověřená totožnost</h3><p>Profily, kontakty a u vybraných služeb také kontrola totožnosti nebo IČO podle typu práce.</p></article>
+            <article><span className="trust-icon">Kč</span><h3>Bezpečná platba</h3><p>Platby jsou zpracovány přes platebního partnera. Výplata se uvolní po potvrzení dokončení.</p></article>
             <article><span className="trust-icon">OK</span><h3>Recenze po úkolu</h3><p>Hodnocení pomůže rozlišit spolehlivé taskery od nových profilů.</p></article>
           </div>
         </section>
@@ -117,7 +143,7 @@ export default function Home() {
           <article className="request-card" id="pro-taskery">
             <p className="kicker">Pro taskery</p>
             <h2>Získejte lokální zakázky bez chaosu ve skupinách</h2>
-            <p>Taskovo má postupně nabídnout profil, poptávky, nabídky, historii práce, hodnocení a později i výplaty.</p>
+            <p>Taskovo nabízí profil taskera, poptávky, nabídky, historii práce, hodnocení a přehled výplat v jednom pracovním prostředí.</p>
             <div className="section-action"><a className="button secondary" href="/registrace-poskytovatel">Registrovat se jako tasker</a></div>
           </article>
         </section>
