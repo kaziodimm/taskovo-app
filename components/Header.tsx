@@ -64,6 +64,8 @@ export async function Header() {
             <a href="/kategorie/stehovani">Stěhování</a>
             <a href="/kategorie/montaz-nabytku">Montáž nábytku</a>
             <a href="/kategorie/doruceni">Doručení</a>
+            <a href="/kategorie/zahrada">Zahrada</a>
+            <a href="/kategorie/opravy">Opravy</a>
             <a href="/kategorie">Všechny kategorie</a>
             <span style={{ height: 1, background: "var(--line)", margin: "4px 0" }} />
             <a href="/uklid-praha">Úklid Praha</a>
