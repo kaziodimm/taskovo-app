@@ -26,10 +26,12 @@ cp .env.example .env.local
 3. Fill:
 
 ```text
+NEXT_PUBLIC_SITE_URL
 NEXT_PUBLIC_SUPABASE_URL
 NEXT_PUBLIC_SUPABASE_ANON_KEY
 SUPABASE_SERVICE_ROLE_KEY
-TASKOVO_ADMIN_PIN
+TASKOVO_ADMIN_EMAIL
+TASKOVO_ADMIN_PASSWORD
 ```
 
 4. Apply the SQL from:
@@ -51,12 +53,26 @@ npm run dev
 3. Add the same environment variables in Vercel.
 4. Deploy.
 
+## Auth and Email
+
+Supabase Auth uses email + password, email confirmation and password recovery.
+
+Setup guide and email templates:
+
+```text
+docs/supabase-auth-setup.md
+docs/email-templates/confirm-signup.html
+docs/email-templates/reset-password.html
+docs/email-templates/password-changed.html
+```
+
 ## Notes
 
-The first production iteration supports:
+The production foundation supports:
 
 - creating tasks;
 - listing open tasks;
 - submitting offers;
-- registering taskers;
+- registering clients and taskers;
+- email confirmation and password recovery;
 - basic admin overview.
