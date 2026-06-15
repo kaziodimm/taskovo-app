@@ -4,6 +4,8 @@ const baseUrl = "https://taskovo.cz";
 
 const routes = [
   "",
+  "/zadat-ukol",
+  "/registrace-poskytovatel",
   "/kategorie",
   "/kategorie/uklid",
   "/kategorie/stehovani",
@@ -21,6 +23,10 @@ const routes = [
   "/platby",
   "/vyplaty",
   "/kontakt",
+  "/obchodni-podminky",
+  "/podminky-pro-poskytovatele",
+  "/ochrana-osobnich-udaju",
+  "/cookies",
   "/uklid-praha",
   "/stehovani-praha",
   "/montaz-nabytku-praha",
