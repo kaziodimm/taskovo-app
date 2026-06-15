@@ -190,14 +190,11 @@ export default async function TasksPage({ searchParams }: { searchParams: Promis
           <article><span>Aktivní poptávky</span><strong>{availableTasks.length} úkolů</strong><p>Zakázky, na které lze poslat nabídku.</p></article>
           <article><span>Rozpočet výběru</span><strong>{formatCzk(totalBudget)}</strong><p>Součet rozpočtů ve zobrazených výsledcích.</p></article>
           <article><span>Průměr</span><strong>{averageBudget ? formatCzk(averageBudget) : "-"}</strong><p>Orientační hodnota jedné zakázky ve filtru.</p></article>
-          <article><span>Aktivita</span><strong>{offerCount} nabídek</strong><p>Signál pilotní marketplace aktivity.</p></article>
+          <article><span>Aktivita</span><strong>{offerCount} nabídek</strong><p>Signál aktuální marketplace aktivity.</p></article>
         </section>
 
         <section className={styles.quickSearch} aria-label="Rychlé filtry">
-          <div>
-            <strong>Rychlý výběr</strong>
-            <p>Nejčastější scénáře pro taskery v pilotní verzi.</p>
-          </div>
+          <div><strong>Rychlý výběr</strong><p>Nejčastější scénáře pro taskery.</p></div>
           <nav aria-label="Rychlé filtry úkolů">
             {presetLinks.map((preset) => <a key={preset.href} href={preset.href}>{preset.label}</a>)}
           </nav>
@@ -309,7 +306,7 @@ export default async function TasksPage({ searchParams }: { searchParams: Promis
             ) : (
               <div className={styles.emptyResults}>
                 <h3>Žádné dostupné úkoly podle filtrů</h3>
-                <p>Zkuste rozšířit město, cenu nebo termín. U pilotní verze bude počet dostupných zakázek růst postupně.</p>
+                <p>Zkuste rozšířit město, cenu nebo termín. Počet dostupných zakázek se mění podle aktuální poptávky klientů.</p>
                 <div className={styles.emptyActions}>
                   <a className="button secondary" href="/tasks">Zobrazit vše</a>
                   <a className="button primary" href="/poskytovatel/dashboard">Zpět do dashboardu</a>
