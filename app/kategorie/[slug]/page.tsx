@@ -83,6 +83,7 @@ export default async function CategoryDetailPage({ params }: { params: Promise<{
   const providers = relevantProviders.length > 0 ? relevantProviders : featuredProviders;
   const matchedCityLinks = cityLinks.filter((item) => item.categorySlug === category.slug);
   const pageUrl = `${baseUrl}/kategorie/${category.slug}`;
+  const categoryQuery = encodeURIComponent(category.shortTitle);
 
   const serviceJsonLd = {
     "@context": "https://schema.org",
@@ -128,8 +129,8 @@ export default async function CategoryDetailPage({ params }: { params: Promise<{
             <h1 className="page-title">{category.title}</h1>
             <p className="hero-lead">{category.description}</p>
             <div className="hero-actions">
-              <a className="button primary" href={`/zadat-ukol?kategorie=${category.slug}`}>Zadat úkol</a>
-              <a className="button secondary" href={`/poskytovatele?kategorie=${category.slug}`}>Najít taskery</a>
+              <a className="button primary" href={`/zadat-ukol?category=${categoryQuery}`}>Zadat úkol</a>
+              <a className="button secondary" href={`/poskytovatele?category=${categoryQuery}`}>Najít taskery</a>
             </div>
           </div>
           <div className="page-hero-card">
