@@ -2,17 +2,24 @@ import type { Metadata } from "next";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 
+const pageUrl = "https://taskovo.cz/bezpecnost";
+
 export const metadata: Metadata = {
-  title: "Bezpecnost a duvera | Taskovo",
+  title: "Bezpečnost a důvěra | Taskovo",
   description:
-    "Jak Taskovo pracuje s overenim identity, ICO, moderaci obsahu, recenzemi, bezpecnou platbou a pravidly platformy.",
+    "Jak Taskovo pracuje s ověřením identity, IČO, moderací obsahu, recenzemi, bezpečnou platbou a pravidly platformy.",
   alternates: { canonical: "/bezpecnost" },
   openGraph: {
-    title: "Bezpecnost a duvera | Taskovo",
-    description: "Duvod, proc Taskovo oddeluje roli platformy, klienta a nezavisleho taskera.",
-    url: "https://taskovo-app.vercel.app/bezpecnost",
+    title: "Bezpečnost a důvěra | Taskovo",
+    description: "Důvod, proč Taskovo odděluje roli platformy, klienta a nezávislého taskera.",
+    url: pageUrl,
     siteName: "Taskovo",
     type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Bezpečnost a důvěra | Taskovo",
+    description: "Důvod, proč Taskovo odděluje roli platformy, klienta a nezávislého taskera.",
   },
 };
 
@@ -36,9 +43,16 @@ export default function SafetyPage() {
   const webPageJsonLd = {
     "@context": "https://schema.org",
     "@type": "WebPage",
-    name: "Bezpecnost a duvera Taskovo",
+    name: "Bezpečnost a důvěra Taskovo",
     description: metadata.description,
-    url: "https://taskovo-app.vercel.app/bezpecnost",
+    url: pageUrl,
+    about: {
+      "@type": "Service",
+      name: "Taskovo trust and safety",
+      provider: { "@type": "Organization", name: "Taskovo", url: "https://taskovo.cz" },
+      serviceType: "Marketplace trust and safety",
+      areaServed: "CZ",
+    },
   };
 
   return (
