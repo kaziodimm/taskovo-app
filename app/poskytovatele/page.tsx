@@ -150,9 +150,9 @@ export default async function ProvidersPage({ searchParams }: { searchParams: Pr
         </section>
 
         <section className={styles.marketIntro} aria-label="Souhrn taskerů">
-          <article><strong>{providers.length} profilů</strong><p>Katalog kombinuje živé profily a ukázkové ověřené karty pro pilot.</p></article>
+          <article><strong>{providers.length} profilů</strong><p>Katalog kombinuje aktivní profily a ověřené ukázkové karty pro orientaci klienta.</p></article>
           <article><strong>{verifiedCount} ověřených</strong><p>Ověřený tasker je vizuálně zvýrazněn teplým badge.</p></article>
-          <article><strong>{completedTotal} úkolů</strong><p>Historie dokončených prací bude růst po spuštění platformy.</p></article>
+          <article><strong>{completedTotal} úkolů</strong><p>Historie dokončených prací ukazuje zkušenost a důvěryhodnost profilu.</p></article>
         </section>
 
         <section className={styles.marketLayout}>
