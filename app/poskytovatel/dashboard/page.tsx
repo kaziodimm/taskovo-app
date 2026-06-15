@@ -8,7 +8,8 @@ import { ProfilePhotoStatus } from "@/components/ProfilePhotoStatus";
 import { ProfilePhotoUploadForm } from "@/components/ProfilePhotoUploadForm";
 import { TaskCard } from "@/components/TaskCard";
 import dashboardListStyles from "@/components/DashboardList.module.css";
-import { getAssignedTasksForTasker, getOffers, getOffersForTasker, getOpenTasksForTaskers, getTaskerProfileForUser } from "@/lib/data";
+import { getAccountContext } from "@/lib/account";
+import { getAssignedTasksForTasker, getOffers, getOffersForTasker, getOpenTasksForTaskers } from "@/lib/data";
 import { getUnreadTaskMessageCounts } from "@/lib/message-data";
 import { createServerSupabaseClient } from "@/lib/supabase";
 import type { Task, TaskerProfile } from "@/lib/types";
@@ -73,10 +74,13 @@ export default async function ProviderDashboardPage({ searchParams }: { searchPa
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) redirect("/prihlaseni?error=login_required");
-  if (user.user_metadata?.role !== "tasker") redirect("/dashboard");
+  const account = await getAccountContext(user);
+  if (account.role === "admin") redirect("/admin");
+  if (account.role === "client") redirect("/dashboard");
+  if (account.role !== "tasker") redirect("/prihlaseni?mode=login&error=account_profile");
 
-  const [profile, openTasks, allOffers, myOffers, assignedTasks] = await Promise.all([
-    getTaskerProfileForUser(user.id),
+  const profile = account.taskerProfile;
+  const [openTasks, allOffers, myOffers, assignedTasks] = await Promise.all([
     getOpenTasksForTaskers(),
     getOffers(),
     getOffersForTasker(user.id),
@@ -105,7 +109,7 @@ export default async function ProviderDashboardPage({ searchParams }: { searchPa
         <section className="dashboard-hero">
           <div>
             <p className="kicker">Dashboard taskera</p>
-            <h1 className="page-title">{profile?.name || user.user_metadata?.name || "Tasker"}</h1>
+            <h1 className="page-title">{profile?.name || account.displayName || "Tasker"}</h1>
             <p className="hero-lead">Sledujte dostupné úkoly, aktivní zakázky, nabídky, výplaty a stav ověření profilu.</p>
           </div>
           <div className="dashboard-hero-actions">
@@ -208,7 +212,7 @@ export default async function ProviderDashboardPage({ searchParams }: { searchPa
         <section className="section dashboard-section" id="vyplaty">
           <div className="dashboard-grid">
             <article className="dashboard-panel"><h3>Výplaty</h3><p>{completedTasks.length ? `Dokončené zakázky: ${completedTasks.length}. Výplatní tok bude aktivní po spuštění platebního partnera.` : "Výplaty budou dostupné po první dokončené a potvrzené zakázce."}</p></article>
-            <article className="dashboard-panel"><h3>Provize</h3><p>Přesné podmínky se zobrazí před odesláním nabídky a před potvrzením objednávky klientem.</p></article>
+            <article className="dashboard-panel"><h3>Provize</h3><p>Přesné podmínky se zobrazí před odeslání nabídky a před potvrzením objednávky klientem.</p></article>
             <article className="dashboard-panel"><h3>Právní role</h3><p>Tasker je nezávislý OSVČ nebo firma. Taskovo práci nezaměstnává ani přímo neposkytuje.</p></article>
           </div>
         </section>
@@ -220,7 +224,7 @@ export default async function ProviderDashboardPage({ searchParams }: { searchPa
             <p>Tyto informace vidí klienti v marketplace a v nabídkách. Ověření profilu nastavuje pouze administrátor.</p>
           </div>
           <form className="compact-form" action={updateTaskerOwnProfile}>
-            <label>Jméno<input name="name" type="text" defaultValue={profile?.name || user.user_metadata?.name || ""} required /></label>
+            <label>Jméno<input name="name" type="text" defaultValue={profile?.name || account.displayName || ""} required /></label>
             <label>Přihlašovací email<input type="email" defaultValue={user.email || ""} disabled /></label>
             <label>Město<input name="city" type="text" defaultValue={profile?.city || ""} required /></label>
             <label>Kategorie<input name="categories" type="text" defaultValue={profile?.categories || ""} placeholder="Úklid, stěhování, montáž..." required /></label>
