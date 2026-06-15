@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { BrandMark } from "@/components/BrandMark";
 import { Footer } from "@/components/Footer";
@@ -6,6 +7,20 @@ import { registerClientAccount, registerTaskerAccount } from "@/app/actions";
 import { loginAccount } from "@/app/auth-actions";
 import { isAdminEmail } from "@/lib/admin-auth";
 import { createServerSupabaseClient, hasSupabaseEnv } from "@/lib/supabase";
+
+export const metadata: Metadata = {
+  title: "Přihlášení a registrace | Taskovo",
+  description: "Přihlášení do Taskovo, registrace klienta a registrace taskera pro český marketplace lokálních služeb.",
+  alternates: { canonical: "/prihlaseni" },
+  openGraph: {
+    title: "Přihlášení a registrace | Taskovo",
+    description: "Jeden vstup pro klienty a taskery v marketplace Taskovo.",
+    url: "https://taskovo.cz/prihlaseni",
+    siteName: "Taskovo",
+    type: "website",
+  },
+  robots: { index: false, follow: false },
+};
 
 type AuthMode = "client" | "tasker" | "login";
 
