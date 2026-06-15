@@ -1,8 +1,49 @@
+import type { Metadata } from "next";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 
+const pageUrl = "https://taskovo.cz/cookies";
+
+export const metadata: Metadata = {
+  title: "Cookies | Taskovo",
+  description: "Přehled cookies na Taskovo: technické cookies pro přihlášení a bezpečnost, analytika, marketing a správa souhlasu.",
+  alternates: { canonical: pageUrl },
+  openGraph: {
+    title: "Cookies | Taskovo",
+    description: "Informace o cookies a správě souhlasu na Taskovo.",
+    url: pageUrl,
+    siteName: "Taskovo",
+    type: "article",
+  },
+};
+
+const points = [
+  { title: "Technické", text: "Nutné cookies pomáhají s přihlášením, formuláři, ochranou účtu a základním fungováním webu." },
+  { title: "Analytické", text: "Po souhlasu mohou pomoci pochopit poptávku, konverze a místa, kde uživatelé narážejí na problém." },
+  { title: "Marketingové", text: "Marketingové cookies budou použité až po souhlasu a po spuštění placených kampaní." },
+  { title: "Správa souhlasu", text: "Uživatel musí mít možnost souhlas upravit nebo odvolat. Cookie banner doplníme před ostrým marketingovým spuštěním." },
+];
+
 export default function CookiesPage() {
   return (
-    <><Header /><main className="page-shell"><section className="section-title"><p className="kicker">Cookies</p><h1 className="page-title">Nastaveni cookies</h1><p>Zakladni stranka pro budoucí cookie banner a spravu souhlasu. Technicke cookies budou nutne pro prihlaseni a bezpecnost.</p></section><div className="legal-grid"><article className="legal-card"><h3>Technicke</h3><p>Nutne pro fungovani uctu, formularu a zabezpeceni.</p></article><article className="legal-card"><h3>Analyticke</h3><p>Pomohou pochopit poptavku, konverze a problemy v toku zadani.</p></article><article className="legal-card"><h3>Marketingove</h3><p>Az po souhlasu a po spusteni kampani.</p></article><article className="legal-card"><h3>Sprava souhlasu</h3><p>Uzivatel musi mit moznost souhlas upravit nebo odvolat.</p></article></div></main><Footer /></>
+    <>
+      <Header />
+      <main className="page-shell">
+        <section className="section-title">
+          <p className="kicker">Cookies</p>
+          <h1 className="page-title">Nastavení cookies</h1>
+          <p>Základní přehled kategorií cookies pro Taskovo. Technické cookies jsou nutné pro účet a bezpečnost, ostatní budou řízené souhlasem.</p>
+        </section>
+        <div className="legal-grid">
+          {points.map((point) => (
+            <article className="legal-card" key={point.title}>
+              <h3>{point.title}</h3>
+              <p>{point.text}</p>
+            </article>
+          ))}
+        </div>
+      </main>
+      <Footer />
+    </>
   );
 }
