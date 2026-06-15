@@ -8,6 +8,8 @@ import { createServerSupabaseClient, hasSupabaseEnv } from "@/lib/supabase";
 import type { Task } from "@/lib/types";
 import styles from "./page.module.css";
 
+const pageUrl = "https://taskovo.cz/tasks";
+
 export const metadata: Metadata = {
   title: "Dostupné úkoly | Taskovo marketplace",
   description: "Aktuální úkoly na Taskovo pro nezávislé taskery: doručení, montáž, úklid, stěhování a lokální pomoc v Česku.",
@@ -15,10 +17,16 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Dostupné úkoly | Taskovo",
     description: "Filtrovaný přehled zakázek, na které mohou nezávislí taskeři poslat nabídku.",
-    url: "/tasks",
+    url: pageUrl,
     siteName: "Taskovo",
     type: "website",
-    images: [{ url: "/taskovo-logo.svg", width: 512, height: 512, alt: "Taskovo logo" }],
+    images: [{ url: "https://taskovo.cz/taskovo-logo.svg", width: 512, height: 512, alt: "Taskovo logo" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Dostupné úkoly | Taskovo",
+    description: "Filtrovaný přehled zakázek, na které mohou nezávislí taskeři poslat nabídku.",
+    images: ["https://taskovo.cz/taskovo-logo.svg"],
   },
   robots: { index: true, follow: true },
 };
@@ -109,6 +117,7 @@ function buildTasksSchema(tasks: Task[]) {
     "@type": "ItemList",
     name: "Dostupné úkoly na Taskovo",
     description: "Aktuální lokální úkoly, na které mohou nezávislí taskeři poslat nabídku.",
+    url: pageUrl,
     itemListElement: tasks.slice(0, 20).map((task, index) => ({
       "@type": "ListItem",
       position: index + 1,
