@@ -9,6 +9,8 @@ const routes = [
   "/kategorie/stehovani",
   "/kategorie/montaz-nabytku",
   "/kategorie/doruceni",
+  "/kategorie/zahrada",
+  "/kategorie/opravy",
   "/poskytovatele",
   "/tasks",
   "/jak-to-funguje",
@@ -33,6 +35,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
     url: `${baseUrl}${route}`,
     lastModified: now,
     changeFrequency: route.includes("praha") ? "weekly" : "monthly",
-    priority: route === "" ? 1 : route.includes("praha") ? 0.86 : 0.72,
+    priority: route === "" ? 1 : route.includes("praha") ? 0.86 : route.startsWith("/kategorie") ? 0.8 : 0.72,
   }));
 }
