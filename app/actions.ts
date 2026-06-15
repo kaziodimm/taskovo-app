@@ -3,6 +3,7 @@
 import { randomUUID } from "crypto";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { dashboardHrefForRole, getAccountContext } from "@/lib/account";
 import { clearAdminSession, setAdminSession, validateAdminCredentials } from "@/lib/admin-auth";
 import { createServerSupabaseClient, createServiceSupabaseClient, hasSupabaseEnv } from "@/lib/supabase";
 
@@ -25,11 +26,6 @@ function optionalString(formData: FormData, key: string) {
 
 function titleFromDescription(description: string) {
   return description.length > 64 ? `${description.slice(0, 61)}...` : description;
-}
-
-function authRedirect(role: string | undefined) {
-  if (role === "tasker") redirect("/poskytovatel/dashboard");
-  redirect("/dashboard");
 }
 
 function revalidateTaskViews(taskId: string) {
@@ -156,8 +152,11 @@ export async function loginAccount(formData: FormData) {
   const supabase = await createServerSupabaseClient();
   const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
-  if (error) redirect("/prihlaseni?error=login");
-  authRedirect(data.user?.user_metadata?.role);
+  if (error || !data.user) redirect("/prihlaseni?error=login");
+
+  const account = await getAccountContext(data.user);
+  if (account.role === "unknown") redirect("/prihlaseni?mode=login&error=account_profile");
+  redirect(dashboardHrefForRole(account.role));
 }
 
 export async function logoutAccount() {
@@ -193,6 +192,12 @@ export async function createTask(formData: FormData) {
   const authSupabase = await createServerSupabaseClient();
   const { data: { user } } = await authSupabase.auth.getUser();
   const service = createServiceSupabaseClient();
+
+  if (user) {
+    const account = await getAccountContext(user);
+    if (account.role === "tasker") redirect("/poskytovatel/dashboard");
+  }
+
   const clientName = optionalString(formData, "client_name") || user?.user_metadata?.name || user?.email || "Klient Taskovo";
   const clientContact = optionalString(formData, "client_contact") || user?.email || "kontakt po přihlášení";
   const attachments = optionalImageFiles(formData, "image_files");
@@ -228,21 +233,23 @@ export async function createOffer(formData: FormData) {
   const taskId = requiredString(formData, "task_id");
   const authSupabase = await createServerSupabaseClient();
   const { data: { user } } = await authSupabase.auth.getUser();
+
+  if (!user) redirect("/prihlaseni?error=login_required");
+
+  const account = await getAccountContext(user);
+  if (account.role === "admin") redirect("/admin");
+  if (account.role === "client") redirect("/dashboard");
+  if (account.role !== "tasker" || !account.taskerProfile) redirect("/prihlaseni?mode=login&error=account_profile");
+
   const service = createServiceSupabaseClient();
-
-  let profile: { id: string; name: string; contact?: string | null; email?: string | null } | null = null;
-  if (user?.id) {
-    const { data } = await service.from("tasker_profiles").select("id,name,contact,email").eq("auth_user_id", user.id).order("created_at", { ascending: false }).limit(1).maybeSingle();
-    profile = data;
-  }
-
-  const taskerName = optionalString(formData, "tasker_name") || profile?.name || user?.user_metadata?.name || user?.email || "Tasker Taskovo";
-  const taskerContact = optionalString(formData, "tasker_contact") || profile?.contact || profile?.email || user?.email || "kontakt po přihlášení";
+  const profile = account.taskerProfile;
+  const taskerName = optionalString(formData, "tasker_name") || profile.name || account.displayName;
+  const taskerContact = optionalString(formData, "tasker_contact") || profile.contact || profile.email || user.email || "kontakt po přihlášení";
 
   const { error } = await service.from("offers").insert({
     task_id: taskId,
-    tasker_auth_user_id: user?.id || null,
-    tasker_profile_id: profile?.id || null,
+    tasker_auth_user_id: user.id,
+    tasker_profile_id: profile.id,
     tasker_name: taskerName,
     tasker_contact: taskerContact,
     price_czk: Number(requiredString(formData, "price_czk")),
@@ -253,7 +260,7 @@ export async function createOffer(formData: FormData) {
 
   await service.from("tasks").update({ status: "offers_received" }).eq("id", taskId);
   revalidateTaskViews(taskId);
-  redirect(user?.user_metadata?.role === "tasker" ? "/poskytovatel/dashboard?updated=offer_sent" : "/tasks");
+  redirect("/poskytovatel/dashboard?updated=offer_sent");
 }
 
 export async function addTaskAttachment(formData: FormData) {
@@ -267,6 +274,10 @@ export async function addTaskAttachment(formData: FormData) {
 
   if (!user) redirect("/prihlaseni?error=login_required");
   if (!imageFile) redirect(`/ukol/${taskId}?error=image_file`);
+
+  const account = await getAccountContext(user);
+  if (account.role === "tasker") redirect("/poskytovatel/dashboard");
+  if (account.role === "unknown") redirect("/prihlaseni?mode=login&error=account_profile");
 
   const service = createServiceSupabaseClient();
   const { data: task, error: taskError } = await service.from("tasks").select("id,client_auth_user_id").eq("id", taskId).maybeSingle();
@@ -289,7 +300,10 @@ export async function acceptOffer(formData: FormData) {
   const { data: { user } } = await authSupabase.auth.getUser();
 
   if (!user) redirect("/prihlaseni?error=login_required");
-  if (user.user_metadata?.role === "tasker") redirect("/poskytovatel/dashboard");
+
+  const account = await getAccountContext(user);
+  if (account.role === "tasker") redirect("/poskytovatel/dashboard");
+  if (account.role === "unknown") redirect("/prihlaseni?mode=login&error=account_profile");
 
   const service = createServiceSupabaseClient();
   const { data: task, error: taskError } = await service.from("tasks").select("id,client_auth_user_id,status").eq("id", taskId).maybeSingle();
@@ -326,7 +340,11 @@ export async function startTaskWork(formData: FormData) {
   const { data: { user } } = await authSupabase.auth.getUser();
 
   if (!user) redirect("/prihlaseni?error=login_required");
-  if (user.user_metadata?.role !== "tasker") redirect("/dashboard");
+
+  const account = await getAccountContext(user);
+  if (account.role === "admin") redirect("/admin");
+  if (account.role === "client") redirect("/dashboard");
+  if (account.role !== "tasker") redirect("/prihlaseni?mode=login&error=account_profile");
 
   const service = createServiceSupabaseClient();
   const { data: task, error: taskError } = await service.from("tasks").select("id,status,assigned_tasker_auth_user_id").eq("id", taskId).maybeSingle();
@@ -349,7 +367,11 @@ export async function requestTaskCompletion(formData: FormData) {
   const { data: { user } } = await authSupabase.auth.getUser();
 
   if (!user) redirect("/prihlaseni?error=login_required");
-  if (user.user_metadata?.role !== "tasker") redirect("/dashboard");
+
+  const account = await getAccountContext(user);
+  if (account.role === "admin") redirect("/admin");
+  if (account.role === "client") redirect("/dashboard");
+  if (account.role !== "tasker") redirect("/prihlaseni?mode=login&error=account_profile");
 
   const service = createServiceSupabaseClient();
   const { data: task, error: taskError } = await service.from("tasks").select("id,status,assigned_tasker_auth_user_id").eq("id", taskId).maybeSingle();
@@ -372,7 +394,10 @@ export async function confirmTaskCompletion(formData: FormData) {
   const { data: { user } } = await authSupabase.auth.getUser();
 
   if (!user) redirect("/prihlaseni?error=login_required");
-  if (user.user_metadata?.role === "tasker") redirect("/poskytovatel/dashboard");
+
+  const account = await getAccountContext(user);
+  if (account.role === "tasker") redirect("/poskytovatel/dashboard");
+  if (account.role === "unknown") redirect("/prihlaseni?mode=login&error=account_profile");
 
   const service = createServiceSupabaseClient();
   const { data: task, error: taskError } = await service.from("tasks").select("id,status,client_auth_user_id").eq("id", taskId).maybeSingle();
@@ -399,6 +424,9 @@ export async function sendTaskMessage(formData: FormData) {
 
   if (!user) redirect("/prihlaseni?error=login_required");
 
+  const account = await getAccountContext(user);
+  if (account.role === "unknown") redirect("/prihlaseni?mode=login&error=account_profile");
+
   const service = createServiceSupabaseClient();
   const { data: task, error: taskError } = await service
     .from("tasks")
@@ -415,7 +443,8 @@ export async function sendTaskMessage(formData: FormData) {
   if (!task.assigned_tasker_auth_user_id) redirect(`/ukol/${taskId}?error=messages_closed`);
 
   const senderRole = isClientOwner ? "client" : "tasker";
-  const senderName = user.user_metadata?.name || user.email || (senderRole === "client" ? "Klient Taskovo" : "Tasker Taskovo");
+  const fallbackName = senderRole === "client" ? "Klient Taskovo" : "Tasker Taskovo";
+  const senderName = account.displayName || user.email || fallbackName;
   const { error } = await service.from("messages").insert({
     task_id: taskId,
     sender_auth_user_id: user.id,
