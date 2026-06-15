@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { isAdminEmail } from "@/lib/admin-auth";
+import { getAccountContext } from "@/lib/account";
 import { createServerSupabaseClient, createServiceSupabaseClient, hasSupabaseEnv } from "@/lib/supabase";
 
 type AccountRole = "client" | "tasker";
@@ -22,12 +22,6 @@ function appUrl(path: string) {
   const envUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.VERCEL_PROJECT_PRODUCTION_URL || process.env.VERCEL_URL;
   const baseUrl = envUrl ? (envUrl.startsWith("http") ? envUrl : `https://${envUrl}`) : "https://taskovo.cz";
   return new URL(path, baseUrl).toString();
-}
-
-function authRedirect(role: string | undefined, email?: string | null) {
-  if (isAdminEmail(email)) redirect("/admin");
-  if (role === "tasker") redirect("/poskytovatel/dashboard");
-  redirect("/dashboard");
 }
 
 function registrationRedirect(role: AccountRole, email: string) {
@@ -159,7 +153,10 @@ export async function loginAccount(formData: FormData) {
     redirect("/prihlaseni?mode=login&error=login");
   }
 
-  authRedirect(data.user?.user_metadata?.role, data.user?.email);
+  if (!data.user) redirect("/prihlaseni?mode=login&error=login");
+  const account = await getAccountContext(data.user);
+  if (account.role === "unknown") redirect("/prihlaseni?mode=login&error=account_profile");
+  redirect(account.dashboardHref);
 }
 
 export async function requestPasswordReset(formData: FormData) {
