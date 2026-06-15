@@ -20,24 +20,6 @@ function dashboardHref(role: unknown, email?: string | null) {
   return role === "tasker" ? "/poskytovatel/dashboard" : "/dashboard";
 }
 
-const navDetailsStyle = { borderTop: 0, padding: 0, position: "relative" as const };
-const navSummaryStyle = { listStyle: "none", cursor: "pointer", fontWeight: 780 };
-const navDropdownStyle = {
-  position: "absolute" as const,
-  top: "calc(100% + 14px)",
-  left: 0,
-  zIndex: 40,
-  display: "grid",
-  gap: 8,
-  minWidth: 220,
-  padding: 12,
-  color: "var(--navy)",
-  background: "white",
-  border: "1px solid var(--line)",
-  borderRadius: 8,
-  boxShadow: "0 18px 44px rgba(13,27,42,.14)",
-};
-
 export async function Header() {
   const user = await getSignedInUser();
   const role = user?.user_metadata?.role;
@@ -57,9 +39,9 @@ export async function Header() {
         </span>
       </a>
       <nav className="site-nav nav-menu" aria-label="Hlavní navigace">
-        <details style={navDetailsStyle}>
-          <summary style={navSummaryStyle}>Kategorie</summary>
-          <div style={{ ...navDropdownStyle, minWidth: 260 }}>
+        <details className="nav-dropdown">
+          <summary className="nav-summary">Kategorie</summary>
+          <div className="nav-dropdown-panel nav-dropdown-panel-wide">
             <a href="/kategorie/uklid">Úklid</a>
             <a href="/kategorie/stehovani">Stěhování</a>
             <a href="/kategorie/montaz-nabytku">Montáž nábytku</a>
@@ -67,7 +49,7 @@ export async function Header() {
             <a href="/kategorie/zahrada">Zahrada</a>
             <a href="/kategorie/opravy">Opravy</a>
             <a href="/kategorie">Všechny kategorie</a>
-            <span style={{ height: 1, background: "var(--line)", margin: "4px 0" }} />
+            <span className="nav-dropdown-separator" aria-hidden="true" />
             <a href="/uklid-praha">Úklid Praha</a>
             <a href="/stehovani-praha">Stěhování Praha</a>
             <a href="/montaz-nabytku-praha">Montáž nábytku Praha</a>
@@ -75,9 +57,9 @@ export async function Header() {
             <a href="/pomoc-na-zahrade-praha">Pomoc na zahradě Praha</a>
           </div>
         </details>
-        <details style={navDetailsStyle}>
-          <summary style={navSummaryStyle}>Jak to funguje</summary>
-          <div style={navDropdownStyle}>
+        <details className="nav-dropdown">
+          <summary className="nav-summary">Jak to funguje</summary>
+          <div className="nav-dropdown-panel">
             <a href="/jak-to-funguje">Postup platformy</a>
             <a href="/pro-zakazniky">Pro zákazníky</a>
             <a href="/pro-taskery">Pro taskery</a>
