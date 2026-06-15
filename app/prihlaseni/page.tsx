@@ -4,7 +4,7 @@ import { BrandMark } from "@/components/BrandMark";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import { loginAccount, registerClientAccount, registerTaskerAccount, requestPasswordReset } from "@/app/auth-actions";
-import { isAdminEmail } from "@/lib/admin-auth";
+import { getAccountContext } from "@/lib/account";
 import { createServerSupabaseClient, hasSupabaseEnv } from "@/lib/supabase";
 
 export const metadata: Metadata = {
@@ -39,9 +39,8 @@ async function redirectSignedInUser() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return;
 
-  if (isAdminEmail(user.email)) redirect("/admin");
-  if (user.user_metadata?.role === "tasker") redirect("/poskytovatel/dashboard");
-  redirect("/dashboard");
+  const account = await getAccountContext(user);
+  if (account.role !== "unknown") redirect(account.dashboardHref);
 }
 
 export default async function LoginPage({
@@ -83,6 +82,7 @@ export default async function LoginPage({
           {error === "duplicate" ? <p className="alert-box">Tento email už je v Taskovo registrovaný. Přihlaste se nebo použijte obnovu hesla.</p> : null}
           {error === "email_confirm" ? <p className="alert-box">Potvrzení emailu se nepodařilo. Otevřete prosím nejnovější email z Taskovo nebo si účet zaregistrujte znovu.</p> : null}
           {error === "email_not_confirmed" ? <p className="alert-box">Email ještě není potvrzený. Zkontrolujte prosím potvrzovací zprávu ve své schránce.</p> : null}
+          {error === "account_profile" ? <p className="alert-box">Účet existuje, ale chybí mu profil klienta nebo taskera. Kontaktujte prosím podporu Taskovo.</p> : null}
           {error === "login" ? <p className="alert-box">Přihlášení se nepodařilo. Zkontrolujte email a heslo.</p> : null}
           {error === "login_required" ? <p className="alert-box">Pro pokračování se prosím přihlaste.</p> : null}
           {error === "register" ? <p className="alert-box">Registrace se nepodařila. Zkuste jiný email nebo silnější heslo.</p> : null}
