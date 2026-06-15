@@ -29,7 +29,7 @@ const categoryFaqs = [
   {
     question: "Můžu před výběrem porovnat cenu a recenze?",
     answer:
-      "Ano. Cílem Taskovo je ukázat nabídky, profil taskera, hodnocení, cenu, dostupnost a způsob provedení ještě před potvrzením úkolu.",
+      "Ano. Taskovo ukazuje nabídky, profil taskera, hodnocení, cenu, dostupnost a způsob provedení před potvrzením úkolu.",
   },
 ];
 
@@ -116,12 +116,23 @@ export default async function CategoryDetailPage({ params }: { params: Promise<{
     })),
   };
 
+  const breadcrumbJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Taskovo", item: baseUrl },
+      { "@type": "ListItem", position: 2, name: "Kategorie", item: `${baseUrl}/kategorie` },
+      { "@type": "ListItem", position: 3, name: category.title, item: pageUrl },
+    ],
+  };
+
   return (
     <>
       <Header />
       <main className="page-shell">
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(serviceJsonLd) }} />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
 
         <section className="page-hero">
           <div>
@@ -160,21 +171,21 @@ export default async function CategoryDetailPage({ params }: { params: Promise<{
             <p className="kicker">Jak vybrat</p>
             <h2>Porovnání místo hledání po skupinách</h2>
             <p className="hero-lead">
-              Taskovo má sjednotit poptávku, profily, cenu, recenze a komunikaci na jednom místě. Klient si sám vybere, komu úkol svěří.
+              Taskovo sjednocuje poptávku, profily, cenu, recenze a komunikaci na jednom místě. Klient si sám vybere, komu úkol svěří.
             </p>
           </div>
           <div className="feature-list">
             <div><strong>Jasný rozsah</strong><span>Popis úkolu, fotky, místo a termín pomůžou taskerům dát přesnější nabídku.</span></div>
             <div><strong>Nezávislí taskeři</strong><span>Taskovo není zaměstnavatel a přímo neposkytuje službu.</span></div>
-            <div><strong>Kontrola důvěry</strong><span>U vybraných profilů lze postupně přidávat ověření totožnosti, IČO a recenze.</span></div>
+            <div><strong>Kontrola důvěry</strong><span>U vybraných profilů lze přidat ověření totožnosti, IČO a recenze.</span></div>
           </div>
         </section>
 
         {matchedCityLinks.length ? (
           <section className="section">
-            <div className="section-title"><p className="kicker">Lokální stránka</p><h2>{category.shortTitle} v Praze</h2><p>Pro vybrané služby postupně vytváříme samostatné stránky podle měst a reálné poptávky.</p></div>
+            <div className="section-title"><p className="kicker">Lokální stránka</p><h2>{category.shortTitle} v Praze</h2><p>Vybrané služby mají samostatné stránky podle města a lokální poptávky.</p></div>
             <div className="legal-grid">
-              {matchedCityLinks.map((item) => <a className="legal-card" href={item.href} key={item.href}><h3>{category.shortTitle} {item.city}</h3><p>Detailní SEO stránka pro konkrétní službu a město.</p></a>)}
+              {matchedCityLinks.map((item) => <a className="legal-card" href={item.href} key={item.href}><h3>{category.shortTitle} {item.city}</h3><p>Detailní stránka pro konkrétní službu a město.</p></a>)}
             </div>
           </section>
         ) : null}
@@ -192,7 +203,7 @@ export default async function CategoryDetailPage({ params }: { params: Promise<{
         <section className="section">
           <div className="section-title">
             <p className="kicker">Důvody důvěry</p>
-            <h2>Základ, který bude důležitý pro pilot</h2>
+            <h2>Transparentní základ pro výběr taskera</h2>
           </div>
           <div className="trust-grid">
             {trustBadges.map((badge) => (
