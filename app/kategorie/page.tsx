@@ -57,12 +57,10 @@ export default function CategoriesPage() {
           <div>
             <p className="kicker">Kategorie</p>
             <h1 className="page-title">Vyberte typ pomoci</h1>
-            <p className="hero-lead">
-              Taskovo začíná u kategorií s jasnou poptávkou, rychlým porovnáním nabídek a lokální dostupností napříč Českem.
-            </p>
+            <p className="hero-lead">Taskovo nabízí kategorie s jasnou poptávkou, rychlým porovnáním nabídek a lokální dostupností napříč Českem.</p>
           </div>
           <div className="page-hero-card">
-            <strong>{marketplaceCategories.length} kategorií pro pilot</strong>
+            <strong>{marketplaceCategories.length} hlavních kategorií</strong>
             <p>Úklid, stěhování, montáž, doručení, zahrada, opravy a další rozšíření podle reálné poptávky.</p>
           </div>
         </section>
@@ -80,10 +78,8 @@ export default function CategoriesPage() {
         <section className="section">
           <div className="section-title">
             <p className="kicker">Praha</p>
-            <h2>První SEO stránky podle poptávky</h2>
-            <p>
-              Tyto stránky pomáhají vyhledávačům pochopit konkrétní služby v konkrétním městě. Později stejnou strukturu rozšíříme pro Brno, Ostravu, Plzeň a menší města.
-            </p>
+            <h2>Lokální stránky podle poptávky</h2>
+            <p>Tyto stránky pomáhají vyhledávačům i klientům pochopit konkrétní služby v konkrétním městě. Stejná struktura se dá rozšířit pro Brno, Ostravu, Plzeň a menší města.</p>
           </div>
           <div className="legal-grid">
             {seoLandingLinks.map((item) => (
@@ -99,9 +95,7 @@ export default function CategoriesPage() {
           <div>
             <p className="kicker">Role platformy</p>
             <h2>Taskovo propojuje, klient si vybírá</h2>
-            <p className="hero-lead">
-              Taskovo je zprostředkovatelská platforma. Taskeři jsou nezávislé osoby, OSVČ nebo firmy. Taskovo není zaměstnavatel taskerů a služby přímo neposkytuje.
-            </p>
+            <p className="hero-lead">Taskovo je zprostředkovatelská platforma. Taskeři jsou nezávislé osoby, OSVČ nebo firmy. Taskovo není zaměstnavatel taskerů a služby přímo neposkytuje.</p>
           </div>
           <div className="feature-list">
             <div><strong>Lepší orientace</strong><span>Každá kategorie má vlastní detail, typické úkoly, ceny a FAQ.</span></div>
