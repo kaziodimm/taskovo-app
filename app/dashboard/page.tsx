@@ -210,9 +210,9 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
 
         <section className="section dashboard-section" id="platby">
           <div className="dashboard-grid">
-            <article className="dashboard-panel"><h3>Platby</h3><p>{acceptedOffers.length ? `Evidujeme ${acceptedOffers.length} vybraných nabídek v odhadované hodnotě ${formatCzk(paidEstimate)}.` : "Platební tok připojíme po dokončení Stripe. Teď je sekce připravená pro pilot."}</p></article>
+            <article className="dashboard-panel"><h3>Platby</h3><p>{acceptedOffers.length ? `Evidujeme ${acceptedOffers.length} vybraných nabídek v odhadované hodnotě ${formatCzk(paidEstimate)}.` : "Platby jsou zpracovány přes platebního partnera. Výplata se uvolní po potvrzení dokončení."}</p></article>
             <article className="dashboard-panel"><h3>Recenze</h3><p>{completedTasks.length ? `Po ${completedTasks.length} dokončených úkolech bude možné přidat recenzi taskerovi.` : "Po dokončení první objednávky zde bude výzva k recenzi."}</p></article>
-            <article className="dashboard-panel"><h3>Bezpečnost</h3><p>Platby a spory budou vedeny přes Taskovo proces. Tasker zůstává nezávislý OSVČ nebo firma.</p></article>
+            <article className="dashboard-panel"><h3>Bezpečnost</h3><p>Platby a spory jsou vedeny přes Taskovo proces. Tasker zůstává nezávislý OSVČ nebo firma.</p></article>
           </div>
         </section>
 
@@ -229,7 +229,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
           <div className="section-title">
             <p className="kicker">Můj profil</p>
             <h2>Kontaktní údaje klienta</h2>
-            <p>Tyto údaje používáme pro objednávky a podporu. Přihlašovací email zatím zůstává stejný.</p>
+            <p>Tyto údaje používáme pro objednávky a podporu. Přihlašovací email zůstává hlavním identifikátorem účtu.</p>
           </div>
           <form className="compact-form" action={updateClientOwnProfile}>
             <label>Jméno<input name="name" type="text" defaultValue={profile?.name || user.user_metadata?.name || ""} required /></label>
