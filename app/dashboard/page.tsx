@@ -9,10 +9,9 @@ import { ProfilePhotoUploadForm } from "@/components/ProfilePhotoUploadForm";
 import { TaskCard } from "@/components/TaskCard";
 import { TaskForm } from "@/components/TaskForm";
 import dashboardListStyles from "@/components/DashboardList.module.css";
+import { getAccountContext } from "@/lib/account";
 import { getOffers, getTasksForClient } from "@/lib/data";
-import { isAdminEmail } from "@/lib/admin-auth";
 import { getUnreadTaskMessageCounts } from "@/lib/message-data";
-import { getClientProfileForUser } from "@/lib/profile-data";
 import { createServerSupabaseClient } from "@/lib/supabase";
 import type { Offer, Task } from "@/lib/types";
 
@@ -23,7 +22,7 @@ export const metadata: Metadata = {
 };
 
 const nextStepCopy: Record<string, string> = {
-  open: "Čeká na nabídky od taskerů.",
+  open: "čeká na nabídky od taskerů.",
   offers_received: "Vyberte taskera z doručených nabídek.",
   assigned: "Tasker je vybraný. Domluvte detaily v objednávce.",
   in_progress: "Tasker pracuje. Sledujte zprávy a detail objednávky.",
@@ -83,12 +82,15 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) redirect("/prihlaseni?error=login_required");
-  if (isAdminEmail(user.email)) redirect("/admin");
-  if (user.user_metadata?.role === "tasker") redirect("/poskytovatel/dashboard");
+  const account = await getAccountContext(user);
+  if (account.role === "admin") redirect("/admin");
+  if (account.role === "tasker") redirect("/poskytovatel/dashboard");
+  if (account.role !== "client") redirect("/prihlaseni?mode=login&error=account_profile");
 
-  const [tasks, offers, profile] = await Promise.all([getTasksForClient(user.id), getOffers(), getClientProfileForUser(user.id)]);
+  const [tasks, offers] = await Promise.all([getTasksForClient(user.id), getOffers()]);
+  const profile = account.clientProfile;
   const unreadCounts = await getUnreadTaskMessageCounts(tasks.map((task) => task.id), user.id);
-  const displayName = profile?.name || user.user_metadata?.name || user.email;
+  const displayName = profile?.name || account.displayName;
   const taskIds = new Set(tasks.map((task) => task.id));
   const clientOffers = offers.filter((offer) => taskIds.has(offer.task_id));
   const offersByTask = groupOffersByTask(clientOffers);
@@ -232,7 +234,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
             <p>Tyto údaje používáme pro objednávky a podporu. Přihlašovací email zůstává hlavním identifikátorem účtu.</p>
           </div>
           <form className="compact-form" action={updateClientOwnProfile}>
-            <label>Jméno<input name="name" type="text" defaultValue={profile?.name || user.user_metadata?.name || ""} required /></label>
+            <label>Jméno<input name="name" type="text" defaultValue={profile?.name || account.displayName || ""} required /></label>
             <label>Přihlašovací email<input type="email" defaultValue={user.email || ""} disabled /></label>
             <label>Telefon<input name="phone" type="text" defaultValue={profile?.phone || ""} placeholder="+420..." /></label>
             <label>Město<input name="city" type="text" defaultValue={profile?.city || ""} placeholder="Praha, Plzeň, Tábor..." /></label>
