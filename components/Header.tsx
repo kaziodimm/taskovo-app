@@ -1,6 +1,6 @@
 import { logoutAccount } from "@/app/actions";
 import { BrandMark } from "@/components/BrandMark";
-import { isAdminEmail } from "@/lib/admin-auth";
+import { getAccountContext } from "@/lib/account";
 import { createServerSupabaseClient, hasSupabaseEnv } from "@/lib/supabase";
 
 async function getSignedInUser() {
@@ -15,17 +15,13 @@ async function getSignedInUser() {
   }
 }
 
-function dashboardHref(role: unknown, email?: string | null) {
-  if (isAdminEmail(email)) return "/admin";
-  return role === "tasker" ? "/poskytovatel/dashboard" : "/dashboard";
-}
-
 export async function Header() {
   const user = await getSignedInUser();
-  const role = user?.user_metadata?.role;
-  const isAdmin = isAdminEmail(user?.email);
-  const accountName = user?.user_metadata?.name || user?.email || "Můj účet";
-  const accountHref = dashboardHref(role, user?.email);
+  const account = user ? await getAccountContext(user) : null;
+  const role = account?.role;
+  const isAdmin = account?.isAdmin ?? false;
+  const accountName = account?.displayName || "Můj účet";
+  const accountHref = account?.dashboardHref || "/dashboard";
   const primaryMarketplaceHref = role === "tasker" ? "/tasks" : "/poskytovatele";
   const primaryMarketplaceLabel = role === "tasker" ? "Úkoly" : "Taskeři";
 
@@ -71,8 +67,8 @@ export async function Header() {
         <a href="/pro-taskery">Pro taskery</a>
         {user ? <a href={primaryMarketplaceHref}>{primaryMarketplaceLabel}</a> : <a href="/poskytovatele">Taskeři</a>}
         {role === "tasker" ? <a href="/poskytovatel/dashboard">Moje práce</a> : null}
-        {user && role !== "tasker" && !isAdmin ? <a href="/dashboard">Moje objednávky</a> : null}
-        {user ? <a href="/profil/foto">Foto profilu</a> : null}
+        {user && role === "client" ? <a href="/dashboard">Moje objednávky</a> : null}
+        {user && !isAdmin ? <a href="/profil/foto">Foto profilu</a> : null}
         <a href="/bezpecnost">Bezpečnost</a>
         <a href="/faq">FAQ</a>
       </nav>
