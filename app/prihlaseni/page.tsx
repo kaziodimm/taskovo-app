@@ -3,8 +3,7 @@ import { redirect } from "next/navigation";
 import { BrandMark } from "@/components/BrandMark";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
-import { registerClientAccount, registerTaskerAccount } from "@/app/actions";
-import { loginAccount } from "@/app/auth-actions";
+import { loginAccount, registerClientAccount, registerTaskerAccount, requestPasswordReset } from "@/app/auth-actions";
 import { isAdminEmail } from "@/lib/admin-auth";
 import { createServerSupabaseClient, hasSupabaseEnv } from "@/lib/supabase";
 
@@ -22,10 +21,10 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-type AuthMode = "client" | "tasker" | "login";
+type AuthMode = "client" | "tasker" | "login" | "reset";
 
 function normalizeMode(mode?: string): AuthMode {
-  if (mode === "tasker" || mode === "login") return mode;
+  if (mode === "tasker" || mode === "login" || mode === "reset") return mode;
   return "client";
 }
 
@@ -45,13 +44,18 @@ async function redirectSignedInUser() {
   redirect("/dashboard");
 }
 
-export default async function LoginPage({ searchParams }: { searchParams: Promise<{ mode?: string; registered?: string; error?: string }> }) {
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ mode?: string; registered?: string; error?: string; resetSent?: string; email?: string; passwordUpdated?: string }>;
+}) {
   await redirectSignedInUser();
 
   const params = await searchParams;
   const mode = normalizeMode(params.mode);
   const registered = params.registered;
   const error = params.error;
+  const email = params.email || "";
 
   return (
     <>
@@ -63,7 +67,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
             <div>
               <p className="kicker">Účet Taskovo</p>
               <h1 className="page-title">Přihlášení a registrace</h1>
-              <p className="hero-lead">Vyberte, jestli chcete zadat úkol, pracovat jako tasker, nebo se přihlásit do existujícího účtu.</p>
+              <p className="hero-lead">Vytvořte účet, potvrďte email a používejte Taskovo jako klient nebo tasker.</p>
             </div>
           </div>
 
@@ -73,10 +77,15 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
             <a className={tabClass(mode === "login")} href="/prihlaseni?mode=login">Přihlášení</a>
           </div>
 
-          {registered ? <p className="success-box">Účet byl vytvořen. Teď se můžete přihlásit.</p> : null}
+          {registered ? <p className="success-box">Účet byl vytvořen. Poslali jsme potvrzovací email, po potvrzení se můžete přihlásit.</p> : null}
+          {params.resetSent ? <p className="success-box">Pokud účet s tímto emailem existuje, poslali jsme odkaz pro obnovu hesla.</p> : null}
+          {params.passwordUpdated ? <p className="success-box">Heslo bylo změněno. Přihlaste se prosím novým heslem.</p> : null}
+          {error === "duplicate" ? <p className="alert-box">Tento email už je v Taskovo registrovaný. Přihlaste se nebo použijte obnovu hesla.</p> : null}
+          {error === "email_not_confirmed" ? <p className="alert-box">Email ještě není potvrzený. Zkontrolujte prosím potvrzovací zprávu ve své schránce.</p> : null}
           {error === "login" ? <p className="alert-box">Přihlášení se nepodařilo. Zkontrolujte email a heslo.</p> : null}
           {error === "login_required" ? <p className="alert-box">Pro pokračování se prosím přihlaste.</p> : null}
           {error === "register" ? <p className="alert-box">Registrace se nepodařila. Zkuste jiný email nebo silnější heslo.</p> : null}
+          {error === "reset" ? <p className="alert-box">Odeslání odkazu pro obnovu hesla se nepodařilo. Zkuste to prosím později.</p> : null}
           {error === "config" ? <p className="alert-box">Chybí konfigurace Supabase service role ve Vercel env.</p> : null}
 
           <div className="auth-grid auth-note">
@@ -84,14 +93,14 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
               <form className="search-panel" action={registerClientAccount}>
                 <div className="card-heading">
                   <h2>Registrace klienta</h2>
-                  <p>Účet pro zadávání úkolů, komunikaci s taskery a budoucí platby.</p>
+                  <p>Po registraci potvrdíte email. Jeden email může mít jen jeden účet Taskovo.</p>
                 </div>
                 <label>Jméno<input name="name" type="text" placeholder="Jan Novák" required /></label>
                 <label>Email<input name="email" type="email" placeholder="vas@email.cz" required /></label>
                 <label>Heslo<input name="password" type="password" placeholder="min. 8 znaků" minLength={8} required /></label>
                 <label>Telefon<input name="phone" type="tel" placeholder="+420 ..." /></label>
                 <label>Město<input name="city" type="text" placeholder="Praha, Brno, Olomouc..." /></label>
-                <label className="checkbox-row"><input name="marketing_consent" type="checkbox" /> Chci dostat informaci o spuštění pilotu</label>
+                <label className="checkbox-row"><input name="marketing_consent" type="checkbox" /> Chci dostat informaci o spuštění Taskovo</label>
                 <button className="button primary" type="submit">Vytvořit účet klienta</button>
                 <p className="fine-print">Už máte účet? <a href="/prihlaseni?mode=login">Přihlaste se</a>.</p>
               </form>
@@ -101,7 +110,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
               <form className="search-panel provider-login-panel" action={registerTaskerAccount}>
                 <div className="card-heading">
                   <h2>Registrace taskera</h2>
-                  <p>Profil pro lidi, kteří chtějí přijímat úkoly a nabízet služby přes Taskovo.</p>
+                  <p>Po potvrzení emailu můžete dokončit profil, posílat nabídky a spravovat zakázky.</p>
                 </div>
                 <label>Jméno<input name="name" type="text" placeholder="Petra Svobodová" required /></label>
                 <label>Email<input name="email" type="email" placeholder="tasker@email.cz" required /></label>
@@ -118,12 +127,27 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
               <form className="search-panel muted-panel" action={loginAccount}>
                 <div className="card-heading">
                   <h2>Přihlášení</h2>
-                  <p>Jeden vstup pro klienta i taskera. Po přihlášení vás systém pošle do správného dashboardu.</p>
+                  <p>Jeden vstup pro klienta i taskera. Systém vás pošle do správného dashboardu.</p>
                 </div>
-                <label>Email<input name="email" type="email" placeholder="vas@email.cz" required /></label>
+                <label>Email<input name="email" type="email" placeholder="vas@email.cz" defaultValue={email} required /></label>
                 <label>Heslo<input name="password" type="password" placeholder="••••••••" required /></label>
                 <button className="button primary" type="submit">Přihlásit se</button>
-                <p className="fine-print">Nemáte účet? <a href="/prihlaseni?mode=client">Registrace klienta</a> nebo <a href="/prihlaseni?mode=tasker">registrace taskera</a>.</p>
+                <div className="auth-links">
+                  <a href="/prihlaseni?mode=reset">Zapomenuté heslo</a>
+                  <span>Nemáte účet? <a href="/prihlaseni?mode=client">Klient</a> nebo <a href="/prihlaseni?mode=tasker">tasker</a>.</span>
+                </div>
+              </form>
+            ) : null}
+
+            {mode === "reset" ? (
+              <form className="search-panel muted-panel" action={requestPasswordReset}>
+                <div className="card-heading">
+                  <h2>Obnova hesla</h2>
+                  <p>Zadejte email účtu. Pokud účet existuje, pošleme bezpečný odkaz pro nastavení nového hesla.</p>
+                </div>
+                <label>Email<input name="email" type="email" placeholder="vas@email.cz" defaultValue={email} required /></label>
+                <button className="button primary" type="submit">Poslat odkaz pro obnovu</button>
+                <p className="fine-print"><a href="/prihlaseni?mode=login">Zpět na přihlášení</a></p>
               </form>
             ) : null}
           </div>
