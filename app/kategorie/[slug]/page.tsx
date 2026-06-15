@@ -5,23 +5,31 @@ import { Header } from "@/components/Header";
 import { ProviderCard } from "@/components/ProviderCard";
 import { featuredProviders, marketplaceCategories, trustBadges } from "@/lib/marketplace-data";
 
-const baseUrl = "https://taskovo-app.vercel.app";
+const baseUrl = "https://taskovo.cz";
+
+const cityLinks = [
+  { city: "Praha", href: "/uklid-praha", categorySlug: "uklid" },
+  { city: "Praha", href: "/stehovani-praha", categorySlug: "stehovani" },
+  { city: "Praha", href: "/montaz-nabytku-praha", categorySlug: "montaz-nabytku" },
+  { city: "Praha", href: "/doruceni-zasilek-praha", categorySlug: "doruceni" },
+  { city: "Praha", href: "/pomoc-na-zahrade-praha", categorySlug: "zahrada" },
+];
 
 const categoryFaqs = [
   {
-    question: "Je Taskovo poskytovatel sluzby?",
+    question: "Je Taskovo poskytovatel služby?",
     answer:
-      "Ne. Taskovo je zprostredkovatelska platforma. Klient si vybira taskera samostatne a tasker vystupuje jako nezavisla osoba, OSVC nebo firma.",
+      "Ne. Taskovo je zprostředkovatelská platforma. Klient si vybírá taskera samostatně a tasker vystupuje jako nezávislá osoba, OSVČ nebo firma.",
   },
   {
-    question: "Jak rychle muzu dostat nabidky?",
+    question: "Jak rychle můžu dostat nabídky?",
     answer:
-      "U beznych ukolu ve vetsich mestech muze klient dostat prvni reakce v radu minut. U mensich mest zalezi na dostupnosti taskeru v okoli.",
+      "U běžných úkolů ve větších městech může klient dostat první reakce v řádu minut. U menších měst záleží na dostupnosti taskerů v okolí.",
   },
   {
-    question: "Muzu pred vyberem porovnat cenu a recenze?",
+    question: "Můžu před výběrem porovnat cenu a recenze?",
     answer:
-      "Ano. Cilem Taskovo je ukazat nabidky, profil taskera, hodnoceni, cenu, dostupnost a zpusob provedeni jeste pred potvrzenim ukolu.",
+      "Ano. Cílem Taskovo je ukázat nabídky, profil taskera, hodnocení, cenu, dostupnost a způsob provedení ještě před potvrzením úkolu.",
   },
 ];
 
@@ -39,7 +47,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   if (!category) return {};
 
   const title = `${category.title} | Taskovo`;
-  const description = `${category.summary} Najdete pomoc v okoli, porovnate nabidky a vyberete si taskera samostatne.`;
+  const description = `${category.summary} Najděte pomoc v okolí, porovnejte nabídky a vyberte si taskera samostatně.`;
   const path = `/kategorie/${category.slug}`;
 
   return {
@@ -52,6 +60,11 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
       url: `${baseUrl}${path}`,
       siteName: "Taskovo",
       type: "website",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
     },
   };
 }
@@ -68,19 +81,23 @@ export default async function CategoryDetailPage({ params }: { params: Promise<{
     ),
   );
   const providers = relevantProviders.length > 0 ? relevantProviders : featuredProviders;
+  const matchedCityLinks = cityLinks.filter((item) => item.categorySlug === category.slug);
+  const pageUrl = `${baseUrl}/kategorie/${category.slug}`;
 
   const serviceJsonLd = {
     "@context": "https://schema.org",
     "@type": "Service",
-    name: `${category.title} pres Taskovo`,
+    name: `${category.title} přes Taskovo`,
     description: category.description,
     provider: {
       "@type": "Organization",
       name: "Taskovo",
-      description: "Taskovo je zprostredkovatelska platforma. Taskeri jsou nezavisle osoby, OSVC nebo firmy.",
+      url: baseUrl,
+      description: "Taskovo je zprostředkovatelská platforma. Taskeři jsou nezávislé osoby, OSVČ nebo firmy.",
     },
-    areaServed: "Ceska republika",
+    areaServed: "Česká republika",
     serviceType: category.title,
+    url: pageUrl,
     offers: {
       "@type": "AggregateOffer",
       priceCurrency: "CZK",
@@ -111,27 +128,27 @@ export default async function CategoryDetailPage({ params }: { params: Promise<{
             <h1 className="page-title">{category.title}</h1>
             <p className="hero-lead">{category.description}</p>
             <div className="hero-actions">
-              <a className="button primary" href={`/zadat-ukol?kategorie=${category.slug}`}>Zadat ukol</a>
-              <a className="button secondary" href={`/poskytovatele?kategorie=${category.slug}`}>Najit taskery</a>
+              <a className="button primary" href={`/zadat-ukol?kategorie=${category.slug}`}>Zadat úkol</a>
+              <a className="button secondary" href={`/poskytovatele?kategorie=${category.slug}`}>Najít taskery</a>
             </div>
           </div>
           <div className="page-hero-card">
             <strong>{category.averagePrice}</strong>
-            <p>{category.responseTime}</p>
+            <p>{category.responseTime}. Klient vždy porovnává konkrétní nabídky a vybírá taskera samostatně.</p>
           </div>
         </section>
 
         <section className="section" style={{ paddingTop: 34 }}>
           <div className="section-title">
-            <p className="kicker">Typicke ukoly</p>
-            <h2>Co lide nejcasteji poptavaji</h2>
+            <p className="kicker">Typické úkoly</p>
+            <h2>Co lidé nejčastěji poptávají</h2>
           </div>
           <div className="workflow-grid">
             {category.examples.map((example, index) => (
               <article key={example}>
                 <span>{String(index + 1).padStart(2, "0")}</span>
                 <h3>{example}</h3>
-                <p>Klient popise rozsah, misto, termin a rozpocet. Taskeri poslou vlastni nabidku.</p>
+                <p>Klient popíše rozsah, místo, termín a rozpočet. Taskeři pošlou vlastní nabídku.</p>
               </article>
             ))}
           </div>
@@ -140,22 +157,31 @@ export default async function CategoryDetailPage({ params }: { params: Promise<{
         <section className="section split">
           <div>
             <p className="kicker">Jak vybrat</p>
-            <h2>Porovnani misto hledani po skupinach</h2>
+            <h2>Porovnání místo hledání po skupinách</h2>
             <p className="hero-lead">
-              Taskovo ma sjednotit poptavku, profily, cenu, recenze a komunikaci na jednom miste. Klient si sam vybere, komu ukol sveri.
+              Taskovo má sjednotit poptávku, profily, cenu, recenze a komunikaci na jednom místě. Klient si sám vybere, komu úkol svěří.
             </p>
           </div>
           <div className="feature-list">
-            <div><strong>Jasny rozsah</strong><span>Popis ukolu, fotky, misto a termin pomuzou taskerum dat presnejsi nabidku.</span></div>
-            <div><strong>Nezavisli taskeri</strong><span>Taskovo neni zamestnavatel a primo neposkytuje sluzbu.</span></div>
-            <div><strong>Kontrola duvery</strong><span>U vybranych profilu lze postupne pridavat overeni totoznosti, ICO a recenze.</span></div>
+            <div><strong>Jasný rozsah</strong><span>Popis úkolu, fotky, místo a termín pomůžou taskerům dát přesnější nabídku.</span></div>
+            <div><strong>Nezávislí taskeři</strong><span>Taskovo není zaměstnavatel a přímo neposkytuje službu.</span></div>
+            <div><strong>Kontrola důvěry</strong><span>U vybraných profilů lze postupně přidávat ověření totožnosti, IČO a recenze.</span></div>
           </div>
         </section>
 
+        {matchedCityLinks.length ? (
+          <section className="section">
+            <div className="section-title"><p className="kicker">Lokální stránka</p><h2>{category.shortTitle} v Praze</h2><p>Pro vybrané služby postupně vytváříme samostatné stránky podle měst a reálné poptávky.</p></div>
+            <div className="legal-grid">
+              {matchedCityLinks.map((item) => <a className="legal-card" href={item.href} key={item.href}><h3>{category.shortTitle} {item.city}</h3><p>Detailní SEO stránka pro konkrétní službu a město.</p></a>)}
+            </div>
+          </section>
+        ) : null}
+
         <section className="section">
           <div className="section-title">
-            <p className="kicker">Doporucene profily</p>
-            <h2>Taskeri vhodni pro tuto kategorii</h2>
+            <p className="kicker">Doporučené profily</p>
+            <h2>Taskeři vhodní pro tuto kategorii</h2>
           </div>
           <div className="provider-grid">
             {providers.slice(0, 3).map((provider) => <ProviderCard key={provider.id} provider={provider} />)}
@@ -164,15 +190,15 @@ export default async function CategoryDetailPage({ params }: { params: Promise<{
 
         <section className="section">
           <div className="section-title">
-            <p className="kicker">Duvody duvery</p>
-            <h2>Zaklad, ktery bude dulezity pro pilot</h2>
+            <p className="kicker">Důvody důvěry</p>
+            <h2>Základ, který bude důležitý pro pilot</h2>
           </div>
           <div className="trust-grid">
             {trustBadges.map((badge) => (
               <article key={badge}>
                 <span className="trust-icon">OK</span>
                 <h3>{badge}</h3>
-                <p>Prvek duvery, ktery pomaha klientovi vybrat taskera podle kvality, transparentnosti a odpovednosti.</p>
+                <p>Prvek důvěry, který pomáhá klientovi vybrat taskera podle kvality, transparentnosti a odpovědnosti.</p>
               </article>
             ))}
           </div>
@@ -181,7 +207,7 @@ export default async function CategoryDetailPage({ params }: { params: Promise<{
         <section className="section faq-section">
           <div className="section-title">
             <p className="kicker">FAQ</p>
-            <h2>Casto kladene otazky ke kategorii</h2>
+            <h2>Často kladené otázky ke kategorii</h2>
           </div>
           <div className="faq-list">
             {categoryFaqs.map((item) => (
