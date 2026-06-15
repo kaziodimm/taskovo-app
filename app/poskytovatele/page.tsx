@@ -7,6 +7,8 @@ import { cities, featuredProviders, marketplaceCategories, type FeaturedProvider
 import type { TaskerProfile } from "@/lib/types";
 import styles from "../tasks/page.module.css";
 
+const pageUrl = "https://taskovo.cz/poskytovatele";
+
 export const metadata: Metadata = {
   title: "Taskeři v okolí | Taskovo",
   description: "Katalog nezávislých taskerů na Taskovo pro úklid, stěhování, montáž, doručení a lokální pomoc v Česku.",
@@ -14,10 +16,16 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Taskeři v okolí | Taskovo",
     description: "Najděte ověřené i nové taskery podle města, kategorie, ceny a profilu.",
-    url: "/poskytovatele",
+    url: pageUrl,
     siteName: "Taskovo",
     type: "website",
-    images: [{ url: "/taskovo-logo.svg", width: 512, height: 512, alt: "Taskovo logo" }],
+    images: [{ url: "https://taskovo.cz/taskovo-logo.svg", width: 512, height: 512, alt: "Taskovo logo" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Taskeři v okolí | Taskovo",
+    description: "Najděte ověřené i nové taskery podle města, kategorie, ceny a profilu.",
+    images: ["https://taskovo.cz/taskovo-logo.svg"],
   },
   robots: { index: true, follow: true },
 };
@@ -85,6 +93,7 @@ function buildProvidersSchema(providers: FeaturedProvider[]) {
     "@type": "ItemList",
     name: "Taskeři na Taskovo",
     description: "Katalog nezávislých taskerů pro lokální služby v Česku.",
+    url: pageUrl,
     itemListElement: providers.slice(0, 20).map((provider, index) => ({
       "@type": "ListItem",
       position: index + 1,
@@ -105,6 +114,18 @@ function buildProvidersSchema(providers: FeaturedProvider[]) {
   };
 }
 
+const searchActionSchema = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  name: "Taskovo",
+  url: "https://taskovo.cz",
+  potentialAction: {
+    "@type": "SearchAction",
+    target: "https://taskovo.cz/poskytovatele?category={search_term_string}",
+    "query-input": "required name=search_term_string",
+  },
+};
+
 export default async function ProvidersPage({ searchParams }: { searchParams: Promise<ProviderSearchParams> }) {
   const params = await searchParams;
   const taskerProfiles = await getTaskers();
@@ -121,6 +142,7 @@ export default async function ProvidersPage({ searchParams }: { searchParams: Pr
       <Header />
       <main className="page-shell">
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(buildProvidersSchema(filteredProviders)) }} />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(searchActionSchema) }} />
         <section className="section-title">
           <p className="kicker">Taskeři</p>
           <h1 className="page-title">Najděte šikovné lidi ve svém okolí</h1>
