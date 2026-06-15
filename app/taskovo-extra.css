@@ -87,7 +87,7 @@
   border-radius: 8px;
   box-shadow: var(--shadow);
 }
-payment-test-card code {
+.payment-test-card code {
   display: block;
   padding: 12px;
   color: var(--navy);
