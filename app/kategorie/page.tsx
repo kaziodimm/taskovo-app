@@ -4,51 +4,73 @@ import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import { marketplaceCategories } from "@/lib/marketplace-data";
 
+const pageUrl = "https://taskovo.cz/kategorie";
+
 export const metadata: Metadata = {
-  title: "Kategorie sluzeb | Taskovo",
+  title: "Kategorie služeb | Taskovo",
   description:
-    "Prehled kategorii na Taskovo: uklid, stehovani, montaz nabytku, doruceni, zahrada, opravy a lokalni pomoc v Cesku.",
+    "Přehled kategorií na Taskovo: úklid, stěhování, montáž nábytku, doručení, zahrada, opravy a lokální pomoc v Česku.",
   alternates: { canonical: "/kategorie" },
   openGraph: {
-    title: "Kategorie sluzeb | Taskovo",
-    description: "Vyberte typ pomoci, zadejte ukol a porovnejte nabidky nezavislych taskeru v okoli.",
-    url: "https://taskovo-app.vercel.app/kategorie",
+    title: "Kategorie služeb | Taskovo",
+    description: "Vyberte typ pomoci, zadejte úkol a porovnejte nabídky nezávislých taskerů v okolí.",
+    url: pageUrl,
     siteName: "Taskovo",
     type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Kategorie služeb | Taskovo",
+    description: "Vyberte typ pomoci, zadejte úkol a porovnejte nabídky nezávislých taskerů v okolí.",
   },
 };
 
 const seoLandingLinks = [
-  { title: "Uklid Praha", href: "/sluzby/uklid-praha", text: "Jednorazovy i pravidelny uklid bytu, domu nebo kancelare." },
-  { title: "Stehovani Praha", href: "/sluzby/stehovani-praha", text: "Mensi stehovani, odnos veci, krabice a prevoz po meste." },
-  { title: "Montaz nabytku Praha", href: "/sluzby/montaz-nabytku-praha", text: "Skrine, postele, police, stoly a drobne domaci instalace." },
-  { title: "Doruceni zasilek Praha", href: "/sluzby/doruceni-zasilek-praha", text: "Vyzvednuti baliku, nakupu, dokumentu nebo leku." },
-  { title: "Pomoc na zahrade Praha", href: "/sluzby/pomoc-na-zahrade-praha", text: "Sekani travy, uklid terasy, hrabani listi a sezonni prace." },
+  { title: "Úklid Praha", href: "/uklid-praha", text: "Jednorázový i pravidelný úklid bytu, domu nebo kanceláře." },
+  { title: "Stěhování Praha", href: "/stehovani-praha", text: "Menší stěhování, odnos věcí, krabice a převoz po městě." },
+  { title: "Montáž nábytku Praha", href: "/montaz-nabytku-praha", text: "Skříně, postele, police, stoly a drobné domácí instalace." },
+  { title: "Doručení zásilek Praha", href: "/doruceni-zasilek-praha", text: "Vyzvednutí balíků, nákupů, dokumentů nebo léků." },
+  { title: "Pomoc na zahradě Praha", href: "/pomoc-na-zahrade-praha", text: "Sekání trávy, úklid terasy, hrabání listí a sezónní práce." },
 ];
 
 export default function CategoriesPage() {
+  const collectionJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    name: "Kategorie služeb Taskovo",
+    url: pageUrl,
+    description: metadata.description,
+    hasPart: marketplaceCategories.map((category) => ({
+      "@type": "WebPage",
+      name: category.title,
+      url: `https://taskovo.cz/kategorie/${category.slug}`,
+      description: category.summary,
+    })),
+  };
+
   return (
     <>
       <Header />
       <main className="page-shell">
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionJsonLd) }} />
         <section className="page-hero">
           <div>
             <p className="kicker">Kategorie</p>
             <h1 className="page-title">Vyberte typ pomoci</h1>
             <p className="hero-lead">
-              Taskovo zacina u kategorii s jasnou poptavkou, rychlym porovnanim nabidek a lokalni dostupnosti napric Ceskem.
+              Taskovo začíná u kategorií s jasnou poptávkou, rychlým porovnáním nabídek a lokální dostupností napříč Českem.
             </p>
           </div>
           <div className="page-hero-card">
-            <strong>{marketplaceCategories.length} kategorii pro pilot</strong>
-            <p>Uklid, stehovani, montaz, doruceni, zahrada, opravy a dalsi rozsireni podle realne poptavky.</p>
+            <strong>{marketplaceCategories.length} kategorií pro pilot</strong>
+            <p>Úklid, stěhování, montáž, doručení, zahrada, opravy a další rozšíření podle reálné poptávky.</p>
           </div>
         </section>
 
         <section className="section" style={{ paddingTop: 26 }}>
           <div className="section-title">
-            <p className="kicker">Hlavni kategorie</p>
-            <h2>Sluzby, ktere lide hledaji nejcasteji</h2>
+            <p className="kicker">Hlavní kategorie</p>
+            <h2>Služby, které lidé hledají nejčastěji</h2>
           </div>
           <div className="category-grid">
             {marketplaceCategories.map((category) => <CategoryCard key={category.slug} category={category} />)}
@@ -58,9 +80,9 @@ export default function CategoriesPage() {
         <section className="section">
           <div className="section-title">
             <p className="kicker">Praha</p>
-            <h2>Prvni SEO stranky podle poptavky</h2>
+            <h2>První SEO stránky podle poptávky</h2>
             <p>
-              Tyto stranky pomahaji vyhledavacum pochopit konkretni sluzby v konkretnim meste. Pozdeji stejnou strukturu rozsirim pro Brno, Ostravu, Plzen a mensi mesta.
+              Tyto stránky pomáhají vyhledávačům pochopit konkrétní služby v konkrétním městě. Později stejnou strukturu rozšíříme pro Brno, Ostravu, Plzeň a menší města.
             </p>
           </div>
           <div className="legal-grid">
@@ -76,15 +98,15 @@ export default function CategoriesPage() {
         <section className="section split">
           <div>
             <p className="kicker">Role platformy</p>
-            <h2>Taskovo propojuje, klient si vybira</h2>
+            <h2>Taskovo propojuje, klient si vybírá</h2>
             <p className="hero-lead">
-              Taskovo je zprostredkovatelska platforma. Taskeri jsou nezavisle osoby, OSVC nebo firmy. Taskovo neni zamestnavatel taskeru a sluzby primo neposkytuje.
+              Taskovo je zprostředkovatelská platforma. Taskeři jsou nezávislé osoby, OSVČ nebo firmy. Taskovo není zaměstnavatel taskerů a služby přímo neposkytuje.
             </p>
           </div>
           <div className="feature-list">
-            <div><strong>Lepsi orientace</strong><span>Kazda kategorie ma vlastni detail, typicke ukoly, ceny a FAQ.</span></div>
-            <div><strong>Skalovani podle mest</strong><span>SEO struktura muze rust podle realne poptavky v Cesku.</span></div>
-            <div><strong>Marketplace logika</strong><span>Zakaznik porovnava nabidky, tasker sam rozhoduje, na ktere ukoly reaguje.</span></div>
+            <div><strong>Lepší orientace</strong><span>Každá kategorie má vlastní detail, typické úkoly, ceny a FAQ.</span></div>
+            <div><strong>Škálování podle měst</strong><span>SEO struktura může růst podle reálné poptávky v Česku.</span></div>
+            <div><strong>Marketplace logika</strong><span>Zákazník porovnává nabídky, tasker sám rozhoduje, na které úkoly reaguje.</span></div>
           </div>
         </section>
       </main>
