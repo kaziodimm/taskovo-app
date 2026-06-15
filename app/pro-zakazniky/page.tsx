@@ -4,17 +4,24 @@ import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import { marketplaceCategories } from "@/lib/marketplace-data";
 
+const pageUrl = "https://taskovo.cz/pro-zakazniky";
+
 export const metadata: Metadata = {
-  title: "Pro zakazniky | Taskovo",
+  title: "Pro zákazníky | Taskovo",
   description:
-    "Zadejte uklid, stehovani, doruceni, montaz nebo jinou lokalni pomoc. Porovnejte nabidky taskeru a vyberte si sami.",
+    "Zadejte úklid, stěhování, doručení, montáž nebo jinou lokální pomoc. Porovnejte nabídky taskerů a vyberte si sami.",
   alternates: { canonical: "/pro-zakazniky" },
   openGraph: {
-    title: "Taskovo pro zakazniky",
-    description: "Jedno misto pro zadani ukolu, porovnani nabidek a vyber lokalniho taskera.",
-    url: "https://taskovo-app.vercel.app/pro-zakazniky",
+    title: "Taskovo pro zákazníky",
+    description: "Jedno místo pro zadání úkolu, porovnání nabídek a výběr lokálního taskera.",
+    url: pageUrl,
     siteName: "Taskovo",
     type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Taskovo pro zákazníky",
+    description: "Jedno místo pro zadání úkolu, porovnání nabídek a výběr lokálního taskera.",
   },
 };
 
@@ -28,10 +35,26 @@ const benefits = [
 const useCases = ["Úklid bytu před návštěvou", "Odvoz věcí nebo menší stěhování", "Vyzvednutí balíku nebo nákupu", "Montáž nábytku a polic", "Pomoc seniorům s praktickým úkolem", "Zahrada, terasa nebo sezónní práce"];
 
 export default function CustomersPage() {
+  const customerJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    name: "Taskovo pro zákazníky",
+    url: pageUrl,
+    description: metadata.description,
+    about: {
+      "@type": "Service",
+      name: "Taskovo marketplace pro zákazníky",
+      provider: { "@type": "Organization", name: "Taskovo", url: "https://taskovo.cz" },
+      audience: { "@type": "Audience", audienceType: "Klienti hledající lokální služby" },
+      areaServed: "CZ",
+    },
+  };
+
   return (
     <>
       <Header />
       <main className="page-shell">
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(customerJsonLd) }} />
         <section className="page-hero">
           <div>
             <p className="kicker">Pro zákazníky</p>
