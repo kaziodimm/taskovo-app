@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { logoutAccount } from "@/app/actions";
 import { updateClientOwnProfile } from "@/app/profile-actions";
@@ -14,6 +15,12 @@ import { getUnreadTaskMessageCounts } from "@/lib/message-data";
 import { getClientProfileForUser } from "@/lib/profile-data";
 import { createServerSupabaseClient } from "@/lib/supabase";
 import type { Offer, Task } from "@/lib/types";
+
+export const metadata: Metadata = {
+  title: "Můj dashboard | Taskovo",
+  description: "Soukromý klientský dashboard Taskovo pro správu úkolů, nabídek, zpráv, profilu a plateb.",
+  robots: { index: false, follow: false },
+};
 
 const nextStepCopy: Record<string, string> = {
   open: "Čeká na nabídky od taskerů.",
