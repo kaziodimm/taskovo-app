@@ -2,17 +2,24 @@ import type { Metadata } from "next";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 
+const pageUrl = "https://taskovo.cz/pro-taskery";
+
 export const metadata: Metadata = {
   title: "Pro taskery | Taskovo",
   description:
-    "Taskovo pomaha nezavislym taskerum, OSVC a malym firmam najit lokalni ukoly, posilat nabidky a budovat reputaci.",
+    "Taskovo pomáhá nezávislým taskerům, OSVČ a malým firmám najít lokální úkoly, posílat nabídky a budovat reputaci.",
   alternates: { canonical: "/pro-taskery" },
   openGraph: {
     title: "Taskovo pro taskery",
-    description: "Lokalni zakazky, vlastni nabidky, profil, recenze a budouci vyplaty pro nezavisle taskery.",
-    url: "https://taskovo-app.vercel.app/pro-taskery",
+    description: "Lokální zakázky, vlastní nabídky, profil, recenze a budoucí výplaty pro nezávislé taskery.",
+    url: pageUrl,
     siteName: "Taskovo",
     type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Taskovo pro taskery",
+    description: "Lokální zakázky, vlastní nabídky, profil, recenze a budoucí výplaty pro nezávislé taskery.",
   },
 };
 
@@ -39,10 +46,26 @@ const rules = [
 ];
 
 export default function TaskersPage() {
+  const taskerJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    name: "Taskovo pro taskery",
+    url: pageUrl,
+    description: metadata.description,
+    about: {
+      "@type": "Service",
+      name: "Taskovo marketplace pro taskery",
+      provider: { "@type": "Organization", name: "Taskovo", url: "https://taskovo.cz" },
+      audience: { "@type": "Audience", audienceType: "Nezávislí taskeři, OSVČ a malé firmy" },
+      areaServed: "CZ",
+    },
+  };
+
   return (
     <>
       <Header />
       <main className="page-shell">
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(taskerJsonLd) }} />
         <section className="page-hero">
           <div>
             <p className="kicker">Pro taskery</p>
