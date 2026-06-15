@@ -1,12 +1,42 @@
+import type { Metadata } from "next";
 import { registerTaskerAccount } from "@/app/actions";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
+
+const pageUrl = "https://taskovo.cz/registrace-poskytovatel";
+
+export const metadata: Metadata = {
+  title: "Registrace taskera | Taskovo",
+  description: "Založte si profil taskera a nabízejte služby jako nezávislý OSVČ nebo firma. Vy rozhodujete, na které úkoly odpovíte.",
+  alternates: { canonical: pageUrl },
+  openGraph: {
+    title: "Registrace taskera | Taskovo",
+    description: "Taskovo propojuje klienty s nezávislými taskery. Registrace profilu pro úklid, montáž, doručení, zahradu a další služby.",
+    url: pageUrl,
+    siteName: "Taskovo",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Registrace taskera | Taskovo",
+    description: "Nabízejte služby přes český marketplace Taskovo.",
+  },
+};
+
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "RegisterAction",
+  name: "Registrace taskera na Taskovo",
+  target: pageUrl,
+  object: { "@type": "Service", name: "Marketplace pro lokální služby" },
+};
 
 export default function ProviderRegistrationPage() {
   return (
     <>
       <Header />
       <main className="page-shell split">
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
         <section className="section-title">
           <p className="kicker">Chci být tasker</p>
           <h1 className="page-title">Nabízejte služby jako nezávislý tasker</h1>
