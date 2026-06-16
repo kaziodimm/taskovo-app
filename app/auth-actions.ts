@@ -3,9 +3,12 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getAccountContext } from "@/lib/account";
+import { sendTaskovoEmail } from "@/lib/email";
 import { createServerSupabaseClient, createServiceSupabaseClient, hasSupabaseEnv } from "@/lib/supabase";
 
 type AccountRole = "client" | "tasker";
+
+const DEFAULT_ADMIN_EMAIL = "kaziodimm@gmail.com";
 
 function requiredString(formData: FormData, key: string) {
   const value = formData.get(key);
@@ -16,6 +19,10 @@ function requiredString(formData: FormData, key: string) {
 function optionalString(formData: FormData, key: string) {
   const value = formData.get(key);
   return typeof value === "string" && value.trim() ? value.trim() : null;
+}
+
+function adminEmail() {
+  return process.env.TASKOVO_ADMIN_EMAIL || DEFAULT_ADMIN_EMAIL;
 }
 
 function appUrl(path: string) {
@@ -125,7 +132,7 @@ export async function registerTaskerAccount(formData: FormData) {
 
   const userId = await signUpWithEmailVerification(email, password, name, "tasker");
   const service = createServiceSupabaseClient();
-  const { error: profileError } = await service.from("tasker_profiles").insert({
+  const { data: profile, error: profileError } = await service.from("tasker_profiles").insert({
     auth_user_id: userId,
     email,
     name,
@@ -134,9 +141,23 @@ export async function registerTaskerAccount(formData: FormData) {
     contact,
     bio,
     password_auth_enabled: true,
-  });
+  }).select("id").single();
 
   if (profileError) throw new Error(profileError.message);
+
+  await sendTaskovoEmail({
+    to: [adminEmail()],
+    subject: `Taskovo admin: nový tasker čeká na kontrolu`,
+    heading: "Nový tasker se registroval",
+    body: [
+      `${name} se registroval jako tasker.`,
+      `Město: ${city}. Kategorie: ${categories}. Kontakt: ${contact}.`,
+      "Zkontrolujte profil, ověření a případně schvalte taskera v administraci.",
+    ],
+    ctaHref: appUrl(profile?.id ? `/admin/taskers/${profile.id}` : "/admin#taskers"),
+    ctaLabel: "Otevřít taskera",
+  });
+
   revalidatePath("/admin");
   registrationRedirect("tasker", email);
 }
