@@ -137,14 +137,22 @@ export default function Home() {
           <article className="request-card">
             <p className="kicker">Pro zákazníky</p>
             <h2>Zadejte práci a vyberte si nabídku</h2>
-            <p>Vhodné pro lidi, kteří nemají čas, auto, nářadí nebo jednoduše nechtějí řešit drobné úkoly sami.</p>
+            <p>Vhodné pro lidi, kteří nemají čas, auto, nářadí nebo jednoduše nechtějí řešit drobné úkoly sami. Najdete pomoc rychleji a bezpečněji než ve skupinách.</p>
             <div className="section-action"><a className="button primary" href="/zadat-ukol">Zadat nový úkol</a></div>
           </article>
           <article className="request-card" id="pro-taskery">
             <p className="kicker">Pro taskery</p>
-            <h2>Získejte lokální zakázky bez chaosu ve skupinách</h2>
-            <p>Taskovo nabízí profil taskera, poptávky, nabídky, historii práce, hodnocení a přehled výplat v jednom pracovním prostředí.</p>
-            <div className="section-action"><a className="button secondary" href="/registrace-poskytovatel">Registrovat se jako tasker</a></div>
+            <h2>Máte dovednosti? Začněte získávat zákazníky.</h2>
+            <p>Taskovo pomáhá šikovným lidem, OSVČ a malým firmám najít první i opakované zakázky bez chaosu ve skupinách, vlastního webu nebo drahé reklamy.</p>
+            <div className="chip-row" aria-label="Výhody pro taskery">
+              <span>Zakázky ve vašem okolí</span>
+              <span>Vlastní ceny a nabídky</span>
+              <span>Budujete si reputaci</span>
+            </div>
+            <div className="hero-actions section-action">
+              <a className="button primary" href="/registrace-poskytovatel">Začít jako tasker</a>
+              <a className="button secondary" href="/pro-taskery">Jak Taskovo pomáhá taskerům</a>
+            </div>
           </article>
         </section>
 
