@@ -32,6 +32,18 @@ function tabClass(active: boolean) {
   return active ? "button primary" : "button secondary";
 }
 
+function registrationSuccessCopy(registered?: string) {
+  if (registered === "tasker") {
+    return "Tasker účet byl vytvořen. Potvrďte email, přihlaste se a v dashboardu doplňte profil, fotku a první nabídku na vhodný úkol.";
+  }
+
+  if (registered === "client") {
+    return "Klientský účet byl vytvořen. Potvrďte email, přihlaste se a můžete zadat první úkol nebo spravovat nabídky taskerů.";
+  }
+
+  return "Účet byl vytvořen. Poslali jsme potvrzovací email, po potvrzení se můžete přihlásit.";
+}
+
 async function redirectSignedInUser() {
   if (!hasSupabaseEnv()) return;
 
@@ -66,7 +78,7 @@ export default async function LoginPage({
             <div>
               <p className="kicker">Účet Taskovo</p>
               <h1 className="page-title">Přihlášení a registrace</h1>
-              <p className="hero-lead">Vytvořte účet, potvrďte email a používejte Taskovo jako klient nebo tasker.</p>
+              <p className="hero-lead">Vytvořte jeden ověřený účet, potvrďte email a Taskovo vás po přihlášení pošle do správného dashboardu.</p>
             </div>
           </div>
 
@@ -76,7 +88,7 @@ export default async function LoginPage({
             <a className={tabClass(mode === "login")} href="/prihlaseni?mode=login">Přihlášení</a>
           </div>
 
-          {registered ? <p className="success-box">Účet byl vytvořen. Poslali jsme potvrzovací email, po potvrzení se můžete přihlásit.</p> : null}
+          {registered ? <p className="success-box">{registrationSuccessCopy(registered)}</p> : null}
           {params.resetSent ? <p className="success-box">Pokud účet s tímto emailem existuje, poslali jsme odkaz pro obnovu hesla.</p> : null}
           {params.passwordUpdated ? <p className="success-box">Heslo bylo změněno. Přihlaste se prosím novým heslem.</p> : null}
           {error === "duplicate" ? <p className="alert-box">Tento email už je v Taskovo registrovaný. Přihlaste se nebo použijte obnovu hesla.</p> : null}
@@ -111,7 +123,7 @@ export default async function LoginPage({
               <form className="search-panel provider-login-panel" action={registerTaskerAccount}>
                 <div className="card-heading">
                   <h2>Registrace taskera</h2>
-                  <p>Po potvrzení emailu můžete dokončit profil, posílat nabídky a spravovat zakázky.</p>
+                  <p>Vytvořte ověřený účet. Po potvrzení emailu doplníte profil, fotku a můžete posílat nabídky na vhodné úkoly.</p>
                 </div>
                 <label>Jméno<input name="name" type="text" placeholder="Petra Svobodová" required /></label>
                 <label>Email<input name="email" type="email" placeholder="tasker@email.cz" required /></label>
@@ -119,8 +131,14 @@ export default async function LoginPage({
                 <label>Město<input name="city" type="text" placeholder="Praha" required /></label>
                 <label>Kategorie<input name="categories" type="text" placeholder="Úklid, montáž, doručení" required /></label>
                 <label>Kontakt<input name="contact" type="text" placeholder="+420 ... / Telegram" /></label>
+                <label>Krátký profil<textarea name="bio" rows={4} placeholder="Co umíte, kdy pracujete a proč si vás má klient vybrat?" /></label>
+                <div className="trust-strip" aria-label="Co následuje po registraci">
+                  <span>Potvrzení emailu</span>
+                  <span>Doplnění profilu</span>
+                  <span>První nabídka</span>
+                </div>
                 <button className="button primary" type="submit">Vytvořit účet taskera</button>
-                <p className="fine-print">Už máte účet? <a href="/prihlaseni?mode=login">Přihlaste se</a>.</p>
+                <p className="fine-print">Už máte účet? <a href="/prihlaseni?mode=login">Přihlaste se</a>. Taskovo je zprostředkovatelská platforma, tasker pracuje samostatně jako OSVČ nebo firma.</p>
               </form>
             ) : null}
 
@@ -128,7 +146,7 @@ export default async function LoginPage({
               <form className="search-panel muted-panel" action={loginAccount}>
                 <div className="card-heading">
                   <h2>Přihlášení</h2>
-                  <p>Jeden vstup pro klienta i taskera. Systém vás pošle do správného dashboardu.</p>
+                  <p>Jeden vstup pro klienta, taskera i administrátora. Systém vás pošle do správného dashboardu podle účtu.</p>
                 </div>
                 <label>Email<input name="email" type="email" placeholder="vas@email.cz" defaultValue={email} required /></label>
                 <label>Heslo<input name="password" type="password" placeholder="••••••••" required /></label>
