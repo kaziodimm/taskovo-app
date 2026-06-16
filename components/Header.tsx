@@ -71,6 +71,8 @@ export async function Header() {
         {isAdmin ? <a href="/admin">Admin</a> : null}
         {isAdmin ? <a href="/admin/prehled">Přehled</a> : null}
         {isAdmin ? <a href="/admin/objednavky">Objednávky</a> : null}
+        {isAdmin ? <a href="/admin/taskeri">Taskeři</a> : null}
+        {isAdmin ? <a href="/admin/klienti">Klienti</a> : null}
         <a href="/bezpecnost">Bezpečnost</a>
         <a href="/faq">FAQ</a>
       </nav>
