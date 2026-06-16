@@ -40,12 +40,12 @@ const benefits = [
 ];
 
 const journey = [
-  ["01", "Vytvoříte profil"],
-  ["02", "Vyberete úkoly, které zvládnete"],
-  ["03", "Pošlete vlastní nabídku"],
-  ["04", "Klient si vás vybere"],
-  ["05", "Po dokončení získáte hodnocení"],
-  ["06", "Reputace pomůže získat další zákazníky"],
+  ["01", "Vytvoříte profil", "Ukážete město, služby, zkušenosti a kontakt, aby klient rychle pochopil, s čím mu můžete pomoct."],
+  ["02", "Vyberete úkoly, které zvládnete", "Reagujete jen na zakázky, které dávají smysl vašim dovednostem, času a lokalitě."],
+  ["03", "Pošlete vlastní nabídku", "Navrhnete cenu, termín a jasnou zprávu. Klient vidí, proč si může vybrat právě vás."],
+  ["04", "Klient si vás vybere", "Taskovo pouze zprostředkuje spojení. Rozhodnutí zůstává na klientovi a domluvě mezi vámi."],
+  ["05", "Po dokončení získáte hodnocení", "Dobře odvedená práce a profesionální komunikace se promění v důvěru pro další klienty."],
+  ["06", "Reputace pomůže získat další zákazníky", "Každá dokončená zakázka posiluje profil a může vám otevřít cestu k opakované práci."],
 ];
 
 const faqs = [
@@ -120,7 +120,7 @@ export default function TaskersPage() {
         <section className="section">
           <div className="section-title"><p className="kicker">Cesta taskera</p><h2>Od prvního profilu k opakovaným zákazníkům</h2></div>
           <div className="workflow-grid">
-            {journey.map(([step, title]) => <article key={step}><span>{step}</span><h3>{title}</h3><p>Každý krok pomáhá klientovi lépe pochopit, proč si má vybrat právě vás.</p></article>)}
+            {journey.map(([step, title, text]) => <article key={step}><span>{step}</span><h3>{title}</h3><p>{text}</p></article>)}
           </div>
         </section>
 
