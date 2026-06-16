@@ -17,6 +17,7 @@ const ATTACHMENT_BUCKET = "task-attachments";
 const MAX_ATTACHMENT_BYTES = 8 * 1024 * 1024;
 const MAX_TASK_CREATE_ATTACHMENTS = 4;
 const MAX_MESSAGE_LENGTH = 1200;
+const DEFAULT_ADMIN_EMAIL = "kaziodimm@gmail.com";
 const ALLOWED_ATTACHMENT_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
 
 function requiredString(formData: FormData, key: string) {
@@ -28,6 +29,10 @@ function requiredString(formData: FormData, key: string) {
 function optionalString(formData: FormData, key: string) {
   const value = formData.get(key);
   return typeof value === "string" && value.trim() ? value.trim() : null;
+}
+
+function adminEmail() {
+  return process.env.TASKOVO_ADMIN_EMAIL || DEFAULT_ADMIN_EMAIL;
 }
 
 function titleFromDescription(description: string) {
@@ -141,6 +146,10 @@ export async function createTask(formData: FormData) {
     if (account.role === "tasker") redirect("/poskytovatel/dashboard");
   }
 
+  const category = requiredString(formData, "category");
+  const city = requiredString(formData, "city");
+  const desiredTime = requiredString(formData, "desired_time");
+  const budget = Number(requiredString(formData, "budget_czk"));
   const clientName = optionalString(formData, "client_name") || user?.user_metadata?.name || user?.email || "Klient Taskovo";
   const clientContact = optionalString(formData, "client_contact") || user?.email || "kontakt po přihlášení";
   const attachments = optionalImageFiles(formData, "image_files");
@@ -149,15 +158,15 @@ export async function createTask(formData: FormData) {
     client_auth_user_id: user?.id || null,
     title: titleFromDescription(description),
     description,
-    category: requiredString(formData, "category"),
-    city: requiredString(formData, "city"),
+    category,
+    city,
     district: optionalString(formData, "district"),
-    budget_czk: Number(requiredString(formData, "budget_czk")),
-    desired_time: requiredString(formData, "desired_time"),
+    budget_czk: budget,
+    desired_time: desiredTime,
     client_name: clientName,
     client_contact: clientContact,
     status: "open",
-  }).select("id").single();
+  }).select("id,title").single();
 
   if (error) throw new Error(error.message);
   if (!task?.id) throw new Error("Task was not created");
@@ -165,6 +174,19 @@ export async function createTask(formData: FormData) {
   for (const imageFile of attachments) {
     await storeTaskAttachment(service, task.id, imageFile, user?.id || null);
   }
+
+  await sendTaskovoEmail({
+    to: [adminEmail()],
+    subject: `Taskovo admin: nový úkol v ${city}`,
+    heading: "Nový úkol čeká v marketplace",
+    body: [
+      `${clientName} zadal nový úkol “${task.title}”.`,
+      `Kategorie: ${category}. Město: ${city}. Rozpočet: ${budget.toLocaleString("cs-CZ")} Kč. Termín: ${desiredTime}.`,
+      `Kontakt klienta: ${clientContact}`,
+    ],
+    ctaHref: appUrl(`/admin/tasks/${task.id}`),
+    ctaLabel: "Otevřít v administraci",
+  });
 
   revalidateTaskViews(task.id);
   redirect(user ? `/ukol/${task.id}` : "/tasks");
