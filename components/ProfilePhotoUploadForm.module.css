@@ -1,24 +1,81 @@
+.uploadDetails {
+  margin-top: 14px;
+  overflow: hidden;
+  background: linear-gradient(180deg, #fff, #f7f9fb);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: 0 10px 24px rgba(13, 27, 42, .05);
+}
+
+.uploadSummary {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 58px;
+  padding: 12px 14px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.uploadSummary::-webkit-details-marker {
+  display: none;
+}
+
+.uploadSummary:hover {
+  background: #fff;
+}
+
+.uploadSummary strong,
+.uploadSummary small {
+  display: block;
+}
+
+.uploadSummary strong {
+  color: var(--navy);
+  font-size: .96rem;
+  line-height: 1.25;
+}
+
+.uploadSummary small {
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: .82rem;
+  font-weight: 760;
+}
+
+.uploadIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 34px;
+  width: 34px;
+  height: 34px;
+  color: #fff;
+  background: linear-gradient(135deg, var(--orange), var(--yellow));
+  border-radius: 999px;
+  font-size: 1.3rem;
+  font-weight: 950;
+  line-height: 1;
+  box-shadow: 0 10px 20px rgba(255, 107, 53, .18);
+}
+
+.uploadDetails[open] .uploadIcon {
+  transform: rotate(45deg);
+}
+
 .uploadForm {
   display: grid;
-  gap: 16px;
-}
-
-.uploadForm :global(.card-heading) {
-  margin-bottom: 4px;
-}
-
-.uploadForm :global(.card-heading p:not(.kicker)) {
-  margin: 8px 0 0;
-  color: var(--muted);
+  gap: 14px;
+  padding: 0 14px 14px;
 }
 
 .previewGrid {
   display: grid;
-  grid-template-columns: 148px minmax(0, 1fr);
-  gap: 18px;
+  grid-template-columns: 116px minmax(0, 1fr);
+  gap: 16px;
   align-items: center;
-  padding: 16px;
-  background: linear-gradient(180deg, #fff, #f7f9fb);
+  padding: 14px;
+  background: #fff;
   border: 1px solid var(--line);
   border-radius: 8px;
 }
@@ -26,14 +83,14 @@
 .previewBox {
   display: grid;
   place-items: center;
-  width: 148px;
-  height: 148px;
+  width: 116px;
+  height: 116px;
   overflow: hidden;
   color: var(--muted);
   background: #eef3f8;
   border: 1px dashed #cbd6e3;
   border-radius: 8px;
-  font-size: .86rem;
+  font-size: .82rem;
   font-weight: 900;
   text-align: center;
 }
@@ -59,7 +116,7 @@
 
 .previewCopy strong {
   color: var(--navy);
-  font-size: 1.04rem;
+  font-size: 1rem;
 }
 
 .previewCopy p {
