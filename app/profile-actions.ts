@@ -3,11 +3,13 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getAccountContext } from "@/lib/account";
+import { appUrl, sendTaskovoEmail } from "@/lib/email";
 import { createServerSupabaseClient, createServiceSupabaseClient, hasSupabaseEnv } from "@/lib/supabase";
 
 const profilePhotoBucket = "profile-photos";
 const allowedPhotoTypes = new Set(["image/jpeg", "image/png", "image/webp"]);
 const maxProfilePhotoBytes = 5 * 1024 * 1024;
+const DEFAULT_ADMIN_EMAIL = "kaziodimm@gmail.com";
 
 function requiredString(formData: FormData, key: string) {
   const value = formData.get(key);
@@ -18,6 +20,10 @@ function requiredString(formData: FormData, key: string) {
 function optionalString(formData: FormData, key: string) {
   const value = formData.get(key);
   return typeof value === "string" && value.trim() ? value.trim() : null;
+}
+
+function adminEmail() {
+  return process.env.TASKOVO_ADMIN_EMAIL || DEFAULT_ADMIN_EMAIL;
 }
 
 function optionalImageUrl(formData: FormData) {
@@ -194,7 +200,7 @@ export async function submitProfilePhotoForReview(formData: FormData) {
 
   const service = createServiceSupabaseClient();
   const table = role === "tasker" ? "tasker_profiles" : "client_profiles";
-  const { data: profile, error: profileError } = await service.from(table).select("id").eq("auth_user_id", user.id).order("created_at", { ascending: false }).limit(1).maybeSingle();
+  const { data: profile, error: profileError } = await service.from(table).select("id,name,email").eq("auth_user_id", user.id).order("created_at", { ascending: false }).limit(1).maybeSingle();
   if (profileError) throw new Error(profileError.message);
   if (!profile) redirect(dashboardHref(role, "error=profile_missing#profil"));
 
@@ -208,6 +214,19 @@ export async function submitProfilePhotoForReview(formData: FormData) {
     } as never)
     .eq("id", profile.id);
   if (error) throw new Error(error.message);
+
+  await sendTaskovoEmail({
+    to: [adminEmail()],
+    subject: `Taskovo admin: profilová fotka čeká na kontrolu`,
+    heading: "Nová fotka ke kontrole",
+    body: [
+      `${profile.name || user.email || "Uživatel"} nahrál novou profilovou fotku.`,
+      `Typ účtu: ${role === "tasker" ? "tasker" : "klient"}.`,
+      "Fotka se veřejně nezobrazí, dokud ji neschválíš v administraci.",
+    ],
+    ctaHref: appUrl(role === "tasker" ? `/admin/taskers/${profile.id}` : `/admin/clients/${profile.id}`),
+    ctaLabel: "Zkontrolovat fotku",
+  });
 
   revalidatePath("/dashboard");
   revalidatePath("/poskytovatel/dashboard");
