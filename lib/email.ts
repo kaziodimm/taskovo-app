@@ -8,6 +8,8 @@ type TaskovoEmail = {
 };
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const defaultFrom = "Taskovo <info@taskovo.cz>";
+const defaultReplyTo = "info@taskovo.cz";
 
 export function appUrl(path: string) {
   const envUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.VERCEL_PROJECT_PRODUCTION_URL || process.env.VERCEL_URL;
@@ -36,7 +38,25 @@ function escapeHtml(value: string) {
     .replace(/'/g, "&#039;");
 }
 
+function renderPlainText({ heading, body, ctaHref, ctaLabel }: Omit<TaskovoEmail, "to" | "subject">) {
+  const cta = ctaHref && ctaLabel ? `\n\n${ctaLabel}: ${ctaHref}` : "";
+  return [
+    "Taskovo",
+    "Pomoc. Rychle. Spolehlivě.",
+    "",
+    heading,
+    "",
+    ...body,
+    cta,
+    "",
+    "Taskovo je zprostředkovatelská platforma. Tasker je nezávislý OSVČ nebo firma a klient si taskera vybírá samostatně.",
+    "Web: https://taskovo.cz",
+    "Podmínky: https://taskovo.cz/obchodni-podminky",
+  ].filter(Boolean).join("\n");
+}
+
 function renderEmail({ heading, body, ctaHref, ctaLabel }: Omit<TaskovoEmail, "to" | "subject">) {
+  const preheader = body[0] || heading;
   const paragraphs = body.map((line) => `<p style="margin:0 0 14px;color:#415a77;font-size:15px;line-height:1.6;">${escapeHtml(line)}</p>`).join("");
   const cta = ctaHref && ctaLabel
     ? `<a href="${escapeHtml(ctaHref)}" style="display:inline-block;margin-top:10px;padding:12px 18px;border-radius:8px;background:#ff6b35;color:#ffffff;font-weight:800;text-decoration:none;">${escapeHtml(ctaLabel)}</a>`
@@ -45,6 +65,7 @@ function renderEmail({ heading, body, ctaHref, ctaLabel }: Omit<TaskovoEmail, "t
   return `<!doctype html>
 <html lang="cs">
   <body style="margin:0;background:#f7f9fb;font-family:Arial,sans-serif;color:#0d1b2a;">
+    <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;">${escapeHtml(preheader)}</div>
     <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f7f9fb;padding:28px 12px;">
       <tr>
         <td align="center">
@@ -61,7 +82,8 @@ function renderEmail({ heading, body, ctaHref, ctaLabel }: Omit<TaskovoEmail, "t
                 ${paragraphs}
                 ${cta}
                 <hr style="margin:26px 0;border:0;border-top:1px solid #dbe3ec;" />
-                <p style="margin:0;color:#6d859e;font-size:13px;line-height:1.55;">Taskovo je zprostředkovatelská platforma. Tasker je nezávislý OSVČ nebo firma a klient si taskera vybírá samostatně.</p>
+                <p style="margin:0 0 10px;color:#6d859e;font-size:13px;line-height:1.55;">Taskovo je zprostředkovatelská platforma. Tasker je nezávislý OSVČ nebo firma a klient si taskera vybírá samostatně.</p>
+                <p style="margin:0;color:#6d859e;font-size:13px;line-height:1.55;"><a href="https://taskovo.cz" style="color:#415a77;font-weight:800;text-decoration:none;">taskovo.cz</a> · <a href="https://taskovo.cz/obchodni-podminky" style="color:#415a77;font-weight:800;text-decoration:none;">Podmínky</a> · <a href="https://taskovo.cz/ochrana-osobnich-udaju" style="color:#415a77;font-weight:800;text-decoration:none;">Soukromí</a></p>
               </td>
             </tr>
           </table>
@@ -84,10 +106,12 @@ export async function sendTaskovoEmail(email: TaskovoEmail) {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      from: process.env.RESEND_FROM_EMAIL || "Taskovo <info@taskovo.cz>",
+      from: process.env.RESEND_FROM_EMAIL || defaultFrom,
+      reply_to: process.env.RESEND_REPLY_TO_EMAIL || defaultReplyTo,
       to: recipients,
       subject: email.subject,
       html: renderEmail(email),
+      text: renderPlainText(email),
     }),
   });
 
