@@ -27,7 +27,11 @@ export type Task = {
   client_name: string;
   client_contact?: string;
   status: TaskStatus;
+  admin_cancel_reason?: string | null;
+  admin_cancelled_at?: string | null;
+  admin_cancelled_by?: string | null;
   created_at: string;
+  updated_at?: string | null;
 };
 
 export type Offer = {
