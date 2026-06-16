@@ -70,6 +70,7 @@ export async function Header() {
         {user && role === "client" ? <a href="/dashboard">Moje objednávky</a> : null}
         {isAdmin ? <a href="/admin">Admin</a> : null}
         {isAdmin ? <a href="/admin/prehled">Přehled</a> : null}
+        {isAdmin ? <a href="/admin/objednavky">Objednávky</a> : null}
         <a href="/bezpecnost">Bezpečnost</a>
         <a href="/faq">FAQ</a>
       </nav>
