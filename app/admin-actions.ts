@@ -158,7 +158,10 @@ export async function updateAdminTaskStatus(formData: FormData) {
   if (!allowedTaskStatuses.has(status)) redirect("/admin?error=bad_status");
 
   const service = await requireAdmin();
-  const { error } = await service.from("tasks").update({ status }).eq("id", taskId);
+  const resetCancellation = status !== "cancelled"
+    ? { admin_cancel_reason: null, admin_cancelled_at: null, admin_cancelled_by: null }
+    : {};
+  const { error } = await service.from("tasks").update({ status, ...resetCancellation }).eq("id", taskId);
   if (error) throw new Error(error.message);
 
   revalidateAdminViews(taskId);
@@ -169,16 +172,25 @@ export async function cancelAdminTask(formData: FormData) {
   const taskId = requiredString(formData, "task_id");
   const reason = requiredString(formData, "reason");
   const service = await requireAdmin();
+  const body = `Objednávka byla zrušena administrátorem. Důvod: ${reason}`;
 
   const { error: messageError } = await service.from("messages").insert({
     task_id: taskId,
     sender_role: "admin",
     sender_name: "Taskovo",
-    body: `Objednávka byla zrušena administrátorem. Důvod: ${reason}`,
+    body,
   });
   if (messageError) throw new Error(messageError.message);
 
-  const { error } = await service.from("tasks").update({ status: "cancelled" }).eq("id", taskId);
+  const { error } = await service
+    .from("tasks")
+    .update({
+      status: "cancelled",
+      admin_cancel_reason: reason,
+      admin_cancelled_at: new Date().toISOString(),
+      admin_cancelled_by: "Taskovo admin",
+    })
+    .eq("id", taskId);
   if (error) throw new Error(error.message);
 
   revalidateAdminViews(taskId);
@@ -199,6 +211,9 @@ export async function reopenAdminTask(formData: FormData) {
       accepted_offer_id: null,
       assigned_tasker_auth_user_id: null,
       assigned_tasker_profile_id: null,
+      admin_cancel_reason: null,
+      admin_cancelled_at: null,
+      admin_cancelled_by: null,
     })
     .eq("id", taskId);
   if (error) throw new Error(error.message);
