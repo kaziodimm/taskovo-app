@@ -292,6 +292,78 @@
 .offer-form select { min-width: 0; }
 
 /* ===========================================================================
+   Cookie Consent
+   ========================================================================== */
+
+.cookie-consent {
+  position: fixed;
+  left: max(18px, calc((100vw - 1180px) / 2));
+  right: max(18px, calc((100vw - 1180px) / 2));
+  bottom: 18px;
+  z-index: 80;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 22px;
+  align-items: end;
+  padding: 20px;
+  color: var(--navy);
+  background: rgba(255, 255, 255, 0.97);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: 0 24px 70px rgba(13, 27, 42, 0.22);
+  backdrop-filter: blur(18px);
+}
+.cookie-consent-copy {
+  display: grid;
+  gap: 8px;
+}
+.cookie-consent .kicker { margin-bottom: 0; }
+.cookie-consent h2 {
+  font-size: 1.2rem;
+  line-height: 1.2;
+}
+.cookie-consent p {
+  max-width: 760px;
+  margin: 0;
+  color: var(--muted);
+}
+.cookie-consent a {
+  width: fit-content;
+  color: var(--orange);
+  font-weight: 900;
+}
+.cookie-consent a:hover,
+.cookie-consent a:focus-visible {
+  color: var(--navy);
+}
+.cookie-consent-details {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 6px 12px;
+  max-width: 760px;
+  padding: 12px;
+  background: #f7f9fb;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.cookie-consent-details strong {
+  font-size: 0.9rem;
+}
+.cookie-consent-details span {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+.cookie-consent-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+}
+.cookie-consent-actions .button {
+  white-space: nowrap;
+}
+
+/* ===========================================================================
    Responsive
    ========================================================================== */
 
@@ -301,6 +373,8 @@
   .dashboard-hero { grid-template-columns: 1fr; }
   .dashboard-hero-actions { justify-content: flex-start; }
   .priority-panel { grid-template-columns: 1fr; }
+  .cookie-consent { grid-template-columns: 1fr; }
+  .cookie-consent-actions { justify-content: flex-start; }
 }
 
 @media (max-width: 700px) {
@@ -331,4 +405,18 @@
     top: 20px;
   }
   .empty-state .button { width: 100%; }
+  .cookie-consent {
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
+    max-height: calc(100vh - 24px);
+    overflow: auto;
+    padding: 16px;
+  }
+  .cookie-consent-actions .button {
+    width: 100%;
+  }
+  .cookie-consent-details {
+    grid-template-columns: 1fr;
+  }
 }
