@@ -18,8 +18,8 @@ const footerGroups = [
     links: [["Registrace", "/registrace-poskytovatel"], ["Dashboard", "/poskytovatel/dashboard"], ["Výplaty", "/vyplaty"], ["Podmínky", "/podminky-pro-poskytovatele"]],
   },
   {
-    title: "Důvěra",
-    links: [["Bezpečnost", "/bezpecnost"], ["Platby", "/platby"], ["Kontakt", "/kontakt"], ["Ochrana údajů", "/ochrana-osobnich-udaju"], ["Cookies", "/cookies"]],
+    title: "Důvěra a právo",
+    links: [["Bezpečnost", "/bezpecnost"], ["Platby", "/platby"], ["Kontakt", "/kontakt"], ["Obchodní podmínky", "/obchodni-podminky"], ["Ochrana údajů", "/ochrana-osobnich-udaju"], ["Cookies", "/cookies"]],
   },
 ];
 
