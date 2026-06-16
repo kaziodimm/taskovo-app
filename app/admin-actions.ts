@@ -57,6 +57,10 @@ function revalidateProfileViews(profileId: string, role: "client" | "tasker") {
   if (role === "tasker") revalidatePath(`/poskytovatel/${profileId}`);
 }
 
+function roleDashboardPath(role: "client" | "tasker") {
+  return role === "tasker" ? "/poskytovatel/dashboard#profil" : "/dashboard#profil";
+}
+
 export async function updateAdminClientProfile(formData: FormData) {
   const clientId = requiredString(formData, "client_id");
   const service = await requireAdmin();
@@ -111,7 +115,7 @@ export async function approveProfilePhoto(formData: FormData) {
   const detailPath = role === "tasker" ? `/admin/taskers/${profileId}` : `/admin/clients/${profileId}`;
   const service = await requireAdmin();
 
-  const { data: profile, error: profileError } = await service.from(table).select("pending_avatar_url").eq("id", profileId).maybeSingle();
+  const { data: profile, error: profileError } = await service.from(table).select("name,email,pending_avatar_url").eq("id", profileId).maybeSingle();
   if (profileError) throw new Error(profileError.message);
   if (!profile?.pending_avatar_url) redirect(`${detailPath}?error=no_pending_photo`);
 
@@ -126,6 +130,15 @@ export async function approveProfilePhoto(formData: FormData) {
     .eq("id", profileId);
   if (error) throw new Error(error.message);
 
+  await sendTaskovoEmail({
+    to: [profile.email],
+    subject: `Taskovo: profilová fotka byla schválena`,
+    heading: "Profilová fotka je schválená",
+    body: [`Dobrý den, ${profile.name || "váš profil"} má nově schválenou profilovou fotku.`, "Fotka se může zobrazovat u vašeho účtu na Taskovo."],
+    ctaHref: appUrl(roleDashboardPath(role)),
+    ctaLabel: "Otevřít profil",
+  });
+
   revalidateProfileViews(profileId, role);
   redirect(`${detailPath}?updated=photo_approved`);
 }
@@ -138,6 +151,9 @@ export async function rejectProfilePhoto(formData: FormData) {
   const detailPath = role === "tasker" ? `/admin/taskers/${profileId}` : `/admin/clients/${profileId}`;
   const service = await requireAdmin();
 
+  const { data: profile, error: profileError } = await service.from(table).select("name,email").eq("id", profileId).maybeSingle();
+  if (profileError) throw new Error(profileError.message);
+
   const { error } = await service
     .from(table)
     .update({
@@ -147,6 +163,15 @@ export async function rejectProfilePhoto(formData: FormData) {
     })
     .eq("id", profileId);
   if (error) throw new Error(error.message);
+
+  await sendTaskovoEmail({
+    to: [profile?.email],
+    subject: `Taskovo: profilová fotka nebyla schválena`,
+    heading: "Profilová fotka nebyla schválena",
+    body: [`Dobrý den, nahraná profilová fotka nebyla schválena.`, `Důvod: ${reason}`, "Můžete nahrát novou fotku, která lépe odpovídá pravidlům profilu."],
+    ctaHref: appUrl(roleDashboardPath(role)),
+    ctaLabel: "Nahrát novou fotku",
+  });
 
   revalidateProfileViews(profileId, role);
   redirect(`${detailPath}?updated=photo_rejected`);
