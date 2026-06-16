@@ -127,7 +127,7 @@ export default async function ProviderDashboardPage({ searchParams }: { searchPa
           <article className="metric-card metric-card-primary"><span>Dostupné úkoly</span><strong>{availableTasks.length}</strong><p>Odhad rozpočtu v okolí: {formatCzk(possiblePipeline)}.</p></article>
           <article className="metric-card"><span>Aktivní práce</span><strong>{assignedTasks.length}</strong><p>{actionTasks.length ? `${actionTasks.length} zakázka potřebuje další krok.` : "Žádné urgentní kroky."}</p></article>
           <article className="metric-card"><span>Odeslané nabídky</span><strong>{pendingOffers.length}</strong><p>{pendingOffers.length ? "Čekají na rozhodnutí klienta." : "Zatím nic nečeká."}</p></article>
-          <article className="metric-card"><span>Odhad výdělku</span><strong>{formatCzk(estimatedEarnings)}</strong><p>Souhrn vybraných nabídek. Výplatní tok bude aktivní po spuštění platebního partnera.</p></article>
+          <article className="metric-card"><span>Odhad výdělku</span><strong>{formatCzk(estimatedEarnings)}</strong><p>Souhrn vybraných nabídek. Výplata se uvolní po potvrzení dokončení podle pravidel platebního partnera.</p></article>
         </section>
 
         <section className="dashboard-tabs" aria-label="Rychlé sekce">
@@ -211,7 +211,7 @@ export default async function ProviderDashboardPage({ searchParams }: { searchPa
 
         <section className="section dashboard-section" id="vyplaty">
           <div className="dashboard-grid">
-            <article className="dashboard-panel"><h3>Výplaty</h3><p>{completedTasks.length ? `Dokončené zakázky: ${completedTasks.length}. Výplatní tok bude aktivní po spuštění platebního partnera.` : "Výplaty budou dostupné po první dokončené a potvrzené zakázce."}</p></article>
+            <article className="dashboard-panel"><h3>Výplaty</h3><p>{completedTasks.length ? `Dokončené zakázky: ${completedTasks.length}. Výplata se uvolní po potvrzení dokončení podle pravidel platebního partnera.` : "Výplaty jsou navázané na dokončené a klientem potvrzené zakázky."}</p></article>
             <article className="dashboard-panel"><h3>Provize</h3><p>Přesné podmínky se zobrazí před odeslání nabídky a před potvrzením objednávky klientem.</p></article>
             <article className="dashboard-panel"><h3>Právní role</h3><p>Tasker je nezávislý OSVČ nebo firma. Taskovo práci nezaměstnává ani přímo neposkytuje.</p></article>
           </div>
