@@ -3,7 +3,12 @@
 import { randomUUID } from "crypto";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { dashboardHrefForRole, getAccountContext } from "@/lib/account";
+import {
+  loginAccount as authLoginAccount,
+  registerClientAccount as authRegisterClientAccount,
+  registerTaskerAccount as authRegisterTaskerAccount,
+} from "@/app/auth-actions";
+import { getAccountContext } from "@/lib/account";
 import { clearAdminSession, setAdminSession, validateAdminCredentials } from "@/lib/admin-auth";
 import { createServerSupabaseClient, createServiceSupabaseClient, hasSupabaseEnv } from "@/lib/supabase";
 
@@ -85,78 +90,15 @@ async function storeTaskAttachment(service: ReturnType<typeof createServiceSupab
 }
 
 export async function registerClientAccount(formData: FormData) {
-  if (!hasSupabaseEnv() || !process.env.SUPABASE_SERVICE_ROLE_KEY) redirect("/prihlaseni?error=config");
-
-  const name = requiredString(formData, "name");
-  const email = requiredString(formData, "email").toLowerCase();
-  const password = requiredString(formData, "password");
-  const phone = optionalString(formData, "phone");
-  const city = optionalString(formData, "city");
-  const service = createServiceSupabaseClient();
-  const { data: created, error: createError } = await service.auth.admin.createUser({ email, password, email_confirm: true, user_metadata: { name, role: "client" } });
-
-  if (createError && !createError.message.toLowerCase().includes("already")) redirect("/prihlaseni?error=register");
-
-  let userId = created.user?.id;
-  if (!userId) {
-    const { data } = await service.auth.admin.listUsers();
-    userId = data.users.find((user) => user.email?.toLowerCase() === email)?.id;
-  }
-
-  const { error: profileError } = await service.from("client_profiles").upsert({ auth_user_id: userId || null, name, email, phone, city, preferred_language: "cs", marketing_consent: formData.get("marketing_consent") === "on", password_auth_enabled: true }, { onConflict: "email" });
-  if (profileError) throw new Error(profileError.message);
-
-  const supabase = await createServerSupabaseClient();
-  const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
-  if (signInError) redirect("/prihlaseni?registered=client");
-
-  revalidatePath("/admin");
-  redirect("/dashboard");
+  return authRegisterClientAccount(formData);
 }
 
 export async function registerTaskerAccount(formData: FormData) {
-  if (!hasSupabaseEnv() || !process.env.SUPABASE_SERVICE_ROLE_KEY) redirect("/prihlaseni?error=config");
-
-  const name = requiredString(formData, "name");
-  const email = requiredString(formData, "email").toLowerCase();
-  const password = requiredString(formData, "password");
-  const city = requiredString(formData, "city");
-  const categories = requiredString(formData, "categories");
-  const contact = optionalString(formData, "contact") || email;
-  const bio = optionalString(formData, "bio");
-  const service = createServiceSupabaseClient();
-  const { data: created, error: createError } = await service.auth.admin.createUser({ email, password, email_confirm: true, user_metadata: { name, role: "tasker" } });
-
-  if (createError && !createError.message.toLowerCase().includes("already")) redirect("/prihlaseni?error=register");
-
-  let userId = created.user?.id;
-  if (!userId) {
-    const { data } = await service.auth.admin.listUsers();
-    userId = data.users.find((user) => user.email?.toLowerCase() === email)?.id;
-  }
-
-  const { error: profileError } = await service.from("tasker_profiles").insert({ auth_user_id: userId || null, email, name, city, categories, contact, bio, password_auth_enabled: true });
-  if (profileError) throw new Error(profileError.message);
-
-  const supabase = await createServerSupabaseClient();
-  const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
-  if (signInError) redirect("/prihlaseni?registered=tasker");
-
-  revalidatePath("/admin");
-  redirect("/poskytovatel/dashboard");
+  return authRegisterTaskerAccount(formData);
 }
 
 export async function loginAccount(formData: FormData) {
-  const email = requiredString(formData, "email").toLowerCase();
-  const password = requiredString(formData, "password");
-  const supabase = await createServerSupabaseClient();
-  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-
-  if (error || !data.user) redirect("/prihlaseni?error=login");
-
-  const account = await getAccountContext(data.user);
-  if (account.role === "unknown") redirect("/prihlaseni?mode=login&error=account_profile");
-  redirect(dashboardHrefForRole(account.role));
+  return authLoginAccount(formData);
 }
 
 export async function logoutAccount() {
@@ -166,7 +108,7 @@ export async function logoutAccount() {
 }
 
 export async function createClientProfile(formData: FormData) {
-  return registerClientAccount(formData);
+  return authRegisterClientAccount(formData);
 }
 
 export async function adminLogin(formData: FormData) {
