@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { appUrl, sendTaskovoEmail } from "@/lib/email";
 import { createServerSupabaseClient, createServiceSupabaseClient, hasSupabaseEnv } from "@/lib/supabase";
 
 const MAX_DISPUTE_REASON_LENGTH = 1200;
@@ -37,7 +38,7 @@ export async function requestTaskDispute(formData: FormData) {
   const service = createServiceSupabaseClient();
   const { data: task, error: taskError } = await service
     .from("tasks")
-    .select("id,status,client_auth_user_id,assigned_tasker_auth_user_id")
+    .select("id,title,status,client_auth_user_id,assigned_tasker_auth_user_id")
     .eq("id", taskId)
     .maybeSingle();
 
@@ -64,6 +65,15 @@ export async function requestTaskDispute(formData: FormData) {
 
   const { error: updateError } = await service.from("tasks").update({ status: "disputed" }).eq("id", taskId);
   if (updateError) throw new Error(updateError.message);
+
+  await sendTaskovoEmail({
+    to: [process.env.TASKOVO_ADMIN_EMAIL || "info@taskovo.cz"],
+    subject: `Taskovo admin: nový spor u objednávky`,
+    heading: "Nový spor v marketplace",
+    body: [`${senderName} nahlásil problém u objednávky “${task.title}”.`, `Důvod: ${reason}`, "Objednávka byla přesunuta do stavu Spor a čeká na ruční kontrolu."],
+    ctaHref: appUrl(`/admin/tasks/${taskId}`),
+    ctaLabel: "Otevřít v administraci",
+  });
 
   revalidateTaskViews(taskId);
   redirect(`/ukol/${taskId}?updated=dispute_reported`);
