@@ -97,7 +97,10 @@ function taskCancelForm(taskId: string) {
       <summary>Zrušit objednávku</summary>
       <form className="compact-form" action={cancelAdminTask}>
         <input type="hidden" name="task_id" value={taskId} />
-        <label className="span-full">Důvod zrušení<textarea name="reason" rows={3} placeholder="Například: nevhodný obsah, duplicitní úkol, porušení pravidel..." required /></label>
+        <label className="span-full">
+          Důvod zrušení
+          <textarea name="reason" rows={3} placeholder="Například: nevhodný obsah, duplicitní úkol, porušení pravidel..." required />
+        </label>
         <button className="button secondary span-full" type="submit">Potvrdit zrušení</button>
       </form>
     </details>
@@ -159,6 +162,7 @@ export default async function AdminPage({ searchParams }: { searchParams?: Admin
   const pendingTaskerPhotos = taskers.filter((tasker) => tasker.pending_avatar_url);
   const pendingPhotoCount = pendingClientPhotos.length + pendingTaskerPhotos.length;
   const verifiedTaskers = taskers.filter((tasker) => tasker.verified).length;
+  const unverifiedTaskers = taskers.filter((tasker) => !tasker.verified);
 
   const renderTaskItem = (task: (typeof tasks)[number], options: { archived?: boolean; compact?: boolean } = {}) => {
     const taskOffers = offersByTask.get(task.id) || [];
@@ -198,6 +202,35 @@ export default async function AdminPage({ searchParams }: { searchParams?: Admin
     );
   };
 
+  const renderTaskerCard = (tasker: (typeof taskers)[number], compact = false) => (
+    <article className={styles.directoryCard} key={tasker.id}>
+      <div className={styles.directoryHeader}>
+        {directoryAvatar(tasker, "Tasker")}
+        <div className={styles.directoryIdentity}>
+          <strong>{tasker.name}</strong>
+          <span>{tasker.city || "město neuvedeno"}</span>
+        </div>
+      </div>
+      <div className={styles.directoryMeta}>
+        <p>{tasker.categories || "kategorie neuvedeny"}</p>
+        <p>{tasker.email || "email neuveden"}</p>
+        <p>{tasker.contact || "kontakt neuveden"}</p>
+      </div>
+      <div className={styles.directoryStatusRow}>
+        <span className={tasker.verified ? styles.verifiedPill : styles.warningPill}>{tasker.verified ? "ověřený tasker" : "čeká na ověření"}</span>
+        {avatarStatus(tasker)}
+      </div>
+      <div className={styles.directoryActions}>
+        <a className="button secondary" href={`/admin/taskers/${tasker.id}`}>Detail taskera</a>
+        <form action={toggleTaskerVerification} className="inline-action-form">
+          <input type="hidden" name="tasker_id" value={tasker.id} />
+          <input type="hidden" name="verified" value={tasker.verified ? "false" : "true"} />
+          <button className={tasker.verified || compact ? "button secondary" : "button primary"} type="submit">{tasker.verified ? "Odebrat ověření" : "Ověřit"}</button>
+        </form>
+      </div>
+    </article>
+  );
+
   return (
     <>
       <Header />
@@ -206,7 +239,7 @@ export default async function AdminPage({ searchParams }: { searchParams?: Admin
           <div>
             <p className="kicker">Admin</p>
             <h1 className="page-title">Operační centrum Taskovo</h1>
-            <p className="hero-lead">Kontrola objednávek, klientů, taskerů, nabídek a stavu práce v pilotním marketplace.</p>
+            <p className="hero-lead">Kontrola objednávek, klientů, taskerů, nabídek a provozních rozhodnutí marketplace.</p>
           </div>
           <div className="page-hero-card"><strong>{visibleTasks.length}</strong><p>aktivních objednávek · {cancelledTasks.length} zrušených v archivu</p></div>
         </section>
@@ -225,10 +258,11 @@ export default async function AdminPage({ searchParams }: { searchParams?: Admin
 
         <nav className={styles.adminJumpNav} aria-label="Rychlá navigace administrace">
           <a href="#fronty">Fronty</a>
+          <a href="#overeni">Ověření</a>
           <a href="#spory">Spory</a>
           <a href="#aktivni">Aktivní</a>
           <a href="#otevrene">Otevřené</a>
-          <a href="#review">Ke kontrole</a>
+          <a href="#review">Fotky</a>
           <a href="#orders">Všechny</a>
           <a href="#zrusene">Archiv</a>
           <a href="#clients">Klienti</a>
@@ -238,28 +272,37 @@ export default async function AdminPage({ searchParams }: { searchParams?: Admin
         </nav>
 
         <div className="dashboard-grid">
-          <article className="dashboard-panel"><h3>Ke kontrole</h3><p>{pendingPhotoCount} profilových fotek čeká na rozhodnutí.</p></article>
+          <article className="dashboard-panel"><h3>Fotky ke kontrole</h3><p>{pendingPhotoCount} profilových fotek čeká na rozhodnutí.</p></article>
+          <article className="dashboard-panel"><h3>Taskeři k ověření</h3><p>{unverifiedTaskers.length} profilů čeká na ruční kontrolu.</p></article>
           <article className="dashboard-panel"><h3>Otevřené</h3><p>{openTasks.length} objednávek čeká na nabídky nebo výběr taskera.</p></article>
           <article className="dashboard-panel"><h3>Aktivní</h3><p>{activeTasks.length} objednávek je přiřazených, probíhá nebo čeká na potvrzení.</p></article>
           <article className="dashboard-panel"><h3>Spory</h3><p>{disputedTasks.length} objednávek čeká na zásah administrátora.</p></article>
-          <article className="dashboard-panel"><h3>Čeká na klienta</h3><p>{waitingClientTasks.length} objednávek čeká na potvrzení dokončení.</p></article>
           <article className="dashboard-panel"><h3>Účty</h3><p>{verifiedTaskers}/{taskers.length} ověřených taskerů · {clients.length} klientů.</p></article>
         </div>
 
         <section id="fronty" className={`section ${styles.sectionCard} ${styles.queueSection}`}>
           <div className="section-heading-row">
-            <div className="section-title"><p className="kicker">Fronty</p><h2>Rychlé řízení marketplace</h2><p>Nejdůležitější provozní pohledy jsou oddělené, aby se u většího počtu objednávek dalo rychle najít, co hoří.</p></div>
+            <div className="section-title"><p className="kicker">Fronty</p><h2>Rychlé řízení marketplace</h2><p>Nejdůležitější provozní pohledy jsou oddělené, aby se u většího počtu objednávek a profilů dalo rychle najít, co vyžaduje zásah.</p></div>
           </div>
           <div className={styles.queueGrid}>
             <a className={`${styles.queueCard} ${disputedTasks.length ? styles.queueCardDanger : ""}`} href="#spory"><strong>{disputedTasks.length}</strong><span>Spory</span><p>Objednávky, kde je potřeba ruční zásah.</p></a>
+            <a className={`${styles.queueCard} ${unverifiedTaskers.length ? styles.queueCardWarning : ""}`} href="#overeni"><strong>{unverifiedTaskers.length}</strong><span>Taskeři k ověření</span><p>Nové profily před viditelným označením důvěry.</p></a>
+            <a className={`${styles.queueCard} ${pendingPhotoCount ? styles.queueCardWarning : ""}`} href="#review"><strong>{pendingPhotoCount}</strong><span>Fotky ke kontrole</span><p>Profilové fotky čekající na schválení.</p></a>
             <a className={styles.queueCard} href="#aktivni"><strong>{activeTasks.length}</strong><span>Aktivní práce</span><p>Přiřazeno, probíhá nebo čeká na potvrzení.</p></a>
             <a className={`${styles.queueCard} ${openTasks.length ? styles.queueCardWarning : ""}`} href="#otevrene"><strong>{openTasks.length}</strong><span>Otevřené</span><p>Úkoly, které ještě hledají taskera.</p></a>
             <a className={styles.queueCard} href="#zrusene"><strong>{cancelledTasks.length}</strong><span>Archiv</span><p>Zrušené objednávky jen pro historii.</p></a>
           </div>
         </section>
 
+        <section id="overeni" className={`section ${styles.sectionCard} ${styles.queueSection}`}>
+          <div className="section-title"><p className="kicker">Důvěra</p><h2>Taskeři čekající na ověření</h2><p>Ověření je ruční administrátorský krok. Taskovo tím jasně odlišuje profily, které prošly základní kontrolou identity, kontaktu a popisu služeb.</p></div>
+          <div className={`${styles.adminList} ${styles.directoryList}`}>
+            {unverifiedTaskers.length ? unverifiedTaskers.map((tasker) => renderTaskerCard(tasker)) : <div className={styles.emptyState}><strong>Žádný tasker nečeká na ověření.</strong><p>Nové registrace taskerů se po vytvoření profilu objeví v této frontě.</p></div>}
+          </div>
+        </section>
+
         <section id="spory" className={`section ${styles.sectionCard} ${styles.queueSection}`}>
-          <div className="section-title"><p className="kicker">Priorita</p><h2>Spory a ruční zásahy</h2><p>Sem patří objednávky, které by měl admin řešit jako první.</p></div>
+          <div className="section-title"><p className="kicker">Priorita</p><h2>Spory a ruční zásahy</h2><p>Sem patří objednávky, které by admin měl řešit jako první.</p></div>
           <div className={styles.adminList}>
             {disputedTasks.length ? disputedTasks.map((task) => renderTaskItem(task)) : <div className={styles.emptyState}><strong>Žádné aktivní spory.</strong><p>Když objednávka přejde do stavu spor, objeví se tady.</p></div>}
           </div>
@@ -340,34 +383,7 @@ export default async function AdminPage({ searchParams }: { searchParams?: Admin
           <section id="taskers" className={styles.sectionCard}>
             <div className="section-title"><p className="kicker">Taskeři</p><h2>Profily taskerů</h2></div>
             <div className={`${styles.adminList} ${styles.directoryList}`}>
-              {taskers.map((tasker) => (
-                <article className={styles.directoryCard} key={tasker.id}>
-                  <div className={styles.directoryHeader}>
-                    {directoryAvatar(tasker, "Tasker")}
-                    <div className={styles.directoryIdentity}>
-                      <strong>{tasker.name}</strong>
-                      <span>{tasker.city || "město neuvedeno"}</span>
-                    </div>
-                  </div>
-                  <div className={styles.directoryMeta}>
-                    <p>{tasker.categories || "kategorie neuvedeny"}</p>
-                    <p>{tasker.email || "email neuveden"}</p>
-                    <p>{tasker.contact || "kontakt neuveden"}</p>
-                  </div>
-                  <div className={styles.directoryStatusRow}>
-                    <span className={tasker.verified ? styles.verifiedPill : styles.warningPill}>{tasker.verified ? "ověřený tasker" : "čeká na ověření"}</span>
-                    {avatarStatus(tasker)}
-                  </div>
-                  <div className={styles.directoryActions}>
-                    <a className="button secondary" href={`/admin/taskers/${tasker.id}`}>Detail taskera</a>
-                    <form action={toggleTaskerVerification} className="inline-action-form">
-                      <input type="hidden" name="tasker_id" value={tasker.id} />
-                      <input type="hidden" name="verified" value={tasker.verified ? "false" : "true"} />
-                      <button className="button secondary" type="submit">{tasker.verified ? "Odebrat ověření" : "Ověřit"}</button>
-                    </form>
-                  </div>
-                </article>
-              ))}
+              {taskers.map((tasker) => renderTaskerCard(tasker, true))}
             </div>
           </section>
           <section id="offers" className={styles.sectionCard}>
