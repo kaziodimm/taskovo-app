@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { isAdminAuthenticated } from "@/lib/admin-auth";
+import { appUrl, sendTaskovoEmail } from "@/lib/email";
 import { createServiceSupabaseClient, hasSupabaseEnv } from "@/lib/supabase";
 
 const MAX_MESSAGE_LENGTH = 1200;
@@ -30,9 +31,20 @@ export async function sendAdminTaskMessage(formData: FormData) {
   if (body.length > MAX_MESSAGE_LENGTH) redirect(`/admin/tasks/${taskId}?error=message_too_long`);
 
   const service = createServiceSupabaseClient();
-  const { data: task, error: taskError } = await service.from("tasks").select("id").eq("id", taskId).maybeSingle();
+  const { data: task, error: taskError } = await service
+    .from("tasks")
+    .select("id,title,client_contact")
+    .eq("id", taskId)
+    .maybeSingle();
   if (taskError) throw new Error(taskError.message);
   if (!task) redirect("/admin?error=task_missing");
+
+  const { data: acceptedOffers, error: offerError } = await service
+    .from("offers")
+    .select("tasker_contact")
+    .eq("task_id", taskId)
+    .eq("status", "accepted");
+  if (offerError) throw new Error(offerError.message);
 
   const { error } = await service.from("messages").insert({
     task_id: taskId,
@@ -41,6 +53,18 @@ export async function sendAdminTaskMessage(formData: FormData) {
     body,
   });
   if (error) throw new Error(error.message);
+
+  await sendTaskovoEmail({
+    to: [task.client_contact, ...(acceptedOffers || []).map((offer) => offer.tasker_contact)],
+    subject: `Taskovo: zpráva k objednávce ${task.title}`,
+    heading: "Nová zpráva od Taskovo",
+    body: [
+      `K objednávce “${task.title}” byla přidána oficiální zpráva administrátora.`,
+      body,
+    ],
+    ctaHref: appUrl(`/ukol/${taskId}`),
+    ctaLabel: "Otevřít objednávku",
+  });
 
   revalidateTaskViews(taskId);
   redirect(`/admin/tasks/${taskId}?updated=admin_message_sent`);
