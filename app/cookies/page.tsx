@@ -3,6 +3,7 @@ import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 
 const pageUrl = "https://taskovo.cz/cookies";
+const supportEmail = "info@taskovo.cz";
 
 export const metadata: Metadata = {
   title: "Cookies | Taskovo",
@@ -17,28 +18,57 @@ export const metadata: Metadata = {
   },
 };
 
-const points = [
-  { title: "Technické", text: "Nutné cookies pomáhají s přihlášením, formuláři, ochranou účtu a základním fungováním webu." },
-  { title: "Analytické", text: "Po souhlasu mohou pomoci pochopit poptávku, konverze a místa, kde uživatelé narážejí na problém." },
-  { title: "Marketingové", text: "Marketingové cookies budou použité až po souhlasu a po spuštění placených kampaní." },
-  { title: "Správa souhlasu", text: "Uživatel musí mít možnost souhlas upravit nebo odvolat. Cookie banner doplníme před ostrým marketingovým spuštěním." },
+const sections = [
+  {
+    title: "Technické cookies",
+    text: "Technické cookies jsou nutné pro fungování webu, přihlášení, ochranu účtu, bezpečnost formulářů, zapamatování relace a základní provoz marketplace. Tyto cookies nevyžadují samostatný marketingový souhlas.",
+  },
+  {
+    title: "Preferenční cookies",
+    text: "Preferenční cookies mohou pomoci zapamatovat nastavení uživatele, například jazyk, vybraný režim nebo stav rozhraní. Používají se jen v rozsahu potřebném pro lepší používání služby.",
+  },
+  {
+    title: "Analytické cookies",
+    text: "Analytické cookies pomáhají pochopit návštěvnost, výkon stránek, konverze a místa, kde uživatelé narážejí na problém. Pokud nejsou technicky nezbytné, používají se až po souhlasu uživatele.",
+  },
+  {
+    title: "Marketingové cookies",
+    text: "Marketingové cookies mohou být použité pro měření kampaní, remarketing a relevantnější reklamu. Používají se pouze na základě souhlasu a uživatel je může odmítnout bez ztráty přístupu k základním funkcím webu.",
+  },
+  {
+    title: "Správa souhlasu",
+    text: "Uživatel může souhlas upravit nebo odvolat v nastavení cookies, jakmile jsou nasazeny cookies vyžadující souhlas. Souhlas není nutný pro technické cookies potřebné k fungování služby.",
+  },
+  {
+    title: "Kontakt",
+    text: `Dotazy ke cookies a soukromí posílejte na ${supportEmail}.`,
+  },
 ];
+
+const cookiesJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "WebPage",
+  name: "Cookies Taskovo",
+  url: pageUrl,
+  description: metadata.description,
+};
 
 export default function CookiesPage() {
   return (
     <>
       <Header />
       <main className="page-shell">
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(cookiesJsonLd) }} />
         <section className="section-title">
           <p className="kicker">Cookies</p>
-          <h1 className="page-title">Nastavení cookies</h1>
-          <p>Základní přehled kategorií cookies pro Taskovo. Technické cookies jsou nutné pro účet a bezpečnost, ostatní budou řízené souhlasem.</p>
+          <h1 className="page-title">Cookies a nastavení souhlasu</h1>
+          <p>Taskovo používá cookies a podobné technologie pro provoz webu, bezpečnost účtu, měření výkonu a případně marketing. Nezbytné cookies pomáhají službě fungovat, ostatní kategorie se řídí souhlasem.</p>
         </section>
         <div className="legal-grid">
-          {points.map((point) => (
-            <article className="legal-card" key={point.title}>
-              <h3>{point.title}</h3>
-              <p>{point.text}</p>
+          {sections.map((section) => (
+            <article className="legal-card" key={section.title}>
+              <h3>{section.title}</h3>
+              <p>{section.text}</p>
             </article>
           ))}
         </div>
