@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { isAdminAuthenticated } from "@/lib/admin-auth";
+import { appUrl, sendTaskovoEmail } from "@/lib/email";
 import { createServiceSupabaseClient, hasSupabaseEnv } from "@/lib/supabase";
 import type { TaskStatus } from "@/lib/types";
 
@@ -174,6 +175,21 @@ export async function cancelAdminTask(formData: FormData) {
   const service = await requireAdmin();
   const body = `Objednávka byla zrušena administrátorem. Důvod: ${reason}`;
 
+  const { data: task, error: taskError } = await service
+    .from("tasks")
+    .select("id,title,client_contact")
+    .eq("id", taskId)
+    .maybeSingle();
+  if (taskError) throw new Error(taskError.message);
+  if (!task) redirect("/admin?error=task_missing");
+
+  const { data: acceptedOffers, error: offerError } = await service
+    .from("offers")
+    .select("tasker_contact")
+    .eq("task_id", taskId)
+    .eq("status", "accepted");
+  if (offerError) throw new Error(offerError.message);
+
   const { error: messageError } = await service.from("messages").insert({
     task_id: taskId,
     sender_role: "admin",
@@ -192,6 +208,19 @@ export async function cancelAdminTask(formData: FormData) {
     })
     .eq("id", taskId);
   if (error) throw new Error(error.message);
+
+  await sendTaskovoEmail({
+    to: [task.client_contact, ...(acceptedOffers || []).map((offer) => offer.tasker_contact)],
+    subject: `Taskovo: objednávka byla zrušena`,
+    heading: "Objednávka byla zrušena",
+    body: [
+      `Objednávka “${task.title}” byla zrušena administrátorem Taskovo.`,
+      `Důvod: ${reason}`,
+      "Tato informace je uložená také v detailu objednávky.",
+    ],
+    ctaHref: appUrl(`/ukol/${taskId}`),
+    ctaLabel: "Otevřít objednávku",
+  });
 
   revalidateAdminViews(taskId);
   redirect(`/admin/tasks/${taskId}?updated=task_cancelled`);
