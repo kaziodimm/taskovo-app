@@ -6,6 +6,7 @@ import { appUrl, sendTaskovoEmail } from "@/lib/email";
 import { createServerSupabaseClient, createServiceSupabaseClient, hasSupabaseEnv } from "@/lib/supabase";
 
 const MAX_DISPUTE_REASON_LENGTH = 1200;
+const DEFAULT_ADMIN_EMAIL = "kaziodimm@gmail.com";
 const disputableStatuses = new Set(["assigned", "in_progress", "awaiting_confirmation"]);
 
 function requiredString(formData: FormData, key: string) {
@@ -67,7 +68,7 @@ export async function requestTaskDispute(formData: FormData) {
   if (updateError) throw new Error(updateError.message);
 
   await sendTaskovoEmail({
-    to: [process.env.TASKOVO_ADMIN_EMAIL || "info@taskovo.cz"],
+    to: [process.env.TASKOVO_ADMIN_EMAIL || DEFAULT_ADMIN_EMAIL],
     subject: `Taskovo admin: nový spor u objednávky`,
     heading: "Nový spor v marketplace",
     body: [`${senderName} nahlásil problém u objednávky “${task.title}”.`, `Důvod: ${reason}`, "Objednávka byla přesunuta do stavu Spor a čeká na ruční kontrolu."],
