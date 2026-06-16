@@ -10,6 +10,7 @@ import {
 } from "@/app/auth-actions";
 import { getAccountContext } from "@/lib/account";
 import { clearAdminSession, setAdminSession, validateAdminCredentials } from "@/lib/admin-auth";
+import { appUrl, sendTaskovoEmail } from "@/lib/email";
 import { createServerSupabaseClient, createServiceSupabaseClient, hasSupabaseEnv } from "@/lib/supabase";
 
 const ATTACHMENT_BUCKET = "task-attachments";
@@ -173,6 +174,8 @@ export async function createOffer(formData: FormData) {
   if (!hasSupabaseEnv() || !process.env.SUPABASE_SERVICE_ROLE_KEY) redirect("/tasks");
 
   const taskId = requiredString(formData, "task_id");
+  const price = Number(requiredString(formData, "price_czk"));
+  const message = requiredString(formData, "message");
   const authSupabase = await createServerSupabaseClient();
   const { data: { user } } = await authSupabase.auth.getUser();
 
@@ -187,6 +190,8 @@ export async function createOffer(formData: FormData) {
   const profile = account.taskerProfile;
   const taskerName = optionalString(formData, "tasker_name") || profile.name || account.displayName;
   const taskerContact = optionalString(formData, "tasker_contact") || profile.contact || profile.email || user.email || "kontakt po přihlášení";
+  const { data: task, error: taskError } = await service.from("tasks").select("id,title,client_contact").eq("id", taskId).maybeSingle();
+  if (taskError) throw new Error(taskError.message);
 
   const { error } = await service.from("offers").insert({
     task_id: taskId,
@@ -194,13 +199,23 @@ export async function createOffer(formData: FormData) {
     tasker_profile_id: profile.id,
     tasker_name: taskerName,
     tasker_contact: taskerContact,
-    price_czk: Number(requiredString(formData, "price_czk")),
-    message: requiredString(formData, "message"),
+    price_czk: price,
+    message,
   });
 
   if (error) throw new Error(error.message);
 
   await service.from("tasks").update({ status: "offers_received" }).eq("id", taskId);
+  if (task) {
+    await sendTaskovoEmail({
+      to: [task.client_contact],
+      subject: `Taskovo: nová nabídka k objednávce ${task.title}`,
+      heading: "Přišla nová nabídka",
+      body: [`${taskerName} poslal nabídku k objednávce “${task.title}”.`, `Cena nabídky: ${price.toLocaleString("cs-CZ")} Kč.`, message],
+      ctaHref: appUrl(`/ukol/${taskId}`),
+      ctaLabel: "Zobrazit nabídku",
+    });
+  }
   revalidateTaskViews(taskId);
   redirect("/poskytovatel/dashboard?updated=offer_sent");
 }
@@ -248,11 +263,11 @@ export async function acceptOffer(formData: FormData) {
   if (account.role === "unknown") redirect("/prihlaseni?mode=login&error=account_profile");
 
   const service = createServiceSupabaseClient();
-  const { data: task, error: taskError } = await service.from("tasks").select("id,client_auth_user_id,status").eq("id", taskId).maybeSingle();
+  const { data: task, error: taskError } = await service.from("tasks").select("id,title,client_auth_user_id,status").eq("id", taskId).maybeSingle();
   if (taskError) throw new Error(taskError.message);
   if (!task || task.client_auth_user_id !== user.id) redirect(`/ukol/${taskId}?error=forbidden`);
 
-  const { data: offer, error: offerError } = await service.from("offers").select("id,task_id,tasker_auth_user_id,tasker_profile_id").eq("id", offerId).eq("task_id", taskId).maybeSingle();
+  const { data: offer, error: offerError } = await service.from("offers").select("id,task_id,tasker_auth_user_id,tasker_profile_id,tasker_name,tasker_contact,price_czk").eq("id", offerId).eq("task_id", taskId).maybeSingle();
   if (offerError) throw new Error(offerError.message);
   if (!offer) redirect(`/ukol/${taskId}?error=offer_missing`);
 
@@ -269,6 +284,15 @@ export async function acceptOffer(formData: FormData) {
     assigned_tasker_profile_id: offer.tasker_profile_id || null,
   }).eq("id", taskId);
   if (taskUpdateError) throw new Error(taskUpdateError.message);
+
+  await sendTaskovoEmail({
+    to: [offer.tasker_contact],
+    subject: `Taskovo: klient vybral vaši nabídku`,
+    heading: "Vaše nabídka byla vybrána",
+    body: [`Klient vybral vaši nabídku k objednávce “${task.title}”.`, `Dohodnutá cena: ${offer.price_czk.toLocaleString("cs-CZ")} Kč.`, "Otevřete detail objednávky a domluvte další kroky s klientem."],
+    ctaHref: appUrl(`/ukol/${taskId}`),
+    ctaLabel: "Otevřít objednávku",
+  });
 
   revalidateTaskViews(taskId);
   redirect(`/ukol/${taskId}?updated=offer_accepted`);
@@ -289,13 +313,22 @@ export async function startTaskWork(formData: FormData) {
   if (account.role !== "tasker") redirect("/prihlaseni?mode=login&error=account_profile");
 
   const service = createServiceSupabaseClient();
-  const { data: task, error: taskError } = await service.from("tasks").select("id,status,assigned_tasker_auth_user_id").eq("id", taskId).maybeSingle();
+  const { data: task, error: taskError } = await service.from("tasks").select("id,title,status,client_contact,assigned_tasker_auth_user_id").eq("id", taskId).maybeSingle();
   if (taskError) throw new Error(taskError.message);
   if (!task || task.assigned_tasker_auth_user_id !== user.id) redirect(`/ukol/${taskId}?error=forbidden`);
   if (task.status !== "assigned") redirect(`/ukol/${taskId}?error=status`);
 
   const { error } = await service.from("tasks").update({ status: "in_progress" }).eq("id", taskId);
   if (error) throw new Error(error.message);
+
+  await sendTaskovoEmail({
+    to: [task.client_contact],
+    subject: `Taskovo: práce na objednávce začala`,
+    heading: "Tasker začal pracovat",
+    body: [`Tasker označil objednávku “${task.title}” jako zahájenou.`, "Další krok uvidíte v detailu objednávky."],
+    ctaHref: appUrl(`/ukol/${taskId}`),
+    ctaLabel: "Otevřít objednávku",
+  });
 
   revalidateTaskViews(taskId);
   redirect(`/ukol/${taskId}?updated=task_started`);
@@ -316,13 +349,22 @@ export async function requestTaskCompletion(formData: FormData) {
   if (account.role !== "tasker") redirect("/prihlaseni?mode=login&error=account_profile");
 
   const service = createServiceSupabaseClient();
-  const { data: task, error: taskError } = await service.from("tasks").select("id,status,assigned_tasker_auth_user_id").eq("id", taskId).maybeSingle();
+  const { data: task, error: taskError } = await service.from("tasks").select("id,title,status,client_contact,assigned_tasker_auth_user_id").eq("id", taskId).maybeSingle();
   if (taskError) throw new Error(taskError.message);
   if (!task || task.assigned_tasker_auth_user_id !== user.id) redirect(`/ukol/${taskId}?error=forbidden`);
   if (task.status !== "in_progress") redirect(`/ukol/${taskId}?error=status`);
 
   const { error } = await service.from("tasks").update({ status: "awaiting_confirmation" }).eq("id", taskId);
   if (error) throw new Error(error.message);
+
+  await sendTaskovoEmail({
+    to: [task.client_contact],
+    subject: `Taskovo: objednávka čeká na potvrzení`,
+    heading: "Tasker označil práci jako hotovou",
+    body: [`Objednávka “${task.title}” čeká na vaše potvrzení dokončení.`, "Zkontrolujte výsledek a potvrďte dokončení v detailu objednávky."],
+    ctaHref: appUrl(`/ukol/${taskId}`),
+    ctaLabel: "Potvrdit dokončení",
+  });
 
   revalidateTaskViews(taskId);
   redirect(`/ukol/${taskId}?updated=completion_requested`);
@@ -342,13 +384,27 @@ export async function confirmTaskCompletion(formData: FormData) {
   if (account.role === "unknown") redirect("/prihlaseni?mode=login&error=account_profile");
 
   const service = createServiceSupabaseClient();
-  const { data: task, error: taskError } = await service.from("tasks").select("id,status,client_auth_user_id").eq("id", taskId).maybeSingle();
+  const { data: task, error: taskError } = await service.from("tasks").select("id,title,status,client_auth_user_id,accepted_offer_id").eq("id", taskId).maybeSingle();
   if (taskError) throw new Error(taskError.message);
   if (!task || task.client_auth_user_id !== user.id) redirect(`/ukol/${taskId}?error=forbidden`);
   if (task.status !== "awaiting_confirmation") redirect(`/ukol/${taskId}?error=status`);
 
+  const { data: offer, error: offerError } = task.accepted_offer_id
+    ? await service.from("offers").select("tasker_contact").eq("id", task.accepted_offer_id).maybeSingle()
+    : { data: null, error: null };
+  if (offerError) throw new Error(offerError.message);
+
   const { error } = await service.from("tasks").update({ status: "completed" }).eq("id", taskId);
   if (error) throw new Error(error.message);
+
+  await sendTaskovoEmail({
+    to: [offer?.tasker_contact],
+    subject: `Taskovo: objednávka byla potvrzena jako dokončená`,
+    heading: "Klient potvrdil dokončení",
+    body: [`Klient potvrdil dokončení objednávky “${task.title}”.`, "Objednávka je nyní ve stavu Hotovo."],
+    ctaHref: appUrl(`/ukol/${taskId}`),
+    ctaLabel: "Otevřít objednávku",
+  });
 
   revalidateTaskViews(taskId);
   redirect(`/ukol/${taskId}?updated=task_completed`);
@@ -372,7 +428,7 @@ export async function sendTaskMessage(formData: FormData) {
   const service = createServiceSupabaseClient();
   const { data: task, error: taskError } = await service
     .from("tasks")
-    .select("id,client_auth_user_id,assigned_tasker_auth_user_id,status")
+    .select("id,title,client_auth_user_id,client_contact,assigned_tasker_auth_user_id,accepted_offer_id,status")
     .eq("id", taskId)
     .maybeSingle();
 
@@ -383,6 +439,11 @@ export async function sendTaskMessage(formData: FormData) {
   const isAssignedTasker = task.assigned_tasker_auth_user_id === user.id;
   if (!isClientOwner && !isAssignedTasker) redirect(`/ukol/${taskId}?error=forbidden`);
   if (!task.assigned_tasker_auth_user_id) redirect(`/ukol/${taskId}?error=messages_closed`);
+
+  const { data: offer, error: offerError } = task.accepted_offer_id
+    ? await service.from("offers").select("tasker_contact").eq("id", task.accepted_offer_id).maybeSingle()
+    : { data: null, error: null };
+  if (offerError) throw new Error(offerError.message);
 
   const senderRole = isClientOwner ? "client" : "tasker";
   const fallbackName = senderRole === "client" ? "Klient Taskovo" : "Tasker Taskovo";
@@ -396,6 +457,15 @@ export async function sendTaskMessage(formData: FormData) {
   });
 
   if (error) throw new Error(error.message);
+
+  await sendTaskovoEmail({
+    to: isClientOwner ? [offer?.tasker_contact] : [task.client_contact],
+    subject: `Taskovo: nová zpráva k objednávce ${task.title}`,
+    heading: "Přišla nová zpráva",
+    body: [`${senderName} poslal zprávu k objednávce “${task.title}”.`, body],
+    ctaHref: appUrl(`/ukol/${taskId}`),
+    ctaLabel: "Otevřít zprávy",
+  });
 
   revalidateTaskViews(taskId);
   redirect(`/ukol/${taskId}?updated=message_sent`);
