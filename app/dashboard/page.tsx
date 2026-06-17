@@ -22,7 +22,7 @@ export const metadata: Metadata = {
 };
 
 const nextStepCopy: Record<string, string> = {
-  open: "čeká na nabídky od taskerů.",
+  open: "Čeká na nabídky od taskerů.",
   offers_received: "Vyberte taskera z doručených nabídek.",
   assigned: "Tasker je vybraný. Domluvte detaily v objednávce.",
   in_progress: "Tasker pracuje. Sledujte zprávy a detail objednávky.",
@@ -76,6 +76,58 @@ function groupOffersByTask(offers: Offer[]) {
   return grouped;
 }
 
+function onboardingStatus(done: boolean, active: boolean) {
+  if (done) return "Hotovo";
+  if (active) return "Teď";
+  return "Další krok";
+}
+
+function clientOnboardingSteps(taskCount: number, offerCount: number, selectedTaskerCount: number, completedTaskCount: number) {
+  const hasTask = taskCount > 0;
+  const hasOffer = offerCount > 0;
+  const hasSelectedTasker = selectedTaskerCount > 0;
+  const hasCompletedTask = completedTaskCount > 0;
+
+  return [
+    {
+      title: "Zadejte úkol",
+      status: onboardingStatus(hasTask, !hasTask),
+      text: hasTask
+        ? "První poptávka je založená. Další krok je porovnat nabídky a vybrat vhodného taskera."
+        : "Popište, co potřebujete, přidejte město, rozpočet a termín. Jasné zadání přinese lepší nabídky.",
+      href: "#novy-ukol",
+      cta: hasTask ? "Zadat další úkol" : "Zadat první úkol",
+    },
+    {
+      title: "Počkejte na nabídky",
+      status: onboardingStatus(hasOffer, hasTask && !hasOffer),
+      text: hasOffer
+        ? "Nabídky už máte k dispozici. Porovnejte cenu, zprávu, profil a domluvu."
+        : "Jakmile taskeři pošlou nabídky, uvidíte je u konkrétní objednávky i v této sekci.",
+      href: "#nabidky",
+      cta: hasOffer ? "Porovnat nabídky" : "Sledovat nabídky",
+    },
+    {
+      title: "Vyberte taskera",
+      status: onboardingStatus(hasSelectedTasker, hasOffer && !hasSelectedTasker),
+      text: hasSelectedTasker
+        ? "Tasker je vybraný. Detaily, zprávy a další kroky řešte přímo v objednávce."
+        : "Klient si taskera vybírá samostatně podle nabídky, profilu a komunikace.",
+      href: "#aktivni",
+      cta: hasSelectedTasker ? "Otevřít objednávky" : "Vybrat taskera",
+    },
+    {
+      title: "Potvrďte dokončení",
+      status: onboardingStatus(hasCompletedTask, hasSelectedTasker && !hasCompletedTask),
+      text: hasCompletedTask
+        ? "Máte dokončenou objednávku. Recenze po dokončení pomáhá zvyšovat kvalitu marketplace."
+        : "Po dokončení práce potvrďte výsledek. Výplata taskerovi se uvolní podle pravidel platebního partnera.",
+      href: "#platby",
+      cta: hasCompletedTask ? "Zkontrolovat historii" : "Jak fungují platby",
+    },
+  ];
+}
+
 export default async function DashboardPage({ searchParams }: { searchParams: Promise<{ updated?: string; error?: string }> }) {
   const params = await searchParams;
   const supabase = await createServerSupabaseClient();
@@ -104,6 +156,8 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
   const unreadTotal = Object.values(unreadCounts).reduce((total, count) => total + count, 0);
   const estimatedBudget = currentTasks.reduce((total, task) => total + (task.budget_czk || 0), 0);
   const paidEstimate = acceptedOffers.reduce((total, offer) => total + (offer.price_czk || 0), 0);
+  const selectedTaskCount = currentTasks.filter((task) => ["assigned", "in_progress", "awaiting_confirmation", "completed"].includes(task.status)).length;
+  const onboarding = clientOnboardingSteps(tasks.length, pendingOffers.length + acceptedOffers.length, Math.max(acceptedOffers.length, selectedTaskCount), completedTasks.length);
   const notice = params.updated ? updateMessages[params.updated] : null;
   const error = params.error ? errorMessages[params.error] || "Akci se nepodařilo dokončit." : null;
 
@@ -127,6 +181,27 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
         {error ? <p className="alert-box">{error}</p> : null}
 
         <form action={logoutAccount} className="admin-toolbar"><span>{user.email}</span><button className="button secondary" type="submit">Odhlásit se</button></form>
+
+        <section className="section dashboard-section" aria-label="Start klienta na Taskovo">
+          <div className="section-heading-row">
+            <div className="section-title">
+              <p className="kicker">Start klienta</p>
+              <h2>Od nápadu k dokončené objednávce</h2>
+              <p>Krátká cesta, která pomáhá zadat úkol, porovnat nabídky a vybrat taskera samostatně.</p>
+            </div>
+            <a className="button secondary" href="#novy-ukol">Zadat úkol</a>
+          </div>
+          <div className="dashboard-grid">
+            {onboarding.map((step) => (
+              <article className="dashboard-panel" key={step.title}>
+                <p className="kicker">{step.status}</p>
+                <h3>{step.title}</h3>
+                <p>{step.text}</p>
+                <a className="button secondary" href={step.href}>{step.cta}</a>
+              </article>
+            ))}
+          </div>
+        </section>
 
         <section className="dashboard-overview" aria-label="Přehled účtu">
           <article className="metric-card metric-card-primary"><span>Aktivní úkoly</span><strong>{currentTasks.length}</strong><p>{actionTasks.length ? `${actionTasks.length} čeká na vaše rozhodnutí.` : "Vše je bez okamžité akce."}</p></article>
