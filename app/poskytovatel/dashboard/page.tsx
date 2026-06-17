@@ -335,7 +335,7 @@ export default async function ProviderDashboardPage({ searchParams }: { searchPa
         <section className="section dashboard-section" id="vyplaty">
           <div className="dashboard-grid">
             <article className="dashboard-panel"><h3>Výplaty</h3><p>{completedTasks.length ? `Dokončené zakázky: ${completedTasks.length}. Výplata se uvolní po potvrzení dokončení podle pravidel platebního partnera.` : "Výplaty jsou navázané na dokončené a klientem potvrzené zakázky."}</p></article>
-            <article className="dashboard-panel"><h3>Provize</h3><p>Přesné podmínky se zobrazí před odeslání nabídky a před potvrzením objednávky klientem.</p></article>
+            <article className="dashboard-panel"><h3>Provize</h3><p>Přesné podmínky se zobrazí před odesláním nabídky a před potvrzením objednávky klientem.</p></article>
             <article className="dashboard-panel"><h3>Právní role</h3><p>Taskovo je zprostředkovatelská platforma. Tasker není zaměstnancem Taskovo a služby poskytuje samostatně jako OSVČ nebo firma.</p></article>
           </div>
         </section>
