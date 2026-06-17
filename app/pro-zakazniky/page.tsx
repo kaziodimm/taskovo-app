@@ -26,13 +26,27 @@ export const metadata: Metadata = {
 };
 
 const benefits = [
-  ["Rychlé zadání", "Popíšete úkol jedním formulářem a nemusíte obvolávat známé, firmy ani skupiny."],
-  ["Porovnání nabídek", "Vidíte cenu, termín, profil taskera a později také ověření, recenze a historii."],
-  ["Lokální dostupnost", "Taskovo je stavěné i pro menší města, kde často chybí organizovaná nabídka služeb."],
-  ["Kontrola nad výběrem", "Klient si taskera vybírá sám. Platforma nenutí konkrétního poskytovatele."],
+  ["Rychlejší než hledání ve skupinách", "Zadáte úkol jednou a nemusíte psát do několika chatů, čekat na náhodné odpovědi ani obvolávat známé."],
+  ["Vyberete si sami", "Porovnáte cenu, zprávu, profil taskera a domluvu. Taskovo vám konkrétního člověka nenutí."],
+  ["Vše na jednom místě", "Zadání, nabídky, zprávy, fotky, platby a historie objednávky zůstávají u konkrétního úkolu."],
+  ["Větší důvěra", "Profily, ověření, recenze a jasná pravidla pomáhají rozhodnout se bezpečněji než v anonymních skupinách."],
 ];
 
 const useCases = ["Úklid bytu před návštěvou", "Odvoz věcí nebo menší stěhování", "Vyzvednutí balíku nebo nákupu", "Montáž nábytku a polic", "Pomoc seniorům s praktickým úkolem", "Zahrada, terasa nebo sezónní práce"];
+
+const journey = [
+  ["01", "Popíšete, co potřebujete", "Město, čas, rozpočet, fotky a krátký popis pomůžou taskerům poslat přesnější nabídku."],
+  ["02", "Dostanete nabídky", "Tasker pošle cenu, zprávu a dostupnost. Vy si nabídky porovnáte v klidu."],
+  ["03", "Vyberete taskera", "Rozhodnutí je na vás. Taskovo slouží jako marketplace, ne jako agentura s přiděleným pracovníkem."],
+  ["04", "Potvrdíte dokončení", "Po dokončení potvrdíte výsledek, případně přidáte recenzi nebo otevřete spor přes podporu."],
+];
+
+const customerFaqs = [
+  ["Musím si taskera vybrat hned?", "Ne. Nabídky můžete porovnat podle ceny, zprávy, profilu a komunikace. Výběr je vždy na klientovi."],
+  ["Je Taskovo poskytovatel služby?", "Ne. Taskovo je zprostředkovatelská platforma. Službu poskytuje vybraný tasker samostatně jako OSVČ, firma nebo nezávislá osoba podle pravidel služby."],
+  ["Můžu přidat fotky k úkolu?", "Ano. Fotky pomáhají upřesnit rozsah práce, ale ve veřejném seznamu úkolů zbytečně nezabírají místo."],
+  ["Co když se něco pokazí?", "Komunikace a historie objednávky zůstává u úkolu. U plateb a sporů se používá proces Taskovo a pravidla platebního partnera."],
+];
 
 export default function CustomersPage() {
   const customerJsonLd = {
@@ -50,21 +64,32 @@ export default function CustomersPage() {
     },
   };
 
+  const faqJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: customerFaqs.map(([question, answer]) => ({
+      "@type": "Question",
+      name: question,
+      acceptedAnswer: { "@type": "Answer", text: answer },
+    })),
+  };
+
   return (
     <>
       <Header />
       <main className="page-shell">
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(customerJsonLd) }} />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
         <section className="page-hero">
           <div>
             <p className="kicker">Pro zákazníky</p>
-            <h1 className="page-title">Zadejte úkol a vyberte si pomoc v okolí</h1>
-            <p className="hero-lead">Taskovo pomáhá najít lidi na praktické úkoly, které nechcete nebo nemůžete řešit sami. Od doručení přes úklid až po montáž a stěhování.</p>
+            <h1 className="page-title">Najděte pomoc rychleji a bezpečněji než ve skupinách</h1>
+            <p className="hero-lead">Taskovo pomáhá zadat praktický úkol, získat nabídky od lidí v okolí a vybrat si taskera samostatně. Hodí se pro úklid, doručení, montáž, stěhování i drobnou pomoc, kterou nechcete řešit sami.</p>
             <div className="hero-actions"><a className="button primary" href="/zadat-ukol">Zadat nový úkol</a><a className="button secondary" href="/poskytovatele">Prohlédnout taskery</a></div>
           </div>
           <div className="page-hero-card">
             <strong>Vy rozhodujete</strong>
-            <p>Klient porovnává nabídky a vybírá taskera samostatně. Taskovo slouží jako přehledné místo pro zadání, komunikaci a důvěru.</p>
+            <p>Klient porovnává nabídky a vybírá taskera samostatně. Taskovo je zprostředkovatelská platforma, ne zaměstnavatel ani přímý poskytovatel služby.</p>
           </div>
         </section>
 
@@ -72,6 +97,16 @@ export default function CustomersPage() {
           <div className="section-heading-row"><div><p className="kicker">Výhody</p><h2>Proč zadat úkol přes Taskovo</h2></div></div>
           <div className="trust-grid">
             {benefits.map(([title, text]) => <article key={title}><span className="trust-icon">OK</span><h3>{title}</h3><p>{text}</p></article>)}
+          </div>
+        </section>
+
+        <section className="section dark-band">
+          <div className="section-title">
+            <p className="kicker">Proces</p>
+            <h2>Od úkolu k hotové práci bez zbytečného chaosu</h2>
+          </div>
+          <div className="workflow-grid">
+            {journey.map(([step, title, text]) => <article key={step}><span>{step}</span><h3>{title}</h3><p>{text}</p></article>)}
           </div>
         </section>
 
@@ -89,6 +124,13 @@ export default function CustomersPage() {
         <section className="section">
           <div className="section-heading-row"><div><p className="kicker">Kategorie</p><h2>Nejčastější služby</h2></div><a className="button secondary" href="/kategorie">Všechny kategorie</a></div>
           <div className="category-grid">{marketplaceCategories.slice(0, 3).map((category) => <CategoryCard key={category.slug} category={category} />)}</div>
+        </section>
+
+        <section className="section faq-section">
+          <div className="section-heading-row"><div className="section-title"><p className="kicker">FAQ</p><h2>Otázky před prvním úkolem</h2></div><a className="button secondary" href="/faq">Všechny otázky</a></div>
+          <div className="faq-list">
+            {customerFaqs.map(([question, answer]) => <details key={question}><summary>{question}</summary><p>{answer}</p></details>)}
+          </div>
         </section>
       </main>
       <Footer />
