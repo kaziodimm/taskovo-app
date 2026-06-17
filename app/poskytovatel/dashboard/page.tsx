@@ -68,6 +68,58 @@ function profileCompletion(profile: TaskerProfile | null) {
   return Math.round((checks.filter(Boolean).length / checks.length) * 100);
 }
 
+function onboardingStatus(done: boolean, active: boolean) {
+  if (done) return "Hotovo";
+  if (active) return "Teď";
+  return "Další krok";
+}
+
+function onboardingSteps(profile: TaskerProfile | null, completion: number, availableTaskCount: number, offerCount: number) {
+  const profileReady = completion >= 85;
+  const photoReady = Boolean(profile?.avatar_url);
+  const hasOpportunity = availableTaskCount > 0;
+  const hasOffer = offerCount > 0;
+
+  return [
+    {
+      title: "Doplňte profil",
+      status: onboardingStatus(profileReady, !profileReady),
+      text: profileReady
+        ? "Profil už působí důvěryhodněji. Průběžně ho zlepšujte podle zkušeností."
+        : "Bio, kontakt, kategorie a město pomáhají klientovi rychle pochopit, co umíte.",
+      href: "#profil",
+      cta: profileReady ? "Upravit profil" : "Doplnit profil",
+    },
+    {
+      title: "Nahrajte fotku",
+      status: onboardingStatus(photoReady, profileReady && !photoReady),
+      text: photoReady
+        ? "Fotka je součástí veřejného profilu a posiluje důvěru před první zprávou."
+        : "Profilová fotka se zobrazí až po kontrole administrátorem, aby marketplace zůstal důvěryhodný.",
+      href: "#profil",
+      cta: photoReady ? "Zkontrolovat fotku" : "Přidat fotku",
+    },
+    {
+      title: "Vyberte vhodný úkol",
+      status: onboardingStatus(hasOpportunity && hasOffer, profileReady && !hasOffer),
+      text: hasOpportunity
+        ? `${availableTaskCount} úkolů je připravených k výběru. Začněte tím, který opravdu zvládnete dodat dobře.`
+        : "Jakmile klienti přidají nové úkoly, objeví se tady i ve veřejném marketplace.",
+      href: "#dostupne-ukoly",
+      cta: "Projít úkoly",
+    },
+    {
+      title: "Pošlete první nabídku",
+      status: onboardingStatus(hasOffer, profileReady && hasOpportunity && !hasOffer),
+      text: hasOffer
+        ? "První nabídky už budují vaši historii. Sledujte stav a reagujte rychle na zprávy klientů."
+        : "Navrhněte vlastní cenu, termín a krátce vysvětlete, proč si klient může vybrat právě vás.",
+      href: hasOffer ? "#nabidky" : "#dostupne-ukoly",
+      cta: hasOffer ? "Zobrazit nabídky" : "Poslat nabídku",
+    },
+  ];
+}
+
 function nextActionCopy(completion: number, offerCount: number, pendingCount: number) {
   if (completion < 85) {
     return {
@@ -138,6 +190,7 @@ export default async function ProviderDashboardPage({ searchParams }: { searchPa
   const notice = params.updated ? updateMessages[params.updated] : null;
   const error = params.error ? errorMessages[params.error] || "Akci se nepodařilo dokončit." : null;
   const nextAction = nextActionCopy(completion, myOffers.length, pendingOffers.length);
+  const onboarding = onboardingSteps(profile, completion, availableTasks.length, myOffers.length);
 
   return (
     <>
@@ -159,6 +212,27 @@ export default async function ProviderDashboardPage({ searchParams }: { searchPa
         {error ? <p className="alert-box">{error}</p> : null}
 
         <form action={logoutAccount} className="admin-toolbar"><span>{user.email}</span><button className="button secondary" type="submit">Odhlásit se</button></form>
+
+        <section className="section dashboard-section" aria-label="Start taskera na Taskovo">
+          <div className="section-heading-row">
+            <div className="section-title">
+              <p className="kicker">Start taskera</p>
+              <h2>Od registrace k první zakázce</h2>
+              <p>Krátká cesta, která pomáhá novému taskerovi rychle pochopit, co udělat před první nabídkou.</p>
+            </div>
+            <a className="button secondary" href="/tasks">Otevřít marketplace</a>
+          </div>
+          <div className="dashboard-grid">
+            {onboarding.map((step) => (
+              <article className="dashboard-panel" key={step.title}>
+                <p className="kicker">{step.status}</p>
+                <h3>{step.title}</h3>
+                <p>{step.text}</p>
+                <a className="button secondary" href={step.href}>{step.cta}</a>
+              </article>
+            ))}
+          </div>
+        </section>
 
         <section className="section dashboard-section" aria-label="Růst taskera">
           <div className="section-heading-row">
@@ -209,7 +283,7 @@ export default async function ProviderDashboardPage({ searchParams }: { searchPa
                 </article>
               ))}
             </div>
-          ) : <div className="empty-state"><h3>Zatím žádná aktivní zakázka</h3><p>Pošlete nabídku na vhodný úkol. Pokud si vás klient vybere, začnete budovat první pracovní historii.</p><a className="button primary" href="#dostupne-ukoly">Projít úkoly</a></div>}
+          ) : <div className="empty-state"><h3>Zatím žádná aktivní zakázka</h3><p>Pošlete nabídku na vhodný úkol. Pokud si vás klient vybere, začnete budovat první zakázkovou historii.</p><a className="button primary" href="#dostupne-ukoly">Projít úkoly</a></div>}
         </section>
 
         {waitingTasks.length ? (
